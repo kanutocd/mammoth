@@ -1,9 +1,6 @@
 name: Docs
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -44,12 +41,16 @@ jobs:
           <html lang="en">
             <head>
               <meta charset="utf-8">
-              <title>Mammoth - Self-hosted PostgreSQL Event Relay</title>
+              <title>Mammoth - Reliable delivery of PostgreSQL change events</title>
             </head>
             <body>
               <h1>Mammoth</h1>
-              <p>Self-hosted PostgreSQL event relay.</p>
+              <p><strong>Reliable delivery of PostgreSQL change events.</strong></p>
               <pre>PostgreSQL → Mammoth → Webhook</pre>
+              <p>
+                Mammoth is a self-hosted PostgreSQL change-event relay focused on
+                reliable arrival, retries, checkpoints, dead letters, and replay metadata.
+              </p>
               <ul>
                 <li><a href="api/">API Reference</a></li>
               </ul>
