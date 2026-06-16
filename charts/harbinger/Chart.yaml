@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mammoth
+description: A lightweight, ultra-fast PostgreSQL CDC-to-Webhook relay
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

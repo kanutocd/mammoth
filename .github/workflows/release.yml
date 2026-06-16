@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish gem to RubyGems.org
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_BRANCH: release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release source
+        run: |
+          release_ref="origin/${RELEASE_BRANCH}"
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ "${GITHUB_REF}" != "refs/heads/${RELEASE_BRANCH}" ]; then
+              echo "Manual releases must be run from the ${RELEASE_BRANCH} branch."
+              exit 1
+            fi
+            exit 0
+          fi
+
+          if ! git show-ref --verify --quiet "refs/remotes/${release_ref}"; then
+            echo "Release branch ${release_ref} was not fetched."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" "${release_ref}"; then
+            echo "Release tag commit ${GITHUB_SHA} is not reachable from ${release_ref}."
+            exit 1
+          fi
+
+      - name: Install native extension headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.5"
+          bundler-cache: true
+
+      - name: Run quality gates
+        run: bundle exec rake
+
+      - name: Check tag matches gem version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(ruby -Ilib -rmammoth/version -e 'puts Mammoth::VERSION')"
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag v$tag does not match gem version $version"
+            exit 1
+          fi
+
+      - name: Build gem package
+        run: bundle exec rake build
+
+      - name: Publish to RubyGems.org
+        uses: rubygems/release-gem@v1

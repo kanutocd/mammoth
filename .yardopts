@@ -1,0 +1,7 @@
+--title "Mammoth API Documentation"
+--protected
+--markup markdown
+--readme README.md
+'lib/**/*.rb'
+-
+--files CHANGELOG.md LICENSE.txt

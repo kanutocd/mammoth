@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Test, lint, docs, package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install native extension headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.5"
+          bundler-cache: true
+
+      - name: Run tests with coverage gates
+        run: bundle exec rake test
+
+      - name: Run E2E tests
+        run: bundle exec rake test:e2e
+
+      - name: Run RuboCop
+        run: bundle exec rubocop
+
+      - name: Validate RBS signatures
+        run: bundle exec rbs validate
+
+      - name: Run Steep
+        run: bundle exec steep check
+
+      - name: Build YARD documentation
+        run: bundle exec yard doc --fail-on-warning --no-private --output-dir doc/api
+
+      - name: Build gem package
+        run: gem build mammoth.gemspec

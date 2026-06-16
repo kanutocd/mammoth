@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "https://kanutocd.github.io/mammoth/schema/mammoth.schema.json",
+ "title": "Mammoth Configuration",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [
+    "mammoth",
+    "postgres",
+    "replication",
+    "webhook",
+    "retry",
+    "sqlite",
+    "logging"
+  ],
+
+  "properties": {
+    "mammoth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+
+    "postgres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "port",
+        "database",
+        "username",
+        "password_env"
+      ],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "database": {
+          "type": "string",
+          "minLength": 1
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1
+        },
+        "password_env": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+
+    "replication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot",
+        "publication"
+      ],
+      "properties": {
+        "slot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publication": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_lsn": {
+          "type": ["string", "null"]
+        },
+        "auto_create_slot": {
+          "type": "boolean"
+        }
+      }
+    },
+
+    "webhook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "url",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_attempts",
+        "schedule_seconds"
+      ],
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "schedule_seconds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+
+    "sqlite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+
+    "logging": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      }
+    }
+  }
+}

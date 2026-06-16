@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+set -eu
+bundle exec rake test:e2e

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mammoth.fullname" . }}-config
+  labels:
+    {{- include "mammoth.labels" . | nindent 4 }}
+data:
+  mammoth.config.yaml: |
+    mammoth:
+      name: {{ .Values.mammoth.name | default (include "mammoth.fullname" .) }}
+
+    postgres:
+      host: {{ .Values.postgres.host | quote }}
+      port: {{ .Values.postgres.port | default 5432 }}
+      database: {{ .Values.postgres.database | quote }}
+      username: {{ .Values.postgres.username | quote }}
+      password_env: "HARBINGER_POSTGRES_PASSWORD"
+
+    replication:
+      slot: {{ .Values.replication.slot | quote }}
+      publication: {{ .Values.replication.publication | quote }}
+
+    webhook:
+      name: {{ .Values.webhook.name | quote }}
+      url: {{ .Values.webhook.url | quote }}
+      timeout_seconds: {{ .Values.webhook.timeout_seconds | default 5 }}
+
+    retry:
+      max_attempts: {{ .Values.retry.max_attempts | default 5 }}
+      schedule_seconds:
+        {{- toYaml .Values.retry.schedule_seconds | nindent 8 }}
+
+    sqlite:
+      path: "/data/mammoth.db"
+
+    logging:
+      level: {{ .Values.logging.level | default "info" | quote }}

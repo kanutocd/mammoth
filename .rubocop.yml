@@ -1,0 +1,21 @@
+plugins:
+  - rubocop-minitest
+  - rubocop-rake
+  
+AllCops:
+  TargetRubyVersion: 4.0
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Metrics/MethodLength:
+  Max: 19
+
+Metrics/ClassLength:
+  Max: 120
+
+Metrics/AbcSize: 
+  Max: 22

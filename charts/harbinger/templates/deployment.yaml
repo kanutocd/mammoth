@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mammoth.fullname" . }}
+  labels:
+    {{- include "mammoth.labels" . | nindent 4 }}
+spec:
+  # Strictly capped at 1 replica to respect the pgoutput slot boundary constraint
+  replicas: 1
+  strategy:
+    type: Recreate # Drops the old pod before spinning up a new one to unlock the replication slot cleanly
+  selector:
+    matchLabels:
+      {{- include "mammoth.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mammoth.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          args:
+            - "start"
+            - "/app/config/mammoth.config.yaml"
+          env:
+            - name: HARBINGER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret.name }}
+                  key: {{ .Values.postgres.existingSecret.key }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+            - name: data-volume
+              mountPath: /data
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "mammoth.fullname" . }}-config
+            items:
+              - key: mammoth.config.yaml
+                path: mammoth.config.yaml
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" (include "mammoth.fullname" .)) }}

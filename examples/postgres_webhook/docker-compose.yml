@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    ports:
+      - "54329:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command: ruby webhook_receiver.rb
+    ports:
+      - "9292:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth_sample:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - webhook_receiver
+      - postgres
+    environment:
+      HARBINGER_POSTGRES_PASSWORD: mammoth
+    command:
+      - deliver-sample
+      - examples/postgres_webhook/config/mammoth.yml
+      - examples/postgres_webhook/events/order_insert.json
+    volumes:
+      - mammoth_data:/app/.sqlite3
+
+volumes:
+  mammoth_data:

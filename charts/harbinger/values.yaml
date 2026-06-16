@@ -1,0 +1,58 @@
+image:
+  repository: ghcr.io/kanutocd/mammoth
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+# Private PRO images can be used by overriding image.repository and setting
+# imagePullSecrets to a Kubernetes registry secret.
+imagePullSecrets: []
+# - name: kanutocd-pro-registry
+
+mammoth:
+  name: production_mammoth
+
+postgres:
+  host: "postgres-service.internal"
+  port: 5432
+  database: "app_production"
+  username: "mammoth_user"
+  existingSecret:
+    name: "postgres-secrets"
+    key: "password"
+
+replication:
+  slot: "mammoth_prod"
+  publication: "mammoth_publication"
+
+webhook:
+  name: "primary_webhook"
+  url: "https://yourservice.com/webhooks/postgres"
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 5
+  schedule_seconds:
+    - 1
+    - 5
+    - 30
+    - 60
+    - 300
+
+logging:
+  level: "info"
+
+persistence:
+  existingClaim: ""
+  storage: "1Gi"
+  # storageClass: "gp3"
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+# PRO-only values are intentionally not rendered by the OSS chart templates.
+pro: {}
