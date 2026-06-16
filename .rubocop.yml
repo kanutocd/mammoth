@@ -15,7 +15,19 @@ Metrics/MethodLength:
   Max: 19
 
 Metrics/ClassLength:
-  Max: 120
+  Max: 135
 
 Metrics/AbcSize: 
-  Max: 22
+  Max: 25
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false    # Excludes keyword arguments from the total count
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+Layout/LineLength:
+  Max: 130

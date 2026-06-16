@@ -12,6 +12,7 @@ module Mammoth
   # from PostgreSQL-specific message shapes while preserving source metadata such
   # as commit LSN and transaction identity when available.
   class EventSerializer
+    # Default source label used in serialized webhook payloads.
     DEFAULT_SOURCE = "postgresql"
 
     # Serialize an event-like object into a webhook-ready Hash.

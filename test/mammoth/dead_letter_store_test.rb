@@ -26,6 +26,31 @@ module Mammoth
       end
     end
 
+    def test_pending_respects_limit
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        store = DeadLetterStore.new(sqlite)
+
+        store.write(event: sample_event("event-1"), destination_name: "primary_webhook")
+        store.write(event: sample_event("event-2"), destination_name: "primary_webhook")
+
+        assert_equal 1, store.pending(limit: 1).size
+      end
+    end
+
+    def test_writes_dead_letter_without_error_object
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        store = DeadLetterStore.new(sqlite)
+
+        store.write(event: sample_event, destination_name: "primary_webhook")
+        row = store.pending.first
+
+        assert_nil row["error_class"]
+        assert_nil row["error_message"]
+      end
+    end
+
     def test_resolves_and_ignores_dead_letters
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!

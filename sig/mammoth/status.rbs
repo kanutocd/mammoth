@@ -1,0 +1,34 @@
+module Mammoth
+  # Builds and prints a boring operational status snapshot.
+  class Status
+    @config: untyped
+
+    @sqlite_store: untyped
+
+    attr_reader config: untyped
+
+    attr_reader sqlite_store: untyped
+
+    # Print status for a configuration and optional SQLite store.
+    #
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
+    # @return [void]
+    def self.call: (untyped config, ?sqlite_store: untyped?) -> untyped
+
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
+    def initialize: (untyped config, ?sqlite_store: untyped?) -> void
+
+    # Print the status snapshot.
+    #
+    # @return [void]
+    def call: () -> untyped
+
+    private
+
+    def sqlite_path: () -> untyped
+
+    def print_store_state: () -> untyped
+  end
+end

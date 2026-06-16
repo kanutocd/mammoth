@@ -1,0 +1,74 @@
+module Mammoth
+  # Owns Mammoth's local SQLite operational database.
+  #
+  # The SQLite database is Mammoth's operational memory. It stores only boring,
+  # inspectable state required for reliability: schema versions, checkpoints,
+  # and dead letters.
+  class SQLiteStore
+    @path: untyped
+
+    @database: untyped
+
+    DEFAULT_DB_PATH: untyped
+
+    MIGRATION_DIR: untyped
+
+    BOOTSTRAP_FILE: "__bootstrap__.sql"
+
+    BOOTSTRAP_VERSION: "__bootstrap__"
+
+    MIGRATIONS_TABLE: "schema_migrations"
+
+    attr_reader path: untyped
+
+    # Open and return a connected store.
+    #
+    # @param path [String] SQLite database path
+    # @return [Mammoth::SQLiteStore]
+    def self.connect: (?untyped path) -> untyped
+
+    # @param path [String] SQLite database path
+    def initialize: (?untyped path) -> void
+
+    # Open the SQLite database and configure conservative operational pragmas.
+    #
+    # @return [Mammoth::SQLiteStore] self
+    def connect: () -> untyped
+
+    # @return [SQLite3::Database] connected database
+    def database: () -> untyped
+
+    # Apply the initial schema if it has not yet been applied.
+    #
+    # @return [Mammoth::SQLiteStore] self
+    def bootstrap!: () -> self
+
+    # Apply a migration file unless its version already exists.
+    #
+    # @param sql_file [String] SQL file name under lib/mammoth/sql
+    # @return [Mammoth::SQLiteStore] self
+    def migrate!: (untyped sql_file) -> self
+
+    # @return [Boolean] true when the initial schema is already applied
+    def bootstrapped?: () -> untyped
+
+    # @param table_name [String] table name
+    # @return [Boolean] true when a table exists
+    def table_exists?: (untyped table_name) -> untyped
+
+    # @param version_name [String] migration version
+    # @return [Boolean] true when a migration version exists
+    def version_exists?: (untyped version_name) -> (false | untyped)
+
+    # Return table names in the operational database.
+    #
+    # @return [Array<String>] table names
+    def tables: () -> untyped
+
+    private
+
+    def apply_migration!: (untyped sql_file, untyped version_name) -> untyped
+
+    def execute_pragma: (untyped name, untyped value) -> untyped
+  end
+end

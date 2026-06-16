@@ -1,0 +1,36 @@
+module Mammoth
+  # Persists source checkpoints in Mammoth's SQLite operational store.
+  class CheckpointStore
+    @sqlite_store: untyped
+
+    attr_reader sqlite_store: untyped
+
+    # @param sqlite_store [Mammoth::SQLiteStore] bootstrapped SQLite store
+    def initialize: (untyped sqlite_store) -> void
+
+    # Insert or update the last successfully delivered source position.
+    #
+    # @param source_name [String] logical source name
+    # @param slot_name [String] PostgreSQL replication slot name
+    # @param publication_name [String] PostgreSQL publication name
+    # @param last_lsn [String, nil] last delivered LSN/source position
+    # @return [Hash] stored checkpoint row
+    def write: (source_name: untyped, slot_name: untyped, publication_name: untyped, last_lsn: untyped) -> untyped
+
+    # Fetch a checkpoint row.
+    #
+    # @param source_name [String] logical source name
+    # @param slot_name [String] PostgreSQL replication slot name
+    # @return [Hash, nil] checkpoint row or nil
+    def fetch: (source_name: untyped, slot_name: untyped) -> untyped
+
+    # Count checkpoint rows.
+    #
+    # @return [Integer] checkpoint count
+    def count: () -> untyped
+
+    private
+
+    def database: () -> untyped
+  end
+end

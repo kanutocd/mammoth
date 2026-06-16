@@ -1,0 +1,40 @@
+module Mammoth
+  # Top-level Mammoth application composition root.
+  #
+  # Application wires Mammoth's current v0.1.0 runtime pieces: configuration,
+  # SQLite operational memory, replication boundary, delivery worker, checkpoint
+  # store, dead letter store, and webhook sink.
+  class Application
+    @config: untyped
+
+    @sqlite_store: untyped
+
+    @consumer: untyped
+
+    @delivery_worker: untyped
+
+    attr_reader config: untyped
+
+    attr_reader sqlite_store: untyped
+
+    attr_reader consumer: untyped
+
+    attr_reader delivery_worker: untyped
+
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param source [#each, nil] injectable event source for tests and demos
+    # @param adapter [#call, nil] optional source adapter
+    # @param sink [#deliver, nil] optional destination sink
+    # @param sleeper [#call] retry sleep strategy
+    def initialize: (untyped config, ?source: untyped?, ?adapter: untyped?, ?sink: untyped?, ?sleeper: untyped) -> void
+
+    # Start the application runtime and deliver consumed events.
+    #
+    # @return [Integer] number of processed events
+    def start: () -> untyped
+
+    private
+
+    def build_delivery_worker: (sink: untyped, sleeper: untyped) -> untyped
+  end
+end

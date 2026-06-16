@@ -1,0 +1,16 @@
+module Pgoutput
+  module Client
+    class Runner
+      def initialize: (**untyped options) -> void
+      def start: () { (untyped payload, untyped metadata) -> untyped } -> untyped
+    end
+  end
+
+  module SourceAdapter
+    class Cdc
+      def initialize: () -> void
+      def normalize: (untyped input) -> untyped
+      def call: (untyped input, untyped metadata) -> untyped
+    end
+  end
+end

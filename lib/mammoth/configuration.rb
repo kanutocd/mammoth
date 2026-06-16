@@ -10,7 +10,8 @@ module Mammoth
   # Configuration is intentionally schema-backed so the same contract can power
   # editor IntelliSense, preflight validation, and runtime startup checks.
   class Configuration
-    DEFAULT_SCHEMA_PATH = File.expand_path("../../config/mammoth.schema.json", __dir__)
+    # Default JSON Schema used to validate Mammoth YAML configuration files.
+    DEFAULT_SCHEMA_PATH = File.expand_path("../../config/mammoth.schema.json", __dir__.to_s)
 
     attr_reader :path, :data, :schema_path
 

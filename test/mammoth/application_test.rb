@@ -13,7 +13,10 @@ module Mammoth
         app = Application.new(Configuration.load(config_path), source: source, sink: sink, sleeper: ->(_seconds) {})
 
         assert_equal 2, app.start
-        checkpoint = CheckpointStore.new(app.sqlite_store).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+        checkpoint = CheckpointStore.new(app.sqlite_store).fetch(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod"
+        )
 
         assert_equal "0/2", checkpoint.fetch("last_lsn")
       end

@@ -11,10 +11,15 @@ module Mammoth
   # inspectable state required for reliability: schema versions, checkpoints,
   # and dead letters.
   class SQLiteStore
-    DEFAULT_DB_PATH = File.expand_path("../../.sqlite3/mammoth.db", __dir__)
-    MIGRATION_DIR = File.expand_path("sql", __dir__)
+    # Default SQLite database path used by local Mammoth runs.
+    DEFAULT_DB_PATH = File.expand_path("../../.sqlite3/mammoth.db", __dir__.to_s)
+    # Directory containing bundled SQLite schema migration files.
+    MIGRATION_DIR = File.expand_path("sql", __dir__.to_s)
+    # Initial schema migration file applied to new SQLite stores.
     BOOTSTRAP_FILE = "__bootstrap__.sql"
+    # Synthetic schema version recorded after the bootstrap migration succeeds.
     BOOTSTRAP_VERSION = "__bootstrap__"
+    # Table that records applied SQLite schema migrations.
     MIGRATIONS_TABLE = "schema_migrations"
 
     attr_reader :path

@@ -1,0 +1,5 @@
+module JSON
+  module Validator
+    def self.fully_validate: (untyped schema, untyped data, ?validate_schema: bool) -> Array[String]
+  end
+end

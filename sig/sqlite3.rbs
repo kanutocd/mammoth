@@ -1,0 +1,16 @@
+module SQLite3
+  class Exception < ::StandardError
+  end
+
+  class Database
+    attr_accessor results_as_hash: bool
+
+    def initialize: (String path) -> void
+    def execute: (String sql, ?untyped binds) -> Array[untyped]
+    def execute_batch: (String sql) -> untyped
+    def get_first_row: (String sql, ?untyped binds) -> untyped
+    def get_first_value: (String sql, ?untyped binds) -> untyped
+    def last_insert_row_id: () -> Integer
+    def transaction: () { () -> untyped } -> untyped
+  end
+end

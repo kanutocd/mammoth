@@ -1,0 +1,20 @@
+module Mammoth
+  # Serializes CDC-core change events into webhook payloads.
+  class EventSerializer
+    @event: untyped
+
+    DEFAULT_SOURCE: String
+
+    def self.call: (untyped event) -> Hash[String, untyped]
+    def initialize: (untyped event) -> void
+    def call: () -> Hash[String, untyped]
+    def to_json: (*untyped _args) -> String
+
+    private
+
+    def stringify_keys: (untyped hash) -> Hash[String, untyped]
+    def normalize_operation: (untyped operation) -> String
+    def occurred_at: (Hash[String, untyped] event_hash) -> untyped
+    def event_data: (Hash[String, untyped] event_hash) -> untyped
+  end
+end

@@ -1,0 +1,50 @@
+module Mammoth
+  # Persists failed deliveries in Mammoth's SQLite dead letter queue.
+  class DeadLetterStore
+    @sqlite_store: untyped
+
+    attr_reader sqlite_store: untyped
+
+    # @param sqlite_store [Mammoth::SQLiteStore] bootstrapped SQLite store
+    def initialize: (untyped sqlite_store) -> void
+
+    # Store a failed delivery.
+    #
+    # @param event [Hash] normalized event payload
+    # @param destination_name [String] destination name
+    # @param error [Exception, nil] delivery failure
+    # @param retry_count [Integer] number of delivery attempts
+    # @return [Integer] inserted dead letter id
+    def write: (event: untyped, destination_name: untyped, ?error: untyped?, ?retry_count: ::Integer) -> untyped
+
+    # Fetch pending dead letters.
+    #
+    # @param limit [Integer] maximum number of rows
+    # @return [Array<Hash>] pending dead letter rows
+    def pending: (?limit: ::Integer) -> untyped
+
+    # Count dead letters by status.
+    #
+    # @param status [String, nil] optional status
+    # @return [Integer] dead letter count
+    def count: (?status: untyped?) -> untyped
+
+    # Mark a dead letter as resolved.
+    #
+    # @param id [Integer] dead letter id
+    # @return [void]
+    def resolve: (untyped id) -> untyped
+
+    # Mark a dead letter as ignored.
+    #
+    # @param id [Integer] dead letter id
+    # @return [void]
+    def ignore: (untyped id) -> untyped
+
+    private
+
+    def database: () -> untyped
+
+    def update_status: (untyped id, untyped status) -> untyped
+  end
+end

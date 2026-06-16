@@ -8,6 +8,7 @@ module Mammoth
   # after success, and persist the failed event to the dead letter queue after
   # retry exhaustion.
   class DeliveryWorker
+    # Default source name used when an event does not provide one.
     DEFAULT_SOURCE = "postgresql"
 
     attr_reader :sink, :checkpoint_store, :dead_letter_store, :retry_schedule, :max_attempts, :sleeper, :source_name,

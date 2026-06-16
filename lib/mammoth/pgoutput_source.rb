@@ -39,26 +39,41 @@ module Mammoth
     # @yieldparam work [Object] CDC::Core::ChangeEvent or TransactionEnvelope
     # @return [void]
     # @raise [Mammoth::ReplicationError] when required CDC components are unavailable
-    def each
+    def each(&block)
       return enum_for(:each) unless block_given?
 
       effective_runner.start do |payload, metadata|
-        normalized_items(payload, metadata).each { |item| yield item }
+        normalized_items(payload, metadata).each(&block)
       end
+    rescue StandardError => e
+      raise e if e.is_a?(ReplicationError)
+
+      raise ReplicationError, "pgoutput replication failed: #{e.message}"
     end
 
     private
 
     def normalized_items(payload, metadata)
-      decoded = effective_decoder ? invoke_component(effective_decoder, parsed_payload(payload), metadata) : parsed_payload(payload)
+      parsed = parsed_payload(payload)
+      decoded = effective_decoder ? invoke_component(effective_decoder, parsed, metadata) : parsed
       normalized = invoke_source_adapter(decoded, metadata)
-      Array(normalized).flatten
+      normalize_source_positions(normalized.is_a?(Array) ? normalized.flatten : [normalized])
     end
 
     def parsed_payload(payload)
       return payload unless effective_parser
 
       invoke_component(effective_parser, payload)
+    end
+
+    def normalize_source_positions(items)
+      items.map do |item|
+        event_hash = item.respond_to?(:to_h) ? item.to_h : item
+        next item unless event_hash.respond_to?(:key?) && event_hash.respond_to?(:[]=)
+
+        event_hash["source_position"] ||= event_hash["commit_lsn"] || event_hash[:source_position] || event_hash[:commit_lsn]
+        event_hash
+      end
     end
 
     def invoke_source_adapter(decoded, metadata)
@@ -85,19 +100,25 @@ module Mammoth
     end
 
     def effective_runner
-      @runner ||= build_runner
+      runner || (@effective_runner ||= build_runner)
     end
 
     def effective_parser
-      @parser ||= build_parser
+      return parser unless parser.nil?
+      return nil if runner
+
+      @effective_parser ||= build_parser
     end
 
     def effective_decoder
-      @decoder ||= build_decoder
+      return decoder unless decoder.nil?
+      return nil if runner
+
+      @effective_decoder ||= build_decoder
     end
 
     def effective_source_adapter
-      @source_adapter ||= build_source_adapter
+      source_adapter || (@effective_source_adapter ||= build_source_adapter)
     end
 
     def build_runner
@@ -142,12 +163,13 @@ module Mammoth
 
     def require_optional!(feature, gem_name)
       require feature
+      true
     rescue LoadError => e
       raise ReplicationError, "#{gem_name} is required for live pgoutput replication: #{e.message}"
     end
 
     def require_any!(features, gem_name)
-      errors = []
+      errors = [] # : Array[String]
       features.each do |feature|
         require feature
         return true

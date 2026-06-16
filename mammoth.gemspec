@@ -50,11 +50,11 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |file| File.basename(file) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "json-schema", "~> 6.2"
-  spec.add_dependency "sqlite3", "~> 2.9"
   spec.add_dependency "cdc-core", "~> 0.1"
+  spec.add_dependency "json-schema", "~> 6.2"
   spec.add_dependency "pgoutput-client", "~> 0.2"
   spec.add_dependency "pgoutput-decoder", "~> 0.1"
   spec.add_dependency "pgoutput-parser", "~> 0.1"
   spec.add_dependency "pgoutput-source-adapter", "~> 0.1"
+  spec.add_dependency "sqlite3", "~> 2.9"
 end

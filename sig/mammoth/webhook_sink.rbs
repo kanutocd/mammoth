@@ -1,0 +1,44 @@
+module Mammoth
+  # Delivers normalized Mammoth events to a webhook endpoint.
+  class WebhookSink
+    @name: untyped
+
+    @url: untyped
+
+    @timeout_seconds: untyped
+
+    SUCCESS_RANGE: ::Range[::Integer]
+
+    attr_reader name: untyped
+
+    attr_reader url: untyped
+
+    attr_reader timeout_seconds: untyped
+
+    # @param name [String] destination name
+    # @param url [String] webhook endpoint URL
+    # @param timeout_seconds [Integer] HTTP open/read timeout in seconds
+    def initialize: (name: untyped, url: untyped, ?timeout_seconds: ::Integer) -> void
+
+    # Build a sink from Mammoth configuration.
+    #
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @return [Mammoth::WebhookSink]
+    def self.from_config: (untyped config) -> untyped
+
+    # Deliver an event to the webhook endpoint.
+    #
+    # @param event [Hash, #to_h] normalized event
+    # @return [Hash] delivery result
+    # @raise [Mammoth::DeliveryError] when delivery fails
+    def deliver: (untyped event) -> untyped
+
+    private
+
+    def perform_request: (untyped payload) -> untyped
+
+    def build_request: (untyped payload) -> untyped
+
+    def delivery_result: (untyped payload, untyped response) -> { event_id: untyped, destination: untyped, status: "delivered", http_status: untyped }
+  end
+end

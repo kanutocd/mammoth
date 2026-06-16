@@ -49,14 +49,14 @@ module Mammoth
 
     private
 
-    def each_event
+    def each_event(&block)
       effective_source.each do |raw_work|
-        normalize(raw_work).each { |event| yield event }
+        normalize(raw_work).each(&block)
       end
     end
 
     def effective_source
-      source || PgoutputSource.new(config)
+      source || raise(ReplicationError, "replication source is not configured")
     end
 
     def normalize(raw_work)
@@ -65,11 +65,11 @@ module Mammoth
     end
 
     def flatten_cdc_work(work)
-      if transaction_envelope?(work)
-        work.events
-      else
-        Array(work).flat_map { |item| transaction_envelope?(item) ? item.events : item }
-      end
+      return [] if work.nil?
+      return work.events if transaction_envelope?(work)
+      return work.flat_map { |item| transaction_envelope?(item) ? item.events : item } if work.is_a?(Array)
+
+      [work]
     end
 
     def transaction_envelope?(work)

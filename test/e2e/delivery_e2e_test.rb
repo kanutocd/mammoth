@@ -12,7 +12,10 @@ module Mammoth
         event_path = write_file(File.join(dir, "event.json"), JSON.generate(event_payload))
 
         with_receiver do |url, received|
-          config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path, webhook_url: url))
+          config_path = write_file(
+            File.join(dir, "mammoth.yml"),
+            minimal_config(sqlite_path: db_path, webhook_url: url)
+          )
 
           assert_equal 0, CLI.call(["deliver-sample", config_path, event_path])
 

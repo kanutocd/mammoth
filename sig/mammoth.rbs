@@ -1,0 +1,7 @@
+# Mammoth is a self-hosted PostgreSQL event relay.
+#
+# Mammoth v0.1.0 focuses on a deliberately small, boring product slice:
+# PostgreSQL change events are normalized, persisted through local operational
+# state, and delivered to webhook destinations.
+module Mammoth
+end

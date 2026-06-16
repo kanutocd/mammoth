@@ -1,0 +1,44 @@
+module Mammoth
+  # Small command dispatcher for Mammoth's operator-facing CLI.
+  class CLI
+    @argv: untyped
+
+    USAGE: untyped
+
+    # Run the CLI.
+    #
+    # @param argv [Array<String>] command line arguments
+    # @return [Integer] process status code
+    def self.call: (untyped argv) -> untyped
+
+    attr_reader argv: untyped
+
+    # @param argv [Array<String>] command line arguments
+    def initialize: (untyped argv) -> void
+
+    # Dispatch the requested command.
+    #
+    # @return [Integer] process status code
+    def call: () -> untyped
+
+    private
+
+    def command: () -> untyped
+
+    def config_path: () -> untyped
+
+    def version: () -> 0
+
+    def validate: () -> 0
+
+    def bootstrap: () -> 0
+
+    def status: () -> 0
+
+    def start: () -> 0
+
+    def deliver_sample: () -> untyped
+
+    def load_config: () -> untyped
+  end
+end

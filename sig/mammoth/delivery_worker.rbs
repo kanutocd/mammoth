@@ -1,0 +1,82 @@
+module Mammoth
+  # Delivers normalized events with retry, checkpoint, and dead-letter handling.
+  #
+  # DeliveryWorker is Mammoth's first reliable delivery unit. It intentionally keeps
+  # the delivery contract small: attempt webhook delivery, advance the checkpoint
+  # after success, and persist the failed event to the dead letter queue after
+  # retry exhaustion.
+  class DeliveryWorker
+    @sink: untyped
+
+    @checkpoint_store: untyped
+
+    @dead_letter_store: untyped
+
+    @source_name: untyped
+
+    @slot_name: untyped
+
+    @publication_name: untyped
+
+    @max_attempts: untyped
+
+    @retry_schedule: untyped
+
+    @sleeper: untyped
+
+    DEFAULT_SOURCE: "postgresql"
+
+    attr_reader sink: untyped
+
+    attr_reader checkpoint_store: untyped
+
+    attr_reader dead_letter_store: untyped
+
+    attr_reader retry_schedule: untyped
+
+    attr_reader max_attempts: untyped
+
+    attr_reader sleeper: untyped
+
+    attr_reader source_name: untyped
+
+    attr_reader slot_name: untyped
+
+    attr_reader publication_name: untyped
+
+    # @param sink [#deliver] destination sink
+    # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
+    # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
+    # @param source_name [String] logical source name
+    # @param slot_name [String] replication slot name
+    # @param publication_name [String] publication name
+    # @param max_attempts [Integer] maximum delivery attempts
+    # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
+    # @param sleeper [#call] sleep strategy, injectable for tests
+    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped) -> void
+
+    # Build a delivery worker from Mammoth configuration and stores.
+    #
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param sink [#deliver] destination sink
+    # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
+    # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
+    # @param sleeper [#call] sleep strategy
+    # @return [Mammoth::DeliveryWorker]
+    def self.from_config: (untyped config, sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, ?sleeper: untyped) -> untyped
+
+    # Deliver an event with retry, checkpoint, and DLQ handling.
+    #
+    # @param event [Hash, #to_h] normalized event
+    # @return [Hash] delivery summary
+    def deliver: (untyped event) -> untyped
+
+    private
+
+    def checkpoint: (untyped event) -> untyped
+
+    def dead_letter: (untyped event, untyped error, untyped attempts) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
+
+    def wait_before_retry: (untyped attempts) -> untyped
+  end
+end

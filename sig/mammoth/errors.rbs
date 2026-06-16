@@ -1,0 +1,21 @@
+module Mammoth
+  # Base error for all Mammoth failures.
+  class Error < StandardError
+  end
+
+  # Raised when configuration cannot be loaded or validated.
+  class ConfigurationError < Error
+  end
+
+  # Raised when local SQLite operational state cannot be initialized.
+  class StoreError < Error
+  end
+
+  # Raised when webhook delivery fails.
+  class DeliveryError < Error
+  end
+
+  # Raised when replication consumption is not available or fails.
+  class ReplicationError < Error
+  end
+end

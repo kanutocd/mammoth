@@ -1,0 +1,11 @@
+# Type checking files:
+
+.........F.......................
+
+lib/mammoth/webhook_sink.rb:47:44: [warning] Cannot find the declaration of constant: `SocketError`
+│ Diagnostic ID: Ruby::UnknownConstant
+│
+└     rescue Timeout::Error, SystemCallError, SocketError, JSON::GeneratorError => e
+                                              ~~~~~~~~~~~
+
+Detected 1 problem from 1 file

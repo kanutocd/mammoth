@@ -47,5 +47,54 @@ module Mammoth
 
       assert_instance_of Enumerator, consumer.start
     end
+
+    def test_start_flattens_transaction_envelopes_inside_arrays
+      events = [{ operation: "insert" }, { operation: "update" }]
+      envelope = FakeEnvelope.new(events, "tx-1")
+      consumer = ReplicationConsumer.new(Configuration.load(fixture_config_path), source: [[envelope]])
+      consumed = []
+
+      count = consumer.start { |event| consumed << event }
+
+      assert_equal 2, count
+      assert_equal events, consumed
+    end
+
+    def test_start_returns_empty_count_for_nil_source_items
+      consumer = ReplicationConsumer.new(Configuration.load(fixture_config_path), source: [nil])
+
+      assert_equal(0, consumer.start { |_event| flunk "nil work should not yield events" })
+    end
+
+    def test_start_skips_nil_adapter_results
+      config = Configuration.load(fixture_config_path)
+      consumer = ReplicationConsumer.new(config, source: [:ignored], adapter: ->(_event) {})
+      events = []
+
+      count = consumer.start { |event| events << event }
+
+      assert_equal 0, count
+      assert_empty events
+    end
+
+    def test_start_flattens_transaction_envelope_inside_array_with_plain_event
+      config = Configuration.load(fixture_config_path)
+      envelope = FakeEnvelope.new([sample_event("0/10"), sample_event("0/11")], "tx-2")
+      consumer = ReplicationConsumer.new(config, source: [[envelope, sample_event("0/12")]])
+      events = []
+
+      count = consumer.start { |event| events << event }
+
+      assert_equal 3, count
+      assert_equal(["0/10", "0/11", "0/12"], events.map { |event| event.fetch("source_position") })
+    end
+
+    FakeEnvelope = Data.define(:events, :transaction_id)
+
+    private
+
+    def sample_event(position)
+      { "operation" => "insert", "source_position" => position }
+    end
   end
 end

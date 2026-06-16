@@ -5,6 +5,7 @@ require "json"
 module Mammoth
   # Small command dispatcher for Mammoth's operator-facing CLI.
   class CLI
+    # Human-readable command usage printed for invalid or incomplete invocations.
     USAGE = [
       "Usage:",
       "  mammoth version",

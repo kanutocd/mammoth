@@ -2,11 +2,13 @@
 
 require "json"
 require "net/http"
+require "socket"
 require "uri"
 
 module Mammoth
   # Delivers normalized Mammoth events to a webhook endpoint.
   class WebhookSink
+    # HTTP status range treated as successful webhook delivery.
     SUCCESS_RANGE = 200..299
 
     attr_reader :name, :url, :timeout_seconds
