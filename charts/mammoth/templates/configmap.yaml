@@ -14,11 +14,12 @@ data:
       port: {{ .Values.postgres.port | default 5432 }}
       database: {{ .Values.postgres.database | quote }}
       username: {{ .Values.postgres.username | quote }}
-      password_env: "HARBINGER_POSTGRES_PASSWORD"
+      password_env: "MAMMOTH_POSTGRES_PASSWORD"
 
     replication:
       slot: {{ .Values.replication.slot | quote }}
-      publication: {{ .Values.replication.publication | quote }}
+      publications:
+        {{ toYaml .Values.replication.publications | nindent 8 }}
 
     webhook:
       name: {{ .Values.webhook.name | quote }}

@@ -1,0 +1,3 @@
+module Mammoth
+  CdcSource: singleton(Mammoth::Sources::Postgres)
+end

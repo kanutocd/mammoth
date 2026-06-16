@@ -17,7 +17,7 @@ services:
   webhook_receiver:
     image: ruby:4.0-slim
     working_dir: /app
-    command: ruby webhook_receiver.rb
+    command: sh -c "gem install webrick --no-document && ruby webhook_receiver.rb"
     ports:
       - "9292:9292"
     volumes:
@@ -31,7 +31,7 @@ services:
       - webhook_receiver
       - postgres
     environment:
-      HARBINGER_POSTGRES_PASSWORD: mammoth
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
     command:
       - deliver-sample
       - examples/postgres_webhook/config/mammoth.yml

@@ -20,7 +20,7 @@ module Mammoth
     def test_consumer_flattens_transaction_envelopes_into_events
       events = [FakeChangeEvent.new, FakeChangeEvent.new]
       envelope = FakeTransactionEnvelope.new(events)
-      consumer = ReplicationConsumer.new(Configuration.load(fixture_config_path), source: [envelope])
+      consumer = ReplicationConsumer.new(source: [envelope])
       consumed = []
 
       count = consumer.start { |event| consumed << event }

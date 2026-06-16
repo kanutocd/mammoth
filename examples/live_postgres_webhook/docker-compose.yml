@@ -1,0 +1,76 @@
+services:
+  postgres:
+    image: postgres:17
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mammoth -d mammoth_demo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    ports:
+      - "54330:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+  
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command: sh -c "gem install webrick --no-document && ruby webhook_receiver.rb"
+    ports:
+      - "9293:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth_live_data:/app/.sqlite3
+
+  # mammoth:
+  #   build:
+  #     context: ../..
+  #     dockerfile: docker/Dockerfile
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     webhook_receiver:
+  #       condition: service_started
+  #   environment:
+  #     MAMMOTH_CONFIG: /app/examples/live_postgres_webhook/config/mammoth.yml
+  #     MAMMOTH_POSTGRES_PASSWORD: mammoth
+  #   entrypoint:
+  #     - bundle
+  #     - exec
+  #     - ruby
+  #     - exe/mammoth
+  #   command:
+  #     - start
+  #     - /app/examples/live_postgres_webhook/config/mammoth.yml
+  #   volumes:
+  #     - ../..:/app
+  #     - mammoth_live_data:/app/.sqlite3
+
+  order_producer:
+    image: postgres:17
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: mammoth
+    command: sh -c "psql -h postgres -U mammoth -d mammoth_demo -c \"insert into orders (status, total_cents) values ('created', 1200);\""
+
+volumes:
+  mammoth_live_data:

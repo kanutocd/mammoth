@@ -8,11 +8,12 @@ postgres:
   port: 5432
   database: mammoth_demo
   username: mammoth
-  password_env: HARBINGER_POSTGRES_PASSWORD
+  password_env: MAMMOTH_POSTGRES_PASSWORD
 
 replication:
   slot: mammoth_prod
-  publication: mammoth_publication
+  publications:
+    - mammoth_publication
 
 webhook:
   name: primary_webhook

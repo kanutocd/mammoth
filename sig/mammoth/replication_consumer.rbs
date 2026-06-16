@@ -1,18 +1,11 @@
 module Mammoth
-  # Consumes CDC-core work items from Mammoth's configured replication source.
+  # Consumes normalized CDC work from an injected source.
   class ReplicationConsumer
-    @config: Mammoth::Configuration
     @source: untyped
-    @adapter: untyped
 
-    attr_reader config: Mammoth::Configuration
     attr_reader source: untyped
-    attr_reader adapter: untyped
 
-    def initialize: (Mammoth::Configuration config, ?source: untyped, ?adapter: untyped) -> void
-
-    def slot: () -> String
-    def publication: () -> String
+    def initialize: (?source: untyped) -> void
 
     def start: () ?{ (untyped event) -> untyped } -> (Integer | Enumerator[untyped, Integer])
 
@@ -20,8 +13,10 @@ module Mammoth
 
     def each_event: () { (untyped event) -> untyped } -> untyped
     def effective_source: () -> untyped
-    def normalize: (untyped raw_work) -> Array[untyped]
     def flatten_cdc_work: (untyped work) -> Array[untyped]
+    def validate_events: (Array[untyped] events) -> Array[untyped]
+    def validate_cdc_event!: (untyped event) -> untyped
+    def cdc_event_hash?: (untyped event_hash) -> bool
     def transaction_envelope?: (untyped work) -> bool
   end
 end

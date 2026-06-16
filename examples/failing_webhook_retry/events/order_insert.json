@@ -1,0 +1,18 @@
+{
+  "event_id": "demo-order-1",
+  "source": "postgresql",
+  "operation": "insert",
+  "namespace": "public",
+  "entity": "orders",
+  "source_position": "0/DEMO001",
+  "occurred_at": "2026-06-14T00:00:00Z",
+  "data": {
+    "id": 1,
+    "status": "paid",
+    "total_cents": 49900
+  },
+  "metadata": {
+    "slot": "mammoth_prod",
+    "publication": "mammoth_publication"
+  }
+}

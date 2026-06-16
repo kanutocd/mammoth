@@ -9,6 +9,7 @@ module Mammoth
 
       assert_equal "local_mammoth", config.dig("mammoth", "name")
       assert_equal "mammoth_prod", config.dig("replication", "slot")
+      assert_equal ["mammoth_publication"], config.dig("replication", "publications")
     end
 
     def test_dig_returns_nil_before_load
@@ -51,6 +52,20 @@ module Mammoth
 
         assert_match(/configuration failed schema validation/, error.message)
         assert_match(/tomato/, error.message)
+      end
+    end
+
+    def test_rejects_singular_publication_key
+      with_temp_dir do |dir|
+        path = write_file(
+          File.join(dir, "singular-publication.yml"),
+          minimal_config.sub("  publications:\n    - mammoth_publication", "  publication: mammoth_publication")
+        )
+
+        error = assert_raises(ConfigurationError) { Configuration.load(path) }
+
+        assert_match(/configuration failed schema validation/, error.message)
+        assert_match(/publications/, error.message)
       end
     end
 

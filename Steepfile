@@ -20,7 +20,12 @@ target :lib do
   # sqlite3 does not publish an RBS library in this bundle. Keep the
   # small Database API Mammoth uses in sig/sqlite3.rbs instead.
 
-  signature "sig"
+  library "pgoutput-client"
+  library "pgoutput-parser"
+  library "pgoutput-decoder"
+  library "pgoutput-source-adapter"
+  library "cdc-core"
 
+  signature "sig"
   check "lib"
 end

@@ -51,7 +51,7 @@ module Mammoth
         dead_letter_store: dead_letter_store,
         source_name: config.dig("mammoth", "name"),
         slot_name: config.dig("replication", "slot"),
-        publication_name: config.dig("replication", "publication"),
+        publication_name: Array(config.dig("replication", "publications")).join(","),
         max_attempts: config.dig("retry", "max_attempts"),
         retry_schedule: config.dig("retry", "schedule_seconds"),
         sleeper: sleeper

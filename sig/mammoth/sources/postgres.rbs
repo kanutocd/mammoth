@@ -1,0 +1,46 @@
+module Mammoth
+  module Sources
+    # Concrete PostgreSQL CDC source for Mammoth.
+    class Postgres
+      @config: Mammoth::Configuration
+      @runner: untyped
+      @parser: untyped
+      @decoder: untyped
+      @adapter: untyped
+      @effective_runner: untyped
+      @effective_parser: untyped
+      @effective_decoder: untyped
+      @effective_adapter: untyped
+
+      attr_reader config: Mammoth::Configuration
+      attr_reader runner: untyped
+      attr_reader parser: untyped
+      attr_reader decoder: untyped
+      attr_reader adapter: untyped
+
+      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped) -> void
+
+      def each: () ?{ (untyped work) -> untyped } -> (Enumerator[untyped, nil] | nil)
+
+      private
+
+      def process_payload: (untyped payload, untyped metadata) { (untyped work) -> untyped } -> untyped
+      def parse_payload: (untyped payload) -> untyped
+      def decode_message: (untyped message, untyped metadata) -> untyped
+      def normalize_decoded: (untyped decoded) -> Array[untyped]
+      def effective_runner: () -> untyped
+      def effective_parser: () -> untyped
+      def effective_decoder: () -> untyped
+      def effective_adapter: () -> untyped
+      def build_runner: () -> untyped
+      def build_parser: () -> untyped
+      def build_decoder: () -> untyped
+      def build_adapter: () -> untyped
+      def required_publications: () -> Array[String]
+      def database_url: () -> String
+      def callable_accepts_metadata?: (untyped object, Symbol method_name) -> bool
+      def required_config: (*String keys) -> untyped
+      def require_optional!: (String feature, String gem_name) -> bool
+    end
+  end
+end

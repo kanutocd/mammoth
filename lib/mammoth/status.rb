@@ -26,6 +26,8 @@ module Mammoth
     # @return [void]
     def call
       puts "Mammoth: #{config.dig("mammoth", "name")}"
+      puts "Replication slot: #{config.dig("replication", "slot")}"
+      puts "Replication publications: #{Array(config.dig("replication", "publications")).join(", ")}"
       puts "Runtime: not started"
       puts "SQLite: #{sqlite_path}"
       puts "Webhook: #{config.dig("webhook", "name")}"

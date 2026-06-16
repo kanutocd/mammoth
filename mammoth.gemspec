@@ -12,8 +12,8 @@ Gem::Specification.new do |spec|
   spec.description = <<~TEXT
     Mammoth is an OSS PostgreSQL change-event delivery appliance for Ruby.
 
-    It consumes CDC-shaped events produced from the pgoutput family of gems and
-    cdc-core, then delivers those changes to webhook endpoints with durable
+    It realizes the CDC Ecosystem pgoutput and cdc-core libraries for PostgreSQL,
+    then delivers normalized changes to webhook endpoints with durable
     checkpointing, retry state, dead letters, and operational visibility.
 
     Mammoth is application-first: it can be installed as a Ruby gem, packaged

@@ -11,9 +11,7 @@ of database change events.
 ```text
 PostgreSQL
       ↓
-pgoutput-client / parser / decoder
-      ↓
-Pgoutput::SourceAdapter::Cdc
+CDC Ecosystem source adapter
       ↓
 CDC::Core::ChangeEvent
       ↓
@@ -39,7 +37,7 @@ Mammoth OSS includes:
 - webhook delivery sink
 - delivery worker with retry, checkpoint, and DLQ handling
 - CDC-core event serialization boundary
-- pgoutput-client / parser / decoder / source-adapter integration boundary
+- CDC Ecosystem source-adapter integration boundary
 - Docker image support
 - public Helm chart support
 - unit and e2e test tasks

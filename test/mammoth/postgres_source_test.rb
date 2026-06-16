@@ -1,0 +1,251 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+module Mammoth
+  # rubocop:disable Metrics/ClassLength
+  class PostgresSourceTest < Minitest::Test
+    def test_streams_from_injected_cdc_source_components
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload-1"]),
+        parser: ->(payload) { "parsed-#{payload}" },
+        decoder: ->(message) { "decoded-#{message}" },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal [sample_event("decoded-parsed-payload-1")], source.each.to_a
+    end
+
+    def test_each_returns_enumerator_without_block
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new([]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_instance_of Enumerator, source.each
+    end
+
+    def test_parser_can_use_parse_interface
+      parser = Object.new
+      def parser.parse(payload) = "parsed-#{payload}"
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: parser,
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal "parsed-payload", source.each.first.fetch("source_position")
+    end
+
+    def test_decoder_can_use_decode_interface
+      decoder = Object.new
+      def decoder.decode(message) = "decoded-#{message}"
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: decoder,
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal "decoded-payload", source.each.first.fetch("source_position")
+    end
+
+    def test_adapter_can_use_normalize_interface
+      adapter = Object.new
+      def adapter.normalize(decoded) = { "operation" => "insert", "source_position" => decoded }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: adapter
+      )
+
+      assert_equal "payload", source.each.first.fetch("source_position")
+    end
+
+    def test_ignores_nil_decoded_messages
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: ->(_message) { nil },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal [], source.each.to_a
+    end
+
+    def test_parser_can_use_process_interface
+      parser = Object.new
+      def parser.process(payload) = "processed-#{payload}"
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: parser,
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal "processed-payload", source.each.first.fetch("source_position")
+    end
+
+    def test_decoder_decode_interface_can_receive_metadata
+      decoder = Object.new
+      def decoder.decode(message, metadata) = "#{message}-#{metadata.fetch(:lsn)}"
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([["payload", { lsn: "0/42" }]]),
+        parser: ->(payload) { payload },
+        decoder: decoder,
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal "payload-0/42", source.each.first.fetch("source_position")
+    end
+
+    def test_decoder_call_interface_can_receive_metadata
+      decoder = ->(message, metadata) { "#{message}-#{metadata.fetch(:lsn)}" }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([["payload", { lsn: "0/43" }]]),
+        parser: ->(payload) { payload },
+        decoder: decoder,
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal "payload-0/43", source.each.first.fetch("source_position")
+    end
+
+    def test_adapter_can_return_array_of_work
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { [nil, sample_event(decoded)] }
+      )
+
+      assert_equal [sample_event("payload")], source.each.to_a
+    end
+
+    def test_reports_adapter_with_no_supported_interface
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: Object.new
+      )
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/source adapter must respond/, error.message)
+    end
+
+    def test_database_url_includes_password_when_present
+      source = Sources::Postgres.new(Configuration.load(fixture_config_path))
+
+      original_password = ENV["HARBINGER_POSTGRES_PASSWORD"]
+      ENV["HARBINGER_POSTGRES_PASSWORD"] = "secret"
+
+      assert_match(%r{postgres://mammoth:secret@localhost:5432/app_development}, source.send(:database_url))
+    ensure
+      ENV["HARBINGER_POSTGRES_PASSWORD"] = original_password
+    end
+
+    def test_reports_missing_required_postgres_config
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("postgres").delete("host")
+      source = Sources::Postgres.new(config)
+
+      error = assert_raises(ReplicationError) { source.send(:database_url) }
+
+      assert_match(/postgres.host/, error.message)
+    end
+
+    def test_uses_plural_publication_names_from_configuration
+      source = Sources::Postgres.new(Configuration.load(fixture_config_path))
+
+      assert_equal ["mammoth_publication"], source.send(:required_publications)
+    end
+
+    def test_rejects_empty_publications
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication")["publications"] = []
+      source = Sources::Postgres.new(config)
+
+      error = assert_raises(ReplicationError) { source.send(:required_publications) }
+
+      assert_match(/replication.publications/, error.message)
+    end
+
+    def test_reports_parser_with_no_supported_interface
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: Object.new,
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/pgoutput parser must respond/, error.message)
+    end
+
+    def test_reports_missing_default_pgoutput_client
+      source = Sources::Postgres.new(Configuration.load(fixture_config_path))
+
+      source.stub(:require_optional!, ->(_feature, gem_name) { raise ReplicationError, "#{gem_name} missing" }) do
+        error = assert_raises(ReplicationError) { source.each.to_a }
+
+        assert_match(/pgoutput-client missing/, error.message)
+      end
+    end
+
+    def test_wraps_unexpected_source_errors
+      broken_runner = Object.new
+      def broken_runner.start
+        raise "stream exploded"
+      end
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: broken_runner,
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/PostgreSQL CDC source failed: stream exploded/, error.message)
+    end
+
+    FakeRunner = Data.define(:payloads) do
+      def start
+        payloads.each { |payload| yield payload, nil }
+      end
+    end
+
+    FakeRunnerWithMetadata = Data.define(:pairs) do
+      def start(&block)
+        pairs.each(&block)
+      end
+    end
+
+    private
+
+    def sample_event(position)
+      { "operation" => "insert", "source_position" => position }
+    end
+  end
+  # rubocop:enable Metrics/ClassLength
+end

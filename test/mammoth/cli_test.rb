@@ -77,13 +77,19 @@ module Mammoth
       fake_app = Object.new
       def fake_app.start = 7
 
-      Application.stub(:new, fake_app) do
-        stdout, stderr = capture_io do
-          assert_equal 0, CLI.call(["start", fixture_config_path])
-        end
+      fake_source = Object.new
+      Sources::Postgres.stub(:new, fake_source) do
+        Application.stub(:new, lambda { |_config, source:|
+          assert_same fake_source, source
+          fake_app
+        }) do
+          stdout, stderr = capture_io do
+            assert_equal 0, CLI.call(["start", fixture_config_path])
+          end
 
-        assert_empty stderr
-        assert_match(/Delivered events: 7/, stdout)
+          assert_empty stderr
+          assert_match(/Delivered events: 7/, stdout)
+        end
       end
     end
 

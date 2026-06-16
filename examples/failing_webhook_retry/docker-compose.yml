@@ -1,0 +1,27 @@
+services:
+  failing_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command: sh -c "gem install webrick --no-document && ruby failing_receiver.rb"
+    ports:
+      - "9294:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth_sample:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - failing_receiver
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    command:
+      - deliver-sample
+      - examples/failing_webhook_retry/config/mammoth.yml
+      - examples/failing_webhook_retry/events/order_insert.json
+    volumes:
+      - mammoth_retry_data:/app/.sqlite3
+
+volumes:
+  mammoth_retry_data:

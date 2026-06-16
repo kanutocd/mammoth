@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../../config/mammoth.schema.json
+
+mammoth:
+  name: live_mammoth
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_live
+  publications:
+    - mammoth_publication
+
+webhook:
+  name: primary_webhook
+  url: http://webhook_receiver:9292/webhook
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 5
+  schedule_seconds:
+    - 1
+    - 5
+    - 30
+    - 60
+    - 300
+
+sqlite:
+  path: .sqlite3/mammoth.db
+
+logging:
+  level: info

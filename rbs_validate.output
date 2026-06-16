@@ -1,11 +1,29 @@
 # Type checking files:
 
-.........F.......................
+..................F...............
 
-lib/mammoth/webhook_sink.rb:47:44: [warning] Cannot find the declaration of constant: `SocketError`
+lib/mammoth/sources/postgres.rb:129:8: [warning] Cannot find the declaration of constant: `Pgoutput`
 │ Diagnostic ID: Ruby::UnknownConstant
 │
-└     rescue Timeout::Error, SystemCallError, SocketError, JSON::GeneratorError => e
-                                              ~~~~~~~~~~~
+└         Pgoutput::Client::Runner.new(
+          ~~~~~~~~
 
-Detected 1 problem from 1 file
+lib/mammoth/sources/postgres.rb:141:8: [warning] Cannot find the declaration of constant: `Pgoutput`
+│ Diagnostic ID: Ruby::UnknownConstant
+│
+└         Pgoutput::RelationTracker.new
+          ~~~~~~~~
+
+lib/mammoth/sources/postgres.rb:147:8: [warning] Cannot find the declaration of constant: `Pgoutput`
+│ Diagnostic ID: Ruby::UnknownConstant
+│
+└         Pgoutput::Decoder.new
+          ~~~~~~~~
+
+lib/mammoth/sources/postgres.rb:153:8: [warning] Cannot find the declaration of constant: `Pgoutput`
+│ Diagnostic ID: Ruby::UnknownConstant
+│
+└         Pgoutput::SourceAdapter::Cdc.new
+          ~~~~~~~~
+
+Detected 4 problems from 1 file

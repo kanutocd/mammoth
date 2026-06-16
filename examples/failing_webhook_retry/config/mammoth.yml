@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../../config/mammoth.schema.json
+
+mammoth:
+  name: retry_demo
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_retry
+  publications:
+    - mammoth_publication
+
+webhook:
+  name: failing_webhook
+  url: http://failing_receiver:9292/webhook
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 2
+  schedule_seconds:
+    - 1
+    - 1
+
+sqlite:
+  path: .sqlite3/mammoth.db
+
+logging:
+  level: info

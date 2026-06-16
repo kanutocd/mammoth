@@ -47,7 +47,8 @@ module MammothTestHelpers
 
       replication:
         slot: mammoth_prod
-        publication: mammoth_publication
+        publications:
+          - mammoth_publication
 
       webhook:
         name: primary_webhook

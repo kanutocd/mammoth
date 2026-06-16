@@ -12,6 +12,7 @@ module Mammoth
       assert_empty stderr
       assert_match(/Mammoth: local_mammoth/, stdout)
       assert_match(/Runtime: not started/, stdout)
+      assert_match(/Replication publications: mammoth_publication/, stdout)
       assert_match(/Webhook: primary_webhook/, stdout)
       refute_match(/Tables:/, stdout)
     end

@@ -1,35 +1,18 @@
 # frozen_string_literal: true
 
 module Mammoth
-  # Consumes CDC-core work items from Mammoth's configured replication source.
+  # Consumes normalized CDC work from an injected source.
   #
-  # ReplicationConsumer is the boundary between upstream CDC ingestion and
-  # sink delivery. Live PostgreSQL ingestion is delegated to {PgoutputSource};
-  # injected sources remain available for unit tests, demos, and e2e fixtures.
+  # ReplicationConsumer is intentionally upstream-agnostic. It does not know
+  # which upstream system produced the work. Its
+  # only job is to consume CDC Ecosystem work, flatten CDC transaction
+  # envelopes, and yield individual change events to the delivery pipeline.
   class ReplicationConsumer
-    attr_reader :config, :source, :adapter
+    attr_reader :source
 
-    # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable CDC work stream
-    # @param adapter [#call, nil] optional adapter for injected raw events
-    def initialize(config, source: nil, adapter: nil)
-      @config = config
+    def initialize(source: nil)
       @source = source
-      @adapter = adapter
-    end
-
-    # Return the configured replication slot.
-    #
-    # @return [String]
-    def slot
-      config.dig("replication", "slot")
-    end
-
-    # Return the configured publication.
-    #
-    # @return [String]
-    def publication
-      config.dig("replication", "publication")
     end
 
     # Consume normalized CDC work from the configured source.
@@ -40,18 +23,20 @@ module Mammoth
       return enum_for(:start) unless block_given?
 
       count = 0
+
       each_event do |event|
         yield event
         count += 1
       end
+
       count
     end
 
     private
 
     def each_event(&block)
-      effective_source.each do |raw_work|
-        normalize(raw_work).each(&block)
+      effective_source.each do |work|
+        flatten_cdc_work(work).each(&block)
       end
     end
 
@@ -59,17 +44,31 @@ module Mammoth
       source || raise(ReplicationError, "replication source is not configured")
     end
 
-    def normalize(raw_work)
-      adapted = adapter ? adapter.call(raw_work) : raw_work
-      flatten_cdc_work(adapted)
-    end
-
     def flatten_cdc_work(work)
       return [] if work.nil?
-      return work.events if transaction_envelope?(work)
-      return work.flat_map { |item| transaction_envelope?(item) ? item.events : item } if work.is_a?(Array)
+      return validate_events(work.events) if transaction_envelope?(work)
+      return work.flat_map { |item| flatten_cdc_work(item) } if work.is_a?(Array)
 
-      [work]
+      validate_events([work])
+    end
+
+    def validate_events(events)
+      events.each { |event| validate_cdc_event!(event) }
+    end
+
+    def validate_cdc_event!(event)
+      return event if event.respond_to?(:to_h) && cdc_event_hash?(event.to_h)
+
+      raise ReplicationError, "CDC source yielded non-CDC work: #{event.class}"
+    end
+
+    def cdc_event_hash?(event_hash)
+      return false unless event_hash.respond_to?(:key?)
+
+      has_operation = event_hash.key?("operation") || event_hash.key?(:operation)
+      has_position = event_hash.key?("source_position") || event_hash.key?(:source_position) ||
+                     event_hash.key?("commit_lsn") || event_hash.key?(:commit_lsn)
+      has_operation && has_position
     end
 
     def transaction_envelope?(work)
