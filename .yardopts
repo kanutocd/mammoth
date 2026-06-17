@@ -13,11 +13,11 @@ CHANGELOG.md
 CODE_OF_CONDUCT.md
 LICENSE.txt
 
-docs/quick-start.md
-docs/postgresql.md
-docs/configuration.md
-docs/cli.md
-docs/operational-state.md
-docs/examples.md
-docs/helm.md
-docs/troubleshooting.md
+docs/QUICK-START.md
+docs/POSTGRESQL.md
+docs/CONFIGURATION.md
+docs/CLI.md
+docs/OPERATIONAL-STATE.md
+docs/EXAMPLES.md
+docs/HELM.md
+docs/TROUBLESHOOTING.md
