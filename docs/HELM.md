@@ -11,7 +11,7 @@ charts/mammoth
 ```bash
 helm template mammoth charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=v0.1.0
+  --set image.tag=latest
 ```
 
 ## Install
@@ -19,7 +19,7 @@ helm template mammoth charts/mammoth \
 ```bash
 helm install mammoth charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=v0.1.0
+  --set image.tag=latest
 ```
 
 ## Required external resources
