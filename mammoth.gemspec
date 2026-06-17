@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/kanutocd/mammoth"
   spec.metadata["changelog_uri"] = "https://github.com/kanutocd/mammoth/blob/main/CHANGELOG.md"
-  spec.metadata["documentation_uri"] = "#{spec.homepage}api/"
+  spec.metadata["documentation_uri"] = "#{spec.homepage}Mammoth.html"
   spec.metadata["rubygems_mfa_required"] = "true"
 
   spec.files = Dir.chdir(__dir__) do

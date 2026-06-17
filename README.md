@@ -24,6 +24,21 @@ Webhook
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
 shared vocabulary so operators can inspect, recover, and reason about delivery.
 
+🦣 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
+JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
+shared vocabulary so operators can inspect, recover, and reason about delivery.
+
+## Documentation
+
+Documentation site:
+
+https://kanutocd.github.io/mammoth/
+
+API documentation:
+
+https://kanutocd.github.io/mammoth/Mammoth.html
+
+
 ## OSS MVP
 
 🦣 Mammoth OSS includes:
