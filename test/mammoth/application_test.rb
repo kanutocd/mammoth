@@ -124,6 +124,54 @@ module Mammoth
       end
     end
 
+
+    def test_processes_event_delivery_inline_when_runtime_is_absent
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+        sink = DeliveryWorkerTest::RecordingSink.new
+        app = Application.new(
+          Configuration.load(config_path),
+          source: [sample_event("event-inline", "0/inline")],
+          sink: sink,
+          sleeper: ->(_seconds) {}
+        )
+
+        assert_equal 1, app.start
+        checkpoint = CheckpointStore.new(app.sqlite_store).fetch(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod"
+        )
+
+        assert_equal "0/inline", checkpoint.fetch("last_lsn")
+      end
+    end
+
+    def test_concurrent_runtime_can_disable_preserve_order
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(
+          File.join(dir, "mammoth.yml"),
+          minimal_config(sqlite_path: db_path) + <<~YAML
+
+            delivery:
+              unit: transaction
+
+            runtime:
+              adapter: concurrent
+              concurrency: 2
+              preserve_order: false
+          YAML
+        )
+        sink = DeliveryWorkerTest::RecordingSink.new
+        envelope = FakeEnvelope.new([sample_event("event-no-order", "0/no-order")], "tx-no-order")
+        app = Application.new(Configuration.load(config_path), source: [envelope], sink: sink, sleeper: ->(_seconds) {})
+
+        assert_equal 1, app.start
+        refute CDC::Concurrent::ProcessorPool.last_options.fetch(:preserve_order)
+      end
+    end
+
     FakeEnvelope = Data.define(:events, :transaction_id)
 
     private

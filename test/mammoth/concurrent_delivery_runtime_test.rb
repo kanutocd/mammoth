@@ -54,9 +54,27 @@ module Mammoth
       assert_nil runtime.shutdown
     end
 
+
+    def test_shutdown_delegates_when_pool_supports_shutdown
+      pool = ShutdownRecordingPool.new
+      runtime = ConcurrentDeliveryRuntime.allocate
+      runtime.instance_variable_set(:@pool, pool)
+
+      assert_nil runtime.shutdown
+      assert pool.shutdown_called
+    end
+
     class RecordingProcessor
       def process(item)
         { processed: item }
+      end
+    end
+
+    class ShutdownRecordingPool
+      attr_reader :shutdown_called
+
+      def shutdown
+        @shutdown_called = true
       end
     end
   end

@@ -201,6 +201,88 @@ module Mammoth
       assert_equal "0/2", envelope.events.first.fetch("source_position")
     end
 
+
+    def test_decoder_can_emit_array_of_decoded_messages
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["payload"]),
+        parser: ->(payload) { payload },
+        decoder: ->(_message) { ["row-1", nil, "row-2"] },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal %w[row-1 row-2], source.each.map { |event| event.fetch("source_position") }
+    end
+
+    def test_commit_message_without_active_transaction_buffer_is_ignored
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["commit"]),
+        parser: ->(payload) { payload },
+        decoder: ->(_message) { FakeCommit.new("0/commit") },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      assert_equal [], source.each.to_a
+    end
+
+    def test_transaction_buffer_ignores_nil_normalized_work
+      decoded_messages = {
+        "begin" => FakeBegin.new("tx-empty"),
+        "row" => "row",
+        "commit" => FakeCommit.new("0/empty")
+      }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(%w[begin row commit]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { decoded_messages.fetch(message) },
+        adapter: ->(_decoded) { nil }
+      )
+
+      envelope = source.each.first
+
+      assert_equal "tx-empty", envelope.transaction_id
+      assert_equal [], envelope.events
+      assert_equal "0/empty", envelope.commit_lsn
+    end
+
+    def test_commit_lsn_falls_back_to_first_event_position
+      decoded_messages = {
+        "begin" => FakeBegin.new("tx-event-position"),
+        "row" => { "operation" => "insert", "source_position" => "0/event" },
+        "commit" => FakeCommit.new(nil)
+      }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(%w[begin row commit]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { decoded_messages.fetch(message) },
+        adapter: ->(decoded) { decoded }
+      )
+
+      envelope = source.each.first
+
+      assert_equal "0/event", envelope.commit_lsn
+    end
+
+    def test_metadata_hash_must_be_hash_like
+      decoded_messages = {
+        "begin" => FakeBeginWithMetadata.new("tx-metadata", "not-a-hash"),
+        "row" => { "operation" => "insert", "source_position" => "0/row" },
+        "commit" => FakeCommit.new("0/commit")
+      }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(%w[begin row commit]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { decoded_messages.fetch(message) },
+        adapter: ->(decoded) { decoded }
+      )
+
+      assert_equal({}, source.each.first.metadata)
+    end
+
     def test_database_url_includes_password_when_present
       source = Sources::Postgres.new(Configuration.load(fixture_config_path))
 
@@ -316,6 +398,7 @@ module Mammoth
     end
 
     FakeBegin = Data.define(:transaction_id)
+    FakeBeginWithMetadata = Data.define(:transaction_id, :metadata)
     FakeCommit = Data.define(:commit_lsn)
 
     FakeRunner = Data.define(:payloads) do

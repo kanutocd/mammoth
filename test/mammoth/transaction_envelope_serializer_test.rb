@@ -69,6 +69,21 @@ module Mammoth
       assert_equal 1, payload.fetch("event_count")
     end
 
+
+    def test_serializes_envelope_without_to_h_and_without_event_position
+      envelope = ObjectEnvelope.new(
+        events: [{ "event_id" => "event-no-position", "operation" => "insert" }],
+        transaction_id: "tx-object"
+      )
+
+      payload = TransactionEnvelopeSerializer.call(envelope)
+
+      assert_equal "tx-object", payload.fetch("transaction_id")
+      assert_nil payload.fetch("source_position")
+      assert_equal EventSerializer::DEFAULT_SOURCE, payload.fetch("source")
+      assert_equal({}, payload.fetch("metadata"))
+    end
+
     private
 
     def sample_event(event_id, position, source: "postgresql")
@@ -96,6 +111,15 @@ module Mammoth
     end
 
     PlainEnvelope = Data.define(:events, :transaction_id)
+
+    class ObjectEnvelope
+      attr_reader :events, :transaction_id
+
+      def initialize(events:, transaction_id:)
+        @events = events
+        @transaction_id = transaction_id
+      end
+    end
 
     MethodEnvelope = Data.define(:events, :transaction_id, :commit_lsn, :commit_time)
   end
