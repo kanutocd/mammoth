@@ -48,7 +48,7 @@ Fix:
 Point Mammoth to a real Kubernetes Service:
 
 ```bash
-helm upgrade mammoth charts/mammoth \
+helm upgrade mammoth ./charts/mammoth \
   --set postgres.host=postgres-service \
   --set postgres.port=5432
 ```
