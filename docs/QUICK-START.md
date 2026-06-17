@@ -13,7 +13,7 @@ gem install mammoth
 Or use the container image:
 
 ```bash
-docker pull ghcr.io/kanutocd/mammoth:v0.1.0
+docker pull ghcr.io/kanutocd/mammoth:latest
 ```
 
 ## 2. Prepare PostgreSQL
