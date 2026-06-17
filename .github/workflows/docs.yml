@@ -51,7 +51,7 @@ jobs:
       - name: Verify documentation output
         run: |
           test -f public/index.html
-          test -d public/file.README.html
+          test -f public/file.README.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
