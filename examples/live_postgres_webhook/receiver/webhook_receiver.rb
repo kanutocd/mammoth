@@ -7,6 +7,7 @@ server = WEBrick::HTTPServer.new(Port: 9292, BindAddress: "0.0.0.0")
 
 server.mount_proc "/webhook" do |request, response|
   payload = JSON.parse(request.body)
+  puts "payload: #{payload.inspect}"
   puts "received #{payload.fetch("event_id")} #{payload.fetch("operation")} #{payload.fetch("entity")}"
   $stdout.flush
   response.status = 200

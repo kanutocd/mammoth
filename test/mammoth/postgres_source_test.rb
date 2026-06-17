@@ -153,12 +153,12 @@ module Mammoth
     def test_database_url_includes_password_when_present
       source = Sources::Postgres.new(Configuration.load(fixture_config_path))
 
-      original_password = ENV["HARBINGER_POSTGRES_PASSWORD"]
-      ENV["HARBINGER_POSTGRES_PASSWORD"] = "secret"
+      original_password = ENV["MAMMOTH_POSTGRES_PASSWORD"]
+      ENV["MAMMOTH_POSTGRES_PASSWORD"] = "secret"
 
       assert_match(%r{postgres://mammoth:secret@localhost:5432/app_development}, source.send(:database_url))
     ensure
-      ENV["HARBINGER_POSTGRES_PASSWORD"] = original_password
+      ENV["MAMMOTH_POSTGRES_PASSWORD"] = original_password
     end
 
     def test_reports_missing_required_postgres_config
@@ -175,6 +175,28 @@ module Mammoth
       source = Sources::Postgres.new(Configuration.load(fixture_config_path))
 
       assert_equal ["mammoth_publication"], source.send(:required_publications)
+    end
+
+    def test_runner_options_include_optional_transport_lifecycle_settings
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication")["auto_create_slot"] = true
+      config.data.fetch("replication")["temporary_slot"] = true
+      config.data.fetch("replication")["feedback_interval"] = 7.5
+      source = Sources::Postgres.new(config)
+
+      options = source.send(:runner_options)
+
+      assert options.fetch(:auto_create_slot)
+      assert options.fetch(:temporary_slot)
+      assert_equal 7.5, options.fetch(:feedback_interval)
+    end
+
+    def test_runner_options_omit_feedback_interval_when_not_configured
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication").delete("feedback_interval")
+      source = Sources::Postgres.new(config)
+
+      refute_includes source.send(:runner_options), :feedback_interval
     end
 
     def test_rejects_empty_publications

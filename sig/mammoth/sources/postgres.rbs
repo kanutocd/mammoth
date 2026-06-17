@@ -33,6 +33,7 @@ module Mammoth
       def effective_decoder: () -> untyped
       def effective_adapter: () -> untyped
       def build_runner: () -> untyped
+      def runner_options: () -> Hash[Symbol, untyped]
       def build_parser: () -> untyped
       def build_decoder: () -> untyped
       def build_adapter: () -> untyped

@@ -88,7 +88,7 @@ module Mammoth
           end
 
           assert_empty stderr
-          assert_match(/Delivered events: 7/, stdout)
+          assert_match(/Processed events: 7/, stdout)
         end
       end
     end
@@ -109,7 +109,7 @@ module Mammoth
           end
 
           assert_empty stderr
-          assert_match(/Delivered sample events: 1/, stdout)
+          assert_match(/Processed sample events: 1/, stdout)
           assert_equal 1, CheckpointStore.new(SQLiteStore.connect(db_path).bootstrap!).count
         end
       end

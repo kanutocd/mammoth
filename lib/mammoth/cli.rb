@@ -91,7 +91,7 @@ module Mammoth
     def start
       config = load_config
       processed = Application.new(config, source: Sources::Postgres.new(config)).start
-      puts "Delivered events: #{processed}"
+      puts "Processed events: #{processed}"
       0
     end
 
@@ -103,7 +103,7 @@ module Mammoth
 
       event = JSON.parse(File.read(event_path))
       processed = Application.new(config, source: [event]).start
-      puts "Delivered sample events: #{processed}"
+      puts "Processed sample events: #{processed}"
       0
     rescue JSON::ParserError => e
       raise ConfigurationError, "invalid event JSON in #{event_path}: #{e.message}"

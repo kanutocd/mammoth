@@ -1,75 +1,70 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## Unreleased
+
+
+## [0.1.0] - 2026-06-17
+
+Initial public release of Mammoth.
 
 ### Added
 
-* Renamed product and gem from Echo to Mammoth.
-* Positioned Mammoth OSS as the reliable PostgreSQL change-event delivery appliance.
-* Added PostgreSQL CDC ingestion using:
+- PostgreSQL logical replication source integration via pgoutput.
+- CDC event normalization through the CDC ecosystem.
+- Webhook delivery destination.
+- SQLite-backed operational state storage.
+- Checkpoint persistence infrastructure.
+- Dead-letter persistence infrastructure.
+- Retry handling for failed webhook deliveries.
+- Configuration validation command.
+- Operational state bootstrap command.
+- Operational status command.
+- Sample event delivery command.
+- Helm chart for Kubernetes deployments.
+- Persistent volume support for SQLite operational state.
+- Example configurations and runnable demonstrations.
 
-  * pgoutput-client
-  * pgoutput-parser
-  * pgoutput-decoder
-  * pgoutput-source-adapter
-  * cdc-core
-* Added PostgreSQL source implementation that realizes the CDC ecosystem contracts.
-* Added CDC-core `ChangeEvent` serialization for webhook delivery.
-* Added CDC-core `TransactionEnvelope` flattening before sink delivery.
-* Added durable SQLite operational state storage.
-* Added checkpoint persistence.
-* Added dead-letter persistence.
-* Added webhook delivery worker with retry support.
-* Added operational status reporting.
-* Added `mammoth start CONFIG` CLI command.
-* Added `mammoth status CONFIG` CLI command.
-* Added JSON Schema configuration validation.
-* Added public Helm chart under `charts/mammoth`.
-* Added multi-stage container image build.
-* Added non-root container runtime support.
-* Added GitHub Pages documentation workflow.
-* Added release workflow for RubyGems publishing.
-* Added end-to-end test task using real HTTP, SQLite, and filesystem paths.
-* Added RBS signatures and Steep validation.
-* Added YARD documentation generation and coverage validation.
+### Examples
 
-### Changed
+- `examples/postgres_webhook`
 
-* Replaced singular replication configuration:
+  - Demonstrates webhook delivery using sample CDC-shaped events.
 
-  ```
-  replication:
-    publication: ...
-  ```
+- `examples/live_postgres_webhook`
 
-  with:
+  - Demonstrates end-to-end PostgreSQL logical replication.
+  - Demonstrates replication slot management.
+  - Demonstrates webhook delivery from live database changes.
 
-  ```
-  replication:
-    publications:
-      - ...
-  ```
+- `examples/operational_state`
 
-  to align with PostgreSQL logical replication and pgoutput-client semantics.
+  - Demonstrates operational state bootstrap.
+  - Demonstrates checkpoint and dead-letter schema initialization.
 
-* Hardened Mammoth boundaries to compose CDC ecosystem libraries rather than reimplementing their responsibilities.
+- `examples/failing_webhook_retry`
 
-* Refactored PostgreSQL CDC source integration around CDC ecosystem contracts.
+  - Demonstrates retry exhaustion behavior.
+  - Demonstrates durable dead-letter persistence.
 
-* Improved Docker image structure and operational examples.
+- `examples/kubernetes_helm`
 
-* Expanded example coverage for:
+  - Demonstrates Helm-based deployment.
+  - Demonstrates PVC-backed operational memory.
 
-  * PostgreSQL → Webhook
-  * Live PostgreSQL replication
-  * Failing webhook retry handling
-  * Operational state inspection
+### Validation
 
-### Fixed
+The 0.1.0 release was manually validated through:
 
-* Fixed CDC ecosystem RBS integration issues.
-* Fixed Steep compatibility with upstream CDC ecosystem gems.
-* Fixed Docker entrypoint and runtime configuration handling.
-* Fixed live PostgreSQL example startup and operational flow.
-* Improved unit and branch test coverage.
+- PostgreSQL logical replication slot creation and consumption.
+- Idle replication connections exceeding one hour.
+- Post-idle event delivery.
+- Webhook delivery success path.
+- Webhook failure and dead-letter path.
+- SQLite checkpoint and dead-letter persistence.
+- Helm chart rendering and installation.
+- Kubernetes deployment on Kind.
+- PVC-backed operational state storage.
 
+### Notes
+
+Mammoth currently operates as a single active consumer per PostgreSQL logical replication slot. The default Helm deployment uses a single replica to align with PostgreSQL logical replication semantics.

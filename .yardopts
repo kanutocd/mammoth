@@ -4,4 +4,4 @@
 --readme README.md
 'lib/**/*.rb'
 -
---files CODE_OF_CONDUCT.md CHANGELOG.md LICENSE.txt
+--files CHANGELOG.md CODE_OF_CONDUCT.md LICENSE.txt

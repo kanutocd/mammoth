@@ -34,9 +34,11 @@ services:
       MAMMOTH_POSTGRES_PASSWORD: mammoth
     command:
       - deliver-sample
-      - examples/postgres_webhook/config/mammoth.yml
-      - examples/postgres_webhook/events/order_insert.json
+      - /config/mammoth.yml
+      - /events/order_insert.json
     volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - ./events/order_insert.json:/events/order_insert.json:ro
       - mammoth_data:/app/.sqlite3
 
 volumes:

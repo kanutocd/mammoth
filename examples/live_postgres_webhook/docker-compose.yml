@@ -38,36 +38,19 @@ services:
     volumes:
       - ./config/mammoth.yml:/config/mammoth.yml:ro
       - mammoth_live_data:/app/.sqlite3
-
-  # mammoth:
-  #   build:
-  #     context: ../..
-  #     dockerfile: docker/Dockerfile
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     webhook_receiver:
-  #       condition: service_started
-  #   environment:
-  #     MAMMOTH_CONFIG: /app/examples/live_postgres_webhook/config/mammoth.yml
-  #     MAMMOTH_POSTGRES_PASSWORD: mammoth
-  #   entrypoint:
-  #     - bundle
-  #     - exec
-  #     - ruby
-  #     - exe/mammoth
-  #   command:
-  #     - start
-  #     - /app/examples/live_postgres_webhook/config/mammoth.yml
-  #   volumes:
-  #     - ../..:/app
-  #     - mammoth_live_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webhook_receiver:
+        condition: service_started
 
   order_producer:
     image: postgres:17
     depends_on:
       postgres:
         condition: service_healthy
+      mammoth:
+        condition: service_started
     environment:
       PGPASSWORD: mammoth
     command: sh -c "psql -h postgres -U mammoth -d mammoth_demo -c \"insert into orders (status, total_cents) values ('created', 1200);\""

@@ -29,7 +29,7 @@ spec:
             - "start"
             - "/app/config/mammoth.config.yaml"
           env:
-            - name: HARBINGER_POSTGRES_PASSWORD
+            - name: MAMMOTH_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.postgres.existingSecret.name }}

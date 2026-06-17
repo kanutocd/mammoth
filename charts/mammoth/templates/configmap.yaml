@@ -20,6 +20,9 @@ data:
       slot: {{ .Values.replication.slot | quote }}
       publications:
         {{ toYaml .Values.replication.publications | nindent 8 }}
+      auto_create_slot: {{ .Values.replication.auto_create_slot | default true }}
+      temporary_slot: {{ .Values.replication.temporary_slot | default false }}
+      feedback_interval: {{ .Values.replication.feedback_interval | default 5.0 }}
 
     webhook:
       name: {{ .Values.webhook.name | quote }}

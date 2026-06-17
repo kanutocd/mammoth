@@ -88,6 +88,14 @@
         },
         "auto_create_slot": {
           "type": "boolean"
+        },
+        "temporary_slot": {
+          "type": "boolean"
+        },
+        "feedback_interval": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMinimum": true
         }
       }
     },

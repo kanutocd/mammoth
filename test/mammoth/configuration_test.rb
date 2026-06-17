@@ -69,6 +69,31 @@ module Mammoth
       end
     end
 
+    def test_accepts_optional_replication_transport_settings
+      with_temp_dir do |dir|
+        path = write_file(File.join(dir, "transport.yml"), minimal_config)
+        config = Configuration.load(path)
+
+        refute config.dig("replication", "auto_create_slot")
+        refute config.dig("replication", "temporary_slot")
+        assert_equal 10.0, config.dig("replication", "feedback_interval")
+      end
+    end
+
+    def test_rejects_invalid_feedback_interval
+      with_temp_dir do |dir|
+        path = write_file(
+          File.join(dir, "bad-feedback.yml"),
+          minimal_config.sub("feedback_interval: 10.0", "feedback_interval: 0")
+        )
+
+        error = assert_raises(ConfigurationError) { Configuration.load(path) }
+
+        assert_match(/configuration failed schema validation/, error.message)
+        assert_match(/feedback_interval/, error.message)
+      end
+    end
+
     def test_raises_for_missing_schema_file
       with_temp_dir do |dir|
         config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config)

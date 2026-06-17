@@ -43,12 +43,15 @@ module MammothTestHelpers
         port: 5432
         database: app_development
         username: mammoth
-        password_env: HARBINGER_POSTGRES_PASSWORD
+        password_env: MAMMOTH_POSTGRES_PASSWORD
 
       replication:
         slot: mammoth_prod
         publications:
           - mammoth_publication
+        auto_create_slot: false
+        temporary_slot: false
+        feedback_interval: 10.0
 
       webhook:
         name: primary_webhook

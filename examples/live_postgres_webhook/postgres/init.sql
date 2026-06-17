@@ -5,10 +5,3 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE PUBLICATION mammoth_publication FOR TABLE orders;
-
-SELECT pg_create_logical_replication_slot('mammoth_live', 'pgoutput')
-WHERE NOT EXISTS (
-  SELECT 1
-  FROM pg_replication_slots
-  WHERE slot_name = 'mammoth_live'
-);

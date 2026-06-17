@@ -14,6 +14,9 @@ replication:
   slot: mammoth_prod
   publications:
     - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 7
 
 webhook:
   name: primary_webhook

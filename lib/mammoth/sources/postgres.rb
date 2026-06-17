@@ -126,13 +126,7 @@ module Mammoth
       def build_runner
         require_optional!("pgoutput/client", "pgoutput-client")
 
-        Pgoutput::Client::Runner.new(
-          database_url: database_url,
-          slot_name: required_config("replication", "slot"),
-          publication_names: required_publications,
-          start_lsn: config.dig("replication", "start_lsn"),
-          auto_create_slot: !!config.dig("replication", "auto_create_slot")
-        )
+        Pgoutput::Client::Runner.new(**runner_options)
       end
 
       def build_parser
@@ -151,6 +145,20 @@ module Mammoth
         require_optional!("pgoutput/source_adapter", "pgoutput-source-adapter")
 
         Pgoutput::SourceAdapter::Cdc.new
+      end
+
+      def runner_options
+        {
+          database_url: database_url,
+          slot_name: required_config("replication", "slot"),
+          publication_names: required_publications,
+          start_lsn: config.dig("replication", "start_lsn"),
+          auto_create_slot: !config.dig("replication", "auto_create_slot").nil?,
+          temporary_slot: !config.dig("replication", "temporary_slot").nil?
+        }.tap do |options|
+          feedback_interval = config.dig("replication", "feedback_interval")
+          options[:feedback_interval] = feedback_interval unless feedback_interval.nil?
+        end
       end
 
       def required_publications

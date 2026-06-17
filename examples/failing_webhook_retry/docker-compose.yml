@@ -18,9 +18,11 @@ services:
       MAMMOTH_POSTGRES_PASSWORD: mammoth
     command:
       - deliver-sample
-      - examples/failing_webhook_retry/config/mammoth.yml
-      - examples/failing_webhook_retry/events/order_insert.json
+      - /config/mammoth.yml
+      - /events/order_insert.json
     volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - ./events/order_insert.json:/events/order_insert.json:ro
       - mammoth_retry_data:/app/.sqlite3
 
 volumes:

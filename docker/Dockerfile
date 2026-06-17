@@ -35,8 +35,20 @@ RUN apt-get update \
 
 COPY --from=build /src/pkg/mammoth-*.gem /tmp/
 
-RUN gem install /tmp/mammoth-*.gem --no-document \
- && rm -f /tmp/mammoth-*.gem
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libsqlite3-dev \
+    libyaml-dev \
+ && gem install /tmp/mammoth-*.gem --no-document \
+ && apt-get purge -y --auto-remove \
+    build-essential \
+    libpq-dev \
+    libsqlite3-dev \
+    libyaml-dev \
+ && rm -f /tmp/mammoth-*.gem \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 
