@@ -1,7 +1,11 @@
+# frozen_string_literal: true
+
 module CDC
   module Concurrent
     class ProcessorPool
-      def self.last_options = @last_options
+      class << self
+        attr_reader :last_options
+      end
 
       def initialize(processor:, concurrency:, timeout:, preserve_order:)
         @processor = processor
