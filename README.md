@@ -13,16 +13,12 @@ PostgreSQL
       ↓
 CDC Ecosystem source adapter
       ↓
-CDC::Core::ChangeEvent
+CDC::Core::TransactionEnvelope
       ↓
 Mammoth
       ↓
 Webhook
 ```
-
-🦣 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
-JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
-shared vocabulary so operators can inspect, recover, and reason about delivery.
 
 🦣 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
@@ -104,6 +100,50 @@ Mammoth stores operational memory in SQLite:
 - `schema_migrations`
 - `checkpoints`
 - `dead_letters`
+
+## Performance
+
+Mammoth scales downstream delivery throughput using the `cdc-concurrent` runtime while maintaining a single PostgreSQL logical replication stream.
+
+### Concurrent Delivery Benchmark
+
+Environment:
+
+* 10,000 transactions
+* 4 events per transaction
+* 40,000 total events
+
+#### Fast Downstream (10ms)
+
+| Concurrency | Transactions/sec |
+| ----------- | ---------------: |
+| 1           |            96.50 |
+| 25          |          2419.65 |
+
+#### Realistic Webhook (50ms)
+
+| Concurrency | Transactions/sec |
+| ----------- | ---------------: |
+| 1           |            19.85 |
+| 25          |           495.11 |
+
+Observed throughput improved from:
+
+- 96.50 → 2419.65 transactions/sec (10ms sink latency)
+- 19.85 → 495.11 transactions/sec (50ms sink latency)
+
+when increasing delivery concurrency from 1 to 25.
+
+The benchmark demonstrates near-linear scaling of delivery throughput without increasing PostgreSQL replication connections.
+
+See:
+
+- docs/BENCHMARKS.md
+- examples/transaction_webhook
+
+For full benchmark methodology and results see:
+
+See [Benchmarks](docs/BENCHMARKS.md).
 
 ## E2E
 
