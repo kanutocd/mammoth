@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
-
 permissions:
   contents: read
   packages: write
@@ -27,30 +25,6 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: Verify release source
-        env:
-          RELEASE_BRANCH: release
-        run: |
-          release_ref="origin/${RELEASE_BRANCH}"
-
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            if [ "${GITHUB_REF}" != "refs/heads/${RELEASE_BRANCH}" ]; then
-              echo "Manual Docker releases must be run from the ${RELEASE_BRANCH} branch."
-              exit 1
-            fi
-            exit 0
-          fi
-
-          if ! git show-ref --verify --quiet "refs/remotes/${release_ref}"; then
-            echo "Release branch ${release_ref} was not fetched."
-            exit 1
-          fi
-
-          if ! git merge-base --is-ancestor "${GITHUB_SHA}" "${release_ref}"; then
-            echo "Release tag commit ${GITHUB_SHA} is not reachable from ${release_ref}."
-            exit 1
-          fi
 
       - name: Check tag matches gem version
         if: startsWith(github.ref, 'refs/tags/')
