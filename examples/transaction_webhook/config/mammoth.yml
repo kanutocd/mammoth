@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../../config/mammoth.schema.json
+
+mammoth:
+  name: transaction_mammoth
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_transaction
+  publications:
+    - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 2.0
+
+delivery:
+  # This example demonstrates Mammoth 0.2 transaction delivery.
+  # The webhook receives one TransactionEnvelope payload containing all
+  # row-level events that PostgreSQL committed together.
+  unit: transaction
+  ordering:
+    scope: transaction
+
+runtime:
+  # Keep concurrency at 1 for the demo so log output is deterministic.
+  # Increase this value when validating downstream I/O-heavy delivery.
+  adapter: concurrent
+  concurrency: 1
+  preserve_order: true
+  timeout_seconds:
+
+webhook:
+  name: transaction_webhook
+  url: http://webhook_receiver:9292/webhook
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 5
+  schedule_seconds:
+    - 1
+    - 5
+    - 30
+    - 60
+    - 300
+
+sqlite:
+  path: .sqlite3/mammoth.db
+
+logging:
+  level: info

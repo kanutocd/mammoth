@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:17
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mammoth -d mammoth_demo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    ports:
+      - "54331:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command: sh -c "gem install webrick --no-document && ruby webhook_receiver.rb"
+    ports:
+      - "9294:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth_transaction_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webhook_receiver:
+        condition: service_started
+
+  transaction_producer:
+    image: postgres:17
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mammoth:
+        condition: service_started
+    environment:
+      PGPASSWORD: mammoth
+    command:
+      - sh
+      - -c
+      - |
+        sleep 3
+        psql -h postgres -U mammoth -d mammoth_demo -v ON_ERROR_STOP=1 <<'SQL'
+        BEGIN;
+        INSERT INTO orders (status, total_cents, note) VALUES ('created', 1200, 'first transaction row');
+        INSERT INTO orders (status, total_cents, note) VALUES ('created', 3400, 'second transaction row');
+        UPDATE orders SET status = 'paid' WHERE status = 'created';
+        COMMIT;
+        SQL
+
+volumes:
+  mammoth_transaction_data:

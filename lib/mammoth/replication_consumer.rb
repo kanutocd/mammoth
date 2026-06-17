@@ -52,6 +52,7 @@ module Mammoth
       return validate_transaction_envelope(work) if transaction_envelope?(work) && transaction_delivery?
       return validate_events(work.events) if transaction_envelope?(work)
       return work.flat_map { |item| flatten_cdc_work(item) } if work.is_a?(Array)
+      return [synthetic_transaction_envelope(work)] if transaction_delivery?
 
       validate_events([work])
     end
@@ -67,6 +68,22 @@ module Mammoth
 
     def validate_events(events)
       events.each { |event| validate_cdc_event!(event) }
+    end
+
+    def synthetic_transaction_envelope(event)
+      validate_cdc_event!(event)
+
+      event_hash = event.respond_to?(:to_h) ? event.to_h : event
+      SyntheticTransactionEnvelope.new(
+        events: [event],
+        transaction_id: event_hash["transaction_id"] || event_hash[:transaction_id] ||
+                        event_hash["xid"] || event_hash[:xid] || event_hash["event_id"] || event_hash[:event_id],
+        commit_lsn: event_hash["commit_lsn"] || event_hash[:commit_lsn] ||
+                    event_hash["source_position"] || event_hash[:source_position],
+        commit_time: event_hash["committed_at"] || event_hash[:committed_at] ||
+                     event_hash["occurred_at"] || event_hash[:occurred_at],
+        metadata: event_hash["metadata"] || event_hash[:metadata] || {}
+      )
     end
 
     def validate_cdc_event!(event)
@@ -87,5 +104,8 @@ module Mammoth
     def transaction_envelope?(work)
       work.respond_to?(:events) && work.respond_to?(:transaction_id)
     end
+
+    SyntheticTransactionEnvelope = Data.define(:events, :transaction_id, :commit_lsn, :commit_time, :metadata)
+    private_constant :SyntheticTransactionEnvelope
   end
 end

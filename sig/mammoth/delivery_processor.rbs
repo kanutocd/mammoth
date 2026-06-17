@@ -7,6 +7,13 @@ module Mammoth
     attr_reader delivery_worker: untyped
     attr_reader delivery_unit: untyped
 
+    def self.concurrent_safe!: () -> true
+    def self.concurrent_safe?: () -> bool
+    def self.concurrent_safe: () -> bool
+
+    def concurrent_safe?: () -> bool
+    def concurrent_safe: () -> bool
+
     def initialize: (delivery_worker: untyped, ?delivery_unit: untyped) -> void
 
     def process: (untyped work) -> untyped

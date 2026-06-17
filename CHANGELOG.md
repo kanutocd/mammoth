@@ -4,36 +4,46 @@
 
 ### Added
 
-* Introduced TransactionEnvelope-aware delivery pipeline foundations.
-* Added `TransactionEnvelopeSerializer` for transaction-level payload serialization.
-* Added `DeliveryProcessor` abstraction for sink delivery execution.
-* Added `ConcurrentDeliveryRuntime` integration for `cdc-concurrent` ProcessorPool execution.
-* Added transaction-level delivery support for webhook sinks.
-* Added runtime configuration options for concurrent delivery execution.
-* Added delivery unit configuration supporting both `event` and `transaction` delivery modes.
-* Added RBS definitions for new runtime and delivery components.
-* Added test coverage for transaction serialization, delivery processing, and concurrent runtime behavior.
+- Added transaction-level delivery mode using `TransactionEnvelope`.
+- Added transaction-aware buffering and aggregation of CDC events.
+- Added transaction webhook example demonstrating end-to-end delivery from PostgreSQL logical replication to HTTP webhook.
+- Added source position propagation for transaction deliveries.
+- Added concurrent delivery runtime integration powered by `cdc-concurrent`.
+- Added `DeliveryProcessor` abstraction for runtime execution.
+- Added `TransactionEnvelopeSerializer` for transaction payload serialization.
+- Added rich self-documenting YAML configuration examples.
 
 ### Changed
 
-* Replication consumer now preserves TransactionEnvelope boundaries throughout the delivery pipeline.
-* Delivery architecture now separates replication ingestion from downstream delivery concurrency.
-* Configuration examples expanded with production-oriented documentation and operational guidance.
-* YAML configuration documentation now includes detailed explanations, recommendations, and deployment considerations.
+- Transaction delivery now emits a single webhook payload per committed PostgreSQL transaction.
+- CDC events belonging to the same database transaction are now grouped into a single `TransactionEnvelope`.
+- Delivery pipeline now preserves transaction boundaries from ingestion through webhook delivery.
+- Replication slot creation now correctly honors configured temporary/permanent slot settings.
+- Concurrent runtime integration now complies with `cdc-concurrent` processor safety requirements.
 
-### Documentation
+### Fixed
 
-* Added Mammoth 2.x architectural roadmap.
-* Expanded configuration reference with rich inline documentation.
-* Documented transaction-level delivery semantics.
-* Documented concurrent delivery runtime behavior.
-* Added guidance for delivery concurrency tuning and operational configuration.
+- Fixed transaction delivery incorrectly emitting one transaction payload per CDC event.
+- Fixed missing source position metadata in transaction deliveries.
+- Fixed replication slot option handling for boolean configuration values.
+- Fixed transaction webhook example startup and producer execution flow.
+- Fixed `cdc-concurrent` runtime compatibility and processor validation failures.
+
+### Examples
+
+- Added `examples/transaction_webhook` demonstrating:
+
+  - PostgreSQL logical replication
+  - TransactionEnvelope aggregation
+  - Transaction-level webhook delivery
+  - Source position propagation
+  - Concurrent delivery runtime integration
 
 ### Internal
 
-* Established architectural foundation for transaction-aware checkpointing.
-* Established architectural foundation for multi-destination fanout delivery.
-* Established architectural foundation for future ordering policy support.
+- Established the foundation for transaction-aware checkpointing.
+- Established the foundation for ordering policies based on transaction boundaries.
+- Established the foundation for future multi-destination fanout delivery.
 
 
 ## [0.1.1] - 2026-06-17

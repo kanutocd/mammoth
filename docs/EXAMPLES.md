@@ -41,6 +41,44 @@ This example exercises:
 - webhook delivery
 - idle replication behavior
 
+
+## `examples/transaction_webhook`
+
+Purpose:
+
+```text
+PostgreSQL transaction
+    ↓
+logical replication
+    ↓
+TransactionEnvelope
+    ↓
+CDC::Concurrent::ProcessorPool
+    ↓
+webhook receiver
+```
+
+Use this when you want to validate Mammoth 0.2 transaction-level delivery.
+
+This example exercises:
+
+- PostgreSQL logical replication
+- transaction envelope preservation
+- `delivery.unit: transaction`
+- `runtime.adapter: concurrent`
+- webhook transaction payloads
+- transaction-level checkpoint boundary foundations
+
+Run it with:
+
+```bash
+cd examples/transaction_webhook
+docker compose up --build
+```
+
+The receiver should log a `transaction.committed` payload with multiple row-level
+events in the `events` array.
+
 ## `examples/operational_state`
 
 Purpose:

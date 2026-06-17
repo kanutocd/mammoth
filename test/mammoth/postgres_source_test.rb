@@ -150,6 +150,57 @@ module Mammoth
       assert_match(/source adapter must respond/, error.message)
     end
 
+
+    def test_buffers_pgoutput_transaction_until_commit
+      decoded_messages = {
+        "begin" => FakeBegin.new("tx-1"),
+        "row-1" => "row-1",
+        "row-2" => "row-2",
+        "commit" => FakeCommit.new("0/99")
+      }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(%w[begin row-1 row-2 commit]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { decoded_messages.fetch(message) },
+        adapter: ->(decoded) { sample_event(decoded) }
+      )
+
+      emitted = source.each.to_a
+
+      assert_equal 1, emitted.length
+      envelope = emitted.fetch(0)
+      assert_equal "tx-1", envelope.transaction_id
+      assert_equal "0/99", envelope.commit_lsn
+      assert_equal 2, envelope.events.length
+      assert_equal %w[row-1 row-2], envelope.events.map { |event| event.fetch("source_position") }
+    end
+
+    def test_commit_metadata_supplies_transaction_commit_lsn
+      decoded_messages = {
+        "begin" => FakeBegin.new("tx-2"),
+        "row" => { "operation" => "insert" },
+        "commit" => FakeCommit.new(nil)
+      }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([
+          ["begin", { lsn: "0/1" }],
+          ["row", { lsn: "0/2" }],
+          ["commit", { lsn: "0/3" }]
+        ]),
+        parser: ->(payload) { payload },
+        decoder: ->(message, _metadata) { decoded_messages.fetch(message) },
+        adapter: ->(decoded) { decoded }
+      )
+
+      envelope = source.each.first
+
+      assert_equal "tx-2", envelope.transaction_id
+      assert_equal "0/3", envelope.commit_lsn
+      assert_equal "0/2", envelope.events.first.fetch("source_position")
+    end
+
     def test_database_url_includes_password_when_present
       source = Sources::Postgres.new(Configuration.load(fixture_config_path))
 
@@ -189,6 +240,19 @@ module Mammoth
       assert options.fetch(:auto_create_slot)
       assert options.fetch(:temporary_slot)
       assert_equal 7.5, options.fetch(:feedback_interval)
+    end
+
+
+    def test_runner_options_preserve_false_transport_lifecycle_settings
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication")["auto_create_slot"] = false
+      config.data.fetch("replication")["temporary_slot"] = false
+      source = Sources::Postgres.new(config)
+
+      options = source.send(:runner_options)
+
+      refute options.fetch(:auto_create_slot)
+      refute options.fetch(:temporary_slot)
     end
 
     def test_runner_options_omit_feedback_interval_when_not_configured
@@ -250,6 +314,9 @@ module Mammoth
 
       assert_match(/PostgreSQL CDC source failed: stream exploded/, error.message)
     end
+
+    FakeBegin = Data.define(:transaction_id)
+    FakeCommit = Data.define(:commit_lsn)
 
     FakeRunner = Data.define(:payloads) do
       def start
