@@ -15,7 +15,7 @@ module Mammoth
     # @param error [Exception, nil] delivery failure
     # @param retry_count [Integer] number of delivery attempts
     # @return [Integer] inserted dead letter id
-    def write: (event: untyped, destination_name: untyped, ?error: untyped?, ?retry_count: ::Integer) -> untyped
+    def write: (event: untyped, destination_name: untyped, ?error: untyped?, ?retry_count: ::Integer, ?serializer: untyped) -> untyped
 
     # Fetch pending dead letters.
     #

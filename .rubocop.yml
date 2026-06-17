@@ -18,7 +18,7 @@ Metrics/ClassLength:
   Max: 145
 
 Metrics/AbcSize: 
-  Max: 25
+  Max: 27
 
 Metrics/ParameterLists:
   CountKeywordArgs: false    # Excludes keyword arguments from the total count
@@ -31,3 +31,6 @@ Metrics/PerceivedComplexity:
 
 Layout/LineLength:
   Max: 130
+
+Metrics/BlockLength:
+  Max: 26

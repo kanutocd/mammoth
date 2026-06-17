@@ -1,0 +1,14 @@
+module Mammoth
+  # Adapter object used by CDC::Concurrent::ProcessorPool.
+  class DeliveryProcessor
+    @delivery_worker: untyped
+    @delivery_unit: untyped
+
+    attr_reader delivery_worker: untyped
+    attr_reader delivery_unit: untyped
+
+    def initialize: (delivery_worker: untyped, ?delivery_unit: untyped) -> void
+
+    def process: (untyped work) -> untyped
+  end
+end

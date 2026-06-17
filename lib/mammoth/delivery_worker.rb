@@ -58,30 +58,42 @@ module Mammoth
       )
     end
 
+    # Deliver a transaction envelope with retry, checkpoint, and DLQ handling.
+    #
+    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @return [Hash] delivery summary
+    def deliver_transaction(envelope)
+      deliver_work(envelope, serializer: TransactionEnvelopeSerializer, delivery_method: :deliver_transaction)
+    end
+
     # Deliver an event with retry, checkpoint, and DLQ handling.
     #
     # @param event [Hash, #to_h] normalized event
     # @return [Hash] delivery summary
     def deliver(event)
+      deliver_work(event, serializer: EventSerializer, delivery_method: :deliver)
+    end
+
+    private
+
+    def deliver_work(work, serializer:, delivery_method:)
       attempts = 0
 
       begin
         attempts += 1
-        result = sink.deliver(event)
-        checkpoint(event)
+        result = sink.public_send(delivery_method, work)
+        checkpoint(work, serializer:)
         result.merge(attempts: attempts)
       rescue DeliveryError => e
-        return dead_letter(event, e, attempts) if attempts >= max_attempts
+        return dead_letter(work, e, attempts, serializer:) if attempts >= max_attempts
 
         wait_before_retry(attempts)
         retry
       end
     end
 
-    private
-
-    def checkpoint(event)
-      payload = EventSerializer.call(event)
+    def checkpoint(work, serializer:)
+      payload = serializer.call(work)
       checkpoint_store.write(
         source_name: source_name,
         slot_name: slot_name,
@@ -90,12 +102,13 @@ module Mammoth
       )
     end
 
-    def dead_letter(event, error, attempts)
+    def dead_letter(event, error, attempts, serializer:)
       id = dead_letter_store.write(
         event: event,
         destination_name: sink.name,
         error: error,
-        retry_count: attempts
+        retry_count: attempts,
+        serializer: serializer
       )
       { status: "dead_lettered", dead_letter_id: id, attempts: attempts }
     end

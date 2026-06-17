@@ -58,6 +58,18 @@ module Mammoth
       assert_equal(%w[0/10 0/11 0/12], events.map { |event| event.fetch("source_position") })
     end
 
+    def test_start_preserves_transaction_envelope_when_delivery_unit_is_transaction
+      events = [sample_event("0/1"), sample_event("0/2")]
+      envelope = FakeEnvelope.new(events, "tx-1")
+      consumer = ReplicationConsumer.new(source: [envelope], delivery_unit: :transaction)
+      consumed = []
+
+      count = consumer.start { |work| consumed << work }
+
+      assert_equal 1, count
+      assert_equal [envelope], consumed
+    end
+
     def test_start_rejects_non_cdc_work
       consumer = ReplicationConsumer.new(source: [:not_cdc])
 

@@ -40,7 +40,21 @@ module Mammoth
     # @return [Hash] delivery result
     # @raise [Mammoth::DeliveryError] when delivery fails
     def deliver(event)
-      payload = EventSerializer.call(event)
+      deliver_payload(EventSerializer.call(event))
+    end
+
+    # Deliver a transaction envelope to the webhook endpoint.
+    #
+    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @return [Hash] delivery result
+    # @raise [Mammoth::DeliveryError] when delivery fails
+    def deliver_transaction(envelope)
+      deliver_payload(TransactionEnvelopeSerializer.call(envelope))
+    end
+
+    private
+
+    def deliver_payload(payload)
       response = perform_request(payload)
       return delivery_result(payload, response) if SUCCESS_RANGE.cover?(response.code.to_i)
 
@@ -48,8 +62,6 @@ module Mammoth
     rescue Timeout::Error, SystemCallError, SocketError, JSON::GeneratorError => e
       raise DeliveryError, "webhook #{name} delivery failed: #{e.message}"
     end
-
-    private
 
     def perform_request(payload)
       Net::HTTP.start(url.host, url.port, use_ssl: url.scheme == "https", open_timeout: timeout_seconds,
@@ -68,6 +80,7 @@ module Mammoth
     def delivery_result(payload, response)
       {
         event_id: payload.fetch("event_id"),
+        payload_type: payload["type"] || "event",
         destination: name,
         status: "delivered",
         http_status: response.code.to_i

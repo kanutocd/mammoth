@@ -1,0 +1,9 @@
+module CDC
+  module Concurrent
+    class ProcessorPool
+      def initialize: (processor: untyped, concurrency: untyped, ?timeout: untyped, ?preserve_order: untyped) -> void
+      def process_many: (Array[untyped] items) -> Array[untyped]
+      def shutdown: () -> untyped
+    end
+  end
+end

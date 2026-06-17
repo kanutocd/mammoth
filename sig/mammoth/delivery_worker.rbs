@@ -69,13 +69,17 @@ module Mammoth
     #
     # @param event [Hash, #to_h] normalized event
     # @return [Hash] delivery summary
+    def deliver_transaction: (untyped envelope) -> untyped
+
     def deliver: (untyped event) -> untyped
 
     private
 
-    def checkpoint: (untyped event) -> untyped
+    def deliver_work: (untyped work, serializer: untyped, delivery_method: untyped) -> untyped
 
-    def dead_letter: (untyped event, untyped error, untyped attempts) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
+    def checkpoint: (untyped work, serializer: untyped) -> untyped
+
+    def dead_letter: (untyped event, untyped error, untyped attempts, serializer: untyped) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
 
     def wait_before_retry: (untyped attempts) -> untyped
   end

@@ -1,0 +1,26 @@
+module Mammoth
+  # Delivery runtime backed by CDC::Concurrent::ProcessorPool.
+  class ConcurrentDeliveryRuntime
+    @processor: untyped
+    @concurrency: untyped
+    @timeout: untyped
+    @preserve_order: untyped
+    @pool: untyped
+
+    attr_reader processor: untyped
+    attr_reader concurrency: untyped
+    attr_reader timeout: untyped
+    attr_reader preserve_order: untyped
+    attr_reader pool: untyped
+
+    def initialize: (processor: untyped, concurrency: untyped, timeout: untyped, preserve_order: untyped) -> void
+
+    def process_many: (Array[untyped] items) -> Array[untyped]
+
+    def shutdown: () -> nil
+
+    private
+
+    def build_pool: () -> untyped
+  end
+end

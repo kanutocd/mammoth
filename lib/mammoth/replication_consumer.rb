@@ -5,14 +5,17 @@ module Mammoth
   #
   # ReplicationConsumer is intentionally upstream-agnostic. It does not know
   # which upstream system produced the work. Its
-  # only job is to consume CDC Ecosystem work, flatten CDC transaction
-  # envelopes, and yield individual change events to the delivery pipeline.
+  # job is to consume CDC Ecosystem work and yield either individual change
+  # events or transaction envelopes depending on Mammoth's configured delivery
+  # unit.
   class ReplicationConsumer
-    attr_reader :source
+    attr_reader :source, :delivery_unit
 
     # @param source [#each, nil] injectable CDC work stream
-    def initialize(source: nil)
+    # @param delivery_unit [String, Symbol] :event or :transaction
+    def initialize(source: nil, delivery_unit: :event)
       @source = source
+      @delivery_unit = delivery_unit.to_sym
     end
 
     # Consume normalized CDC work from the configured source.
@@ -46,10 +49,20 @@ module Mammoth
 
     def flatten_cdc_work(work)
       return [] if work.nil?
+      return validate_transaction_envelope(work) if transaction_envelope?(work) && transaction_delivery?
       return validate_events(work.events) if transaction_envelope?(work)
       return work.flat_map { |item| flatten_cdc_work(item) } if work.is_a?(Array)
 
       validate_events([work])
+    end
+
+    def transaction_delivery?
+      delivery_unit == :transaction
+    end
+
+    def validate_transaction_envelope(envelope)
+      validate_events(envelope.events)
+      [envelope]
     end
 
     def validate_events(events)

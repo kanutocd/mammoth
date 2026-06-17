@@ -24,6 +24,22 @@ module Mammoth
       end
     end
 
+    def test_delivers_transaction_envelope_to_webhook
+      with_test_server(202) do |url, received|
+        sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
+        envelope = FakeEnvelope.new(
+          [{ "event_id" => "event-1", "operation" => "insert", "source_position" => "0/1" }],
+          "tx-1"
+        )
+
+        result = sink.deliver_transaction(envelope)
+
+        assert_equal "delivered", result.fetch(:status)
+        assert_equal "transaction.committed", result.fetch(:payload_type)
+        assert_match(/transaction.committed/, received.fetch(:body))
+      end
+    end
+
     def test_raises_delivery_error_for_non_success_status
       with_test_server(500) do |url, _received|
         sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
@@ -41,6 +57,8 @@ module Mammoth
 
       assert_raises(DeliveryError) { sink.deliver("event_id" => "event-1", "operation" => "insert") }
     end
+
+    FakeEnvelope = Data.define(:events, :transaction_id)
 
     private
 

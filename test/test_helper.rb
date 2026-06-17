@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "simplecov"
 
 SimpleCov.external_at_exit = true
@@ -10,9 +11,39 @@ SimpleCov.start do
 end
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+
+FAKE_RUNTIME_DIR = File.expand_path("tmp/fake_runtimes", __dir__)
+FileUtils.mkdir_p(File.join(FAKE_RUNTIME_DIR, "cdc"))
+File.write(File.join(FAKE_RUNTIME_DIR, "cdc", "concurrent.rb"), <<~FAKE_CONCURRENT)
+  module CDC
+    module Concurrent
+      class ProcessorPool
+        def self.last_options = @last_options
+
+        def initialize(processor:, concurrency:, timeout:, preserve_order:)
+          @processor = processor
+          @shutdown = false
+          self.class.instance_variable_set(
+            :@last_options,
+            { processor: processor, concurrency: concurrency, timeout: timeout, preserve_order: preserve_order }
+          )
+        end
+
+        def process_many(items)
+          items.map { |item| @processor.process(item) }.freeze
+        end
+
+        def shutdown
+          @shutdown = true
+        end
+      end
+    end
+  end
+FAKE_CONCURRENT
+$LOAD_PATH.unshift FAKE_RUNTIME_DIR
+
 require "mammoth"
 
-require "fileutils"
 require "minitest/autorun"
 require "stringio"
 require "tempfile"

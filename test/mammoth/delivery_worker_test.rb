@@ -73,6 +73,25 @@ module Mammoth
       end
     end
 
+    def test_delivers_and_checkpoints_successful_transaction_envelope
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = RecordingSink.new
+        worker = build_worker(sqlite, sink: sink)
+        envelope = FakeEnvelope.new(
+          [sample_event.merge("source_position" => "0/1"), sample_event.merge("source_position" => "0/2")], "tx-1"
+        )
+
+        result = worker.deliver_transaction(envelope)
+        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+
+        assert_equal "delivered", result.fetch(:status)
+        assert_equal "transaction.committed", result.fetch(:payload_type)
+        assert_equal "0/2", checkpoint.fetch("last_lsn")
+        assert_equal envelope, sink.delivered_transactions.fetch(0)
+      end
+    end
+
     private
 
     def build_worker(sqlite, sink:, sleeper: ->(_seconds) {})
@@ -101,15 +120,24 @@ module Mammoth
       }
     end
 
+    FakeEnvelope = Data.define(:events, :transaction_id)
+
     class RecordingSink
-      attr_reader :name
+      attr_reader :name, :delivered_transactions
 
       def initialize
         @name = "primary_webhook"
+        @delivered_transactions = []
       end
 
       def deliver(event)
         { event_id: event.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
+      end
+
+      def deliver_transaction(envelope)
+        @delivered_transactions << envelope
+        { event_id: "transaction-1", payload_type: "transaction.committed", destination: name, status: "delivered",
+          http_status: 200 }
       end
     end
 

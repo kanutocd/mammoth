@@ -50,6 +50,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |file| File.basename(file) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "cdc-concurrent", "~> 0.1"
   spec.add_dependency "cdc-core", "~> 0.1"
   spec.add_dependency "json-schema", "~> 6.2"
   spec.add_dependency "pgoutput-client", "~> 0.2"

@@ -16,6 +16,8 @@ module Mammoth
 
     @delivery_worker: untyped
 
+    @runtime: untyped
+
     attr_reader config: untyped
 
     attr_reader sqlite_store: untyped
@@ -37,6 +39,22 @@ module Mammoth
 
     private
 
+    def process_work: (untyped runtime, untyped work) -> untyped
+
+    def build_runtime: () -> untyped
+
     def build_delivery_worker: (sink: untyped, sleeper: untyped) -> untyped
+
+    def transaction_delivery?: () -> bool
+
+    def delivery_unit: () -> Symbol
+
+    def runtime_adapter: () -> untyped
+
+    def runtime_concurrency: () -> untyped
+
+    def runtime_timeout: () -> untyped
+
+    def runtime_preserve_order?: () -> bool
   end
 end

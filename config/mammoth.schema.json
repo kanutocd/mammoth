@@ -1,10 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "https://kanutocd.github.io/mammoth/schema/mammoth.schema.json",
- "title": "Mammoth Configuration",
+  "title": "Mammoth Configuration",
   "type": "object",
   "additionalProperties": false,
-
   "required": [
     "mammoth",
     "postgres",
@@ -14,20 +13,22 @@
     "sqlite",
     "logging"
   ],
-
   "properties": {
     "mammoth": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Human-readable Mammoth instance name used in logs, status output, metrics, and future dashboards. Keep stable per environment."
         }
-      }
+      },
+      "description": "Mammoth instance identity and operator-facing metadata."
     },
-
     "postgres": {
       "type": "object",
       "additionalProperties": false,
@@ -41,28 +42,33 @@
       "properties": {
         "host": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "PostgreSQL host reachable from the Mammoth process or pod."
         },
         "port": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 65535
+          "maximum": 65535,
+          "description": "PostgreSQL TCP port."
         },
         "database": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Source PostgreSQL database name."
         },
         "username": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "PostgreSQL user used by Mammoth. This user must be able to connect in replication mode and read publication metadata."
         },
         "password_env": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Name of the environment variable containing the PostgreSQL password. The password itself should not be stored in YAML."
         }
-      }
+      },
+      "description": "PostgreSQL connection settings for the source database."
     },
-
     "replication": {
       "type": "object",
       "additionalProperties": false,
@@ -73,7 +79,8 @@
       "properties": {
         "slot": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "PostgreSQL logical replication slot name. Permanent slots preserve WAL until Mammoth acknowledges progress. Changing this value creates a separate replication position."
         },
         "publications": {
           "type": "array",
@@ -81,25 +88,33 @@
           "items": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "description": "PostgreSQL publications to subscribe to. Publications define which table changes PostgreSQL sends to Mammoth."
         },
         "start_lsn": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional Log Sequence Number for advanced recovery or controlled replay. Leave null or unset for normal checkpoint-based operation."
         },
         "auto_create_slot": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, Mammoth creates the replication slot if it does not exist. Convenient for development; DBA-managed slots are recommended for production."
         },
         "temporary_slot": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, use a temporary slot that disappears when the replication session ends. Durable deployments should use false."
         },
         "feedback_interval": {
           "type": "number",
           "minimum": 0,
-          "exclusiveMinimum": true
+          "exclusiveMinimum": true,
+          "description": "Standby feedback interval in seconds. Lower values improve liveness/progress visibility; higher values reduce chatter."
         }
-      }
+      },
+      "description": "Logical replication settings. Mammoth uses one replication slot and one WAL stream; downstream runtime concurrency does not create additional replication connections."
     },
-
     "webhook": {
       "type": "object",
       "additionalProperties": false,
@@ -111,19 +126,22 @@
       "properties": {
         "name": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Destination name used in logs, dead-letter records, and future metrics."
         },
         "url": {
           "type": "string",
-          "format": "uri"
+          "format": "uri",
+          "description": "Destination URL for delivered CDC payloads. Transaction delivery sends a TransactionEnvelope payload; event delivery sends a single event payload."
         },
         "timeout_seconds": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "HTTP timeout in seconds for webhook delivery attempts."
         }
-      }
+      },
+      "description": "HTTP webhook destination settings."
     },
-
     "retry": {
       "type": "object",
       "additionalProperties": false,
@@ -134,7 +152,8 @@
       "properties": {
         "max_attempts": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "Maximum delivery attempts before moving the event or envelope to the dead-letter store."
         },
         "schedule_seconds": {
           "type": "array",
@@ -142,27 +161,33 @@
           "items": {
             "type": "integer",
             "minimum": 1
-          }
+          },
+          "description": "Progressive retry delay schedule in seconds. If attempts exceed the schedule length, the final value may be reused."
         }
-      }
+      },
+      "description": "Retry policy for failed delivery attempts before dead-lettering."
     },
-
     "sqlite": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path"],
+      "required": [
+        "path"
+      ],
       "properties": {
         "path": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Filesystem path to Mammoth SQLite operational database. In Kubernetes, back this path with persistent storage."
         }
-      }
+      },
+      "description": "SQLite operational store settings for checkpoints, attempts, and dead-letter records."
     },
-
     "logging": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["level"],
+      "required": [
+        "level"
+      ],
       "properties": {
         "level": {
           "type": "string",
@@ -171,9 +196,78 @@
             "info",
             "warn",
             "error"
-          ]
+          ],
+          "description": "Log verbosity. Use debug for diagnostics, info for normal operation, and warn/error for quieter production output."
         }
-      }
+      },
+      "description": "Logging configuration."
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string",
+          "enum": [
+            "event",
+            "transaction"
+          ],
+          "description": "Delivery granularity. event delivers each change independently; transaction delivers a complete TransactionEnvelope and is the safer default for checkpoint correctness."
+        },
+        "ordering": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "global",
+                "transaction",
+                "relation",
+                "primary_key",
+                "none"
+              ],
+              "description": "Ordering scope. global preserves complete WAL order; transaction preserves commit order; relation preserves per-table order; primary_key preserves per-row order; none is best-effort only."
+            }
+          },
+          "description": "Ordering policy consumed by the delivery runtime."
+        }
+      },
+      "description": "Delivery semantics for CDC payloads."
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "concurrent"
+          ],
+          "description": "Delivery runtime adapter. inline executes synchronously; concurrent uses CDC::Concurrent::ProcessorPool for I/O-heavy delivery work."
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of downstream delivery workers. Does not create extra PostgreSQL replication slots or connections."
+        },
+        "preserve_order": {
+          "type": "boolean",
+          "description": "When true, preserve configured delivery ordering while using the runtime. Disable only for idempotent ordering-insensitive destinations."
+        },
+        "timeout_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "exclusiveMinimum": true,
+          "description": "Optional runtime-level timeout in seconds. Leave null to rely on destination-specific timeouts."
+        }
+      },
+      "description": "Downstream delivery runtime settings. Runtime concurrency affects webhook/destination delivery only, not PostgreSQL replication stream count."
     }
-  }
+  },
+  "description": "Mammoth relay configuration. Mammoth consumes PostgreSQL logical replication changes and delivers them to downstream destinations while preserving checkpoint, retry, and dead-letter semantics."
 }

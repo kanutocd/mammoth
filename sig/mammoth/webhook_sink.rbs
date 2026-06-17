@@ -33,12 +33,16 @@ module Mammoth
     # @raise [Mammoth::DeliveryError] when delivery fails
     def deliver: (untyped event) -> untyped
 
+    def deliver_transaction: (untyped envelope) -> untyped
+
     private
+
+    def deliver_payload: (untyped payload) -> untyped
 
     def perform_request: (untyped payload) -> untyped
 
     def build_request: (untyped payload) -> untyped
 
-    def delivery_result: (untyped payload, untyped response) -> { event_id: untyped, destination: untyped, status: "delivered", http_status: untyped }
+    def delivery_result: (untyped payload, untyped response) -> untyped
   end
 end

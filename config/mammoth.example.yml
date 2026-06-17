@@ -1,30 +1,236 @@
 # yaml-language-server: $schema=./mammoth.schema.json
 
+# Mammoth example configuration.
+#
+# This file is intentionally verbose. It is both a runnable starting point and
+# the primary operator-facing documentation for local development, Kubernetes
+# values, and production deployments.
+#
+# Architecture reminder:
+#
+#   PostgreSQL
+#      ↓
+#   one logical replication slot
+#      ↓
+#   one WAL stream
+#      ↓
+#   Mammoth delivery runtime
+#      ↓
+#   one or more downstream deliveries
+#
+# Runtime concurrency affects downstream delivery work only. It does not create
+# additional PostgreSQL replication slots or replication connections.
+
 mammoth:
+  # Human-readable Mammoth instance name.
+  #
+  # Used in logs, status output, metrics, and future operational dashboards.
+  # Keep this stable per environment.
+  #
+  # Examples:
+  #   local_mammoth
+  #   staging_mammoth
+  #   production_mammoth
   name: local_mammoth
 
 postgres:
+  # PostgreSQL host reachable from the Mammoth process or pod.
+  #
+  # For local development this is usually localhost.
+  # In Kubernetes this is usually a service DNS name.
   host: localhost
+
+  # PostgreSQL port.
   port: 5432
+
+  # Source database name.
   database: app_development
+
+  # PostgreSQL user used by Mammoth.
+  #
+  # This user must be able to connect in replication mode and read publication
+  # metadata. In many deployments this means a dedicated replication user.
   username: mammoth
+
+  # Environment variable containing the PostgreSQL password.
+  #
+  # The password is intentionally not stored directly in YAML. In Kubernetes,
+  # set this variable from a Secret.
   password_env: MAMMOTH_POSTGRES_PASSWORD
 
 replication:
+  # PostgreSQL logical replication slot name.
+  #
+  # Permanent slots survive PostgreSQL restarts and preserve WAL until Mammoth
+  # acknowledges progress. Changing this value creates a separate replication
+  # position and should be treated as an operational migration.
+  #
+  # Recommended:
+  #   development: mammoth_dev
+  #   staging:     mammoth_staging
+  #   production:  mammoth_prod
   slot: mammoth_prod
+
+  # PostgreSQL publications to subscribe to.
+  #
+  # Publications define which table changes PostgreSQL sends to Mammoth.
+  # Create them explicitly in production so the database boundary is clear.
+  #
+  # Example SQL:
+  #   CREATE PUBLICATION mammoth_publication FOR TABLE users, orders;
   publications:
     - mammoth_publication
+
+  # Optional start LSN for advanced recovery or controlled replay.
+  #
+  # Leave unset for normal operation. Mammoth will use its checkpoint store and
+  # the replication slot position.
+  #
+  # Example:
+  #   start_lsn: "0/16B6C50"
+  #
+  # start_lsn:
+
+  # Automatically create the replication slot if it does not exist.
+  #
+  # true:
+  #   Convenient for development, demos, and first-time bootstrap.
+  #
+  # false:
+  #   Recommended for production when slots are DBA-managed infrastructure.
   auto_create_slot: false
+
+  # Use a temporary replication slot.
+  #
+  # false:
+  #   Recommended for durable Mammoth deployments. The slot survives reconnects
+  #   and PostgreSQL restarts.
+  #
+  # true:
+  #   Useful for experiments only. A temporary slot disappears when the
+  #   replication session ends and is not suitable for durable delivery.
   temporary_slot: false
+
+  # Standby feedback interval in seconds.
+  #
+  # Mammoth sends periodic feedback while streaming so PostgreSQL knows the
+  # consumer is alive and can advance slot state safely.
+  #
+  # Lower values:
+  #   faster liveness/feedback visibility, slightly more network chatter
+  #
+  # Higher values:
+  #   less chatter, slower visibility into consumer progress
+  #
+  # Recommended:
+  #   development: 2.0
+  #   production:  5.0-10.0
   feedback_interval: 10.0
 
+delivery:
+  # Delivery granularity.
+  #
+  # event:
+  #   Deliver each change event independently. This has lower latency but weaker
+  #   transaction-level semantics.
+  #
+  # transaction:
+  #   Deliver a complete TransactionEnvelope as one payload. This is the safer
+  #   default because checkpointing can advance only after the whole transaction
+  #   has been delivered successfully.
+  #
+  # Recommended:
+  #   transaction
+  unit: transaction
+
+  ordering:
+    # Ordering policy used by the delivery runtime.
+    #
+    # global:
+    #   Preserve complete WAL/stream order. Safest, lowest concurrency.
+    #
+    # transaction:
+    #   Preserve transaction commit order. Recommended for transaction delivery.
+    #
+    # relation:
+    #   Preserve order per table/relation while allowing unrelated tables to run
+    #   concurrently.
+    #
+    # primary_key:
+    #   Preserve order per row identity while allowing unrelated rows to run
+    #   concurrently.
+    #
+    # none:
+    #   Best-effort delivery order. Highest freedom for concurrency, but only use
+    #   when destinations are idempotent and ordering-insensitive.
+    #
+    # Recommended:
+    #   transaction
+    scope: transaction
+
+runtime:
+  # Runtime adapter for downstream delivery work.
+  #
+  # inline:
+  #   Execute delivery work synchronously in the caller. Best for debugging and
+  #   the safest compatibility mode.
+  #
+  # concurrent:
+  #   Use CDC::Concurrent::ProcessorPool for I/O-heavy delivery workloads such as
+  #   webhook HTTP calls, retry sleeps/backoff, and future multi-destination
+  #   fanout.
+  adapter: concurrent
+
+  # Number of downstream delivery workers.
+  #
+  # This affects webhook/destination delivery concurrency only.
+  # It does NOT create additional replication slots.
+  # It does NOT create additional PostgreSQL replication connections.
+  #
+  # Recommended:
+  #   development: 1
+  #   small production: 2-5
+  #   webhook-heavy production: 10-50, after soak testing
+  concurrency: 1
+
+  # Preserve configured ordering while using the runtime.
+  #
+  # true:
+  #   Safer default. Related work is kept in order according to delivery.ordering.
+  #
+  # false:
+  #   Higher throughput potential, but only safe for idempotent destinations that
+  #   do not depend on event order.
+  preserve_order: true
+
+  # Optional runtime timeout in seconds.
+  #
+  # Leave blank to let destination-specific timeouts control delivery behavior.
+  # Useful later for bounding end-to-end processor execution.
+  timeout_seconds:
+
 webhook:
+  # Destination name used in logs, dead-letter records, and future metrics.
   name: primary_webhook
+
+  # Destination URL for delivered CDC payloads.
+  #
+  # For delivery.unit: transaction, the payload represents a TransactionEnvelope.
+  # For delivery.unit: event, the payload represents one change event.
   url: https://example.com/webhooks/postgres
+
+  # HTTP timeout in seconds for webhook delivery attempts.
   timeout_seconds: 5
 
 retry:
+  # Maximum delivery attempts before the event/envelope is moved to the dead
+  # letter store.
   max_attempts: 5
+
+  # Retry delay schedule in seconds.
+  #
+  # Mammoth uses this as progressive backoff. If attempts exceed the length of
+  # this list, the final value may be reused by the delivery worker.
   schedule_seconds:
     - 1
     - 5
@@ -33,7 +239,21 @@ retry:
     - 300
 
 sqlite:
+  # Local operational database path.
+  #
+  # Mammoth stores checkpoints, delivery attempts, and dead-letter records here.
+  # In Kubernetes, back this path with a PersistentVolumeClaim.
   path: data/mammoth.db
 
 logging:
+  # Log verbosity.
+  #
+  # debug:
+  #   Very chatty; useful while diagnosing delivery or replication behavior.
+  #
+  # info:
+  #   Recommended normal default.
+  #
+  # warn/error:
+  #   Quieter production modes.
   level: info

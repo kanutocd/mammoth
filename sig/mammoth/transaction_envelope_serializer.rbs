@@ -1,0 +1,25 @@
+module Mammoth
+  # Serializes CDC transaction envelopes into webhook payloads.
+  class TransactionEnvelopeSerializer
+    @envelope: untyped
+    @envelope_hash: untyped
+
+    PAYLOAD_TYPE: "transaction.committed"
+
+    attr_reader envelope: untyped
+
+    def self.call: (untyped envelope) -> Hash[String, untyped]
+    def initialize: (untyped envelope) -> void
+    def call: () -> Hash[String, untyped]
+    def to_json: (*untyped _args) -> String
+
+    private
+
+    def envelope_hash: () -> Hash[String, untyped]
+    def stringify_keys: (untyped hash) -> Hash[String, untyped]
+    def envelope_value: (untyped key) -> untyped
+    def source_position: (Array[Hash[String, untyped]] event_payloads) -> untyped
+    def committed_at: () -> untyped
+    def first_event_value: (Array[Hash[String, untyped]] event_payloads, untyped key) -> untyped
+  end
+end

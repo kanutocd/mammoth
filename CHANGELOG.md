@@ -1,6 +1,40 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 Unreleased
+
+### Added
+
+* Introduced TransactionEnvelope-aware delivery pipeline foundations.
+* Added `TransactionEnvelopeSerializer` for transaction-level payload serialization.
+* Added `DeliveryProcessor` abstraction for sink delivery execution.
+* Added `ConcurrentDeliveryRuntime` integration for `cdc-concurrent` ProcessorPool execution.
+* Added transaction-level delivery support for webhook sinks.
+* Added runtime configuration options for concurrent delivery execution.
+* Added delivery unit configuration supporting both `event` and `transaction` delivery modes.
+* Added RBS definitions for new runtime and delivery components.
+* Added test coverage for transaction serialization, delivery processing, and concurrent runtime behavior.
+
+### Changed
+
+* Replication consumer now preserves TransactionEnvelope boundaries throughout the delivery pipeline.
+* Delivery architecture now separates replication ingestion from downstream delivery concurrency.
+* Configuration examples expanded with production-oriented documentation and operational guidance.
+* YAML configuration documentation now includes detailed explanations, recommendations, and deployment considerations.
+
+### Documentation
+
+* Added Mammoth 2.x architectural roadmap.
+* Expanded configuration reference with rich inline documentation.
+* Documented transaction-level delivery semantics.
+* Documented concurrent delivery runtime behavior.
+* Added guidance for delivery concurrency tuning and operational configuration.
+
+### Internal
+
+* Established architectural foundation for transaction-aware checkpointing.
+* Established architectural foundation for multi-destination fanout delivery.
+* Established architectural foundation for future ordering policy support.
+
 
 ## [0.1.1] - 2026-06-17
 

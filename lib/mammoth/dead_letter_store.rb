@@ -20,9 +20,9 @@ module Mammoth
     # @param error [Exception, nil] delivery failure
     # @param retry_count [Integer] number of delivery attempts
     # @return [Integer] inserted dead letter id
-    def write(event:, destination_name:, error: nil, retry_count: 0) # rubocop:disable Metrics/MethodLength
+    def write(event:, destination_name:, error: nil, retry_count: 0, serializer: EventSerializer) # rubocop:disable Metrics/MethodLength
       now = Time.now.utc.iso8601
-      payload = EventSerializer.call(event)
+      payload = serializer.call(event)
       database.execute(
         <<~SQL,
           INSERT INTO dead_letters(
@@ -46,7 +46,7 @@ module Mammoth
           payload.fetch("event_id"),
           payload.fetch("source"),
           destination_name,
-          payload.fetch("operation"),
+          payload["operation"] || payload["type"],
           payload["namespace"],
           payload["entity"],
           payload["source_position"],
