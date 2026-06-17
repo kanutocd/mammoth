@@ -4,6 +4,12 @@ plugins:
   
 AllCops:
   TargetRubyVersion: 4.0
+  NewCops: disable
+  Exclude:
+    - 'test/tmp/**/*'
+    - 'vendor/**/*'
+    - 'bin/*'
+
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
