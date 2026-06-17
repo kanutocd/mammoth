@@ -1,0 +1,94 @@
+# PostgreSQL Requirements
+
+Mammoth consumes PostgreSQL logical replication through the CDC ecosystem's pgoutput path.
+
+## PostgreSQL settings
+
+The PostgreSQL server must allow logical replication:
+
+```text
+wal_level = logical
+max_replication_slots = 10
+max_wal_senders = 10
+```
+
+The exact values depend on your deployment, but `wal_level=logical` is mandatory.
+
+## Publication
+
+Mammoth requires at least one publication listed in configuration.
+
+Example:
+
+```sql
+CREATE TABLE IF NOT EXISTS orders (
+  id bigserial PRIMARY KEY,
+  status text NOT NULL,
+  total_cents integer NOT NULL
+);
+
+CREATE PUBLICATION mammoth_publication FOR TABLE orders;
+```
+
+Check publications:
+
+```sql
+SELECT * FROM pg_publication;
+```
+
+## Replication slot
+
+Mammoth consumes one logical replication slot per active stream.
+
+Example configuration:
+
+```yaml
+replication:
+  slot: mammoth_prod
+  publications:
+    - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 10.0
+```
+
+If `auto_create_slot` is `true`, Mammoth attempts to create the slot. If it is `false`, create the slot yourself.
+
+Inspect slots:
+
+```sql
+SELECT
+  slot_name,
+  plugin,
+  slot_type,
+  database,
+  active,
+  restart_lsn,
+  confirmed_flush_lsn
+FROM pg_replication_slots;
+```
+
+Expected plugin:
+
+```text
+pgoutput
+```
+
+## One slot, one active subscriber
+
+A PostgreSQL logical replication slot is consumed by one active subscriber at a time. Run one active Mammoth replica per logical replication slot.
+
+For Kubernetes, this is why the Helm chart defaults to one replica.
+
+## Idle streams and feedback
+
+Mammoth uses pgoutput-client transport behavior that sends replication feedback during idle periods. The `replication.feedback_interval` setting controls the feedback cadence.
+
+Example:
+
+```yaml
+replication:
+  feedback_interval: 7.0
+```
+
+Use a value appropriate for your PostgreSQL timeout and operational needs.

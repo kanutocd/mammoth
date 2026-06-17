@@ -5,7 +5,7 @@
 [![Ruby Version](https://img.shields.io/badge/ruby-%3E%3D%204.0-ruby.svg)](https://www.ruby-lang.org/en/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Mammoth is a self-hosted PostgreSQL event relay focused on reliable delivery
+🦣 Mammoth is a self-hosted PostgreSQL event relay focused on reliable delivery
 of database change events.
 
 ```text
@@ -20,13 +20,13 @@ Mammoth
 Webhook
 ```
 
-Mammoth is intentionally boring infrastructure. It uses YAML configuration,
+🦣 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
 shared vocabulary so operators can inspect, recover, and reason about delivery.
 
 ## OSS MVP
 
-Mammoth OSS includes:
+🦣 Mammoth OSS includes:
 
 - CLI foundation
 - YAML configuration loading

@@ -1,7 +1,23 @@
 --title "Mammoth API Documentation"
 --protected
 --markup markdown
---readme README.md
-'lib/**/*.rb'
+
+--readme docs/README.md
+
+lib/**/*.rb
+
 -
---files CHANGELOG.md CODE_OF_CONDUCT.md LICENSE.txt
+
+README.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+LICENSE.txt
+
+docs/quick-start.md
+docs/postgresql.md
+docs/configuration.md
+docs/cli.md
+docs/operational-state.md
+docs/examples.md
+docs/helm.md
+docs/troubleshooting.md

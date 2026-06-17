@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Ken C. Demanawa"]
   spec.email = ["kenneth.c.demanawa@gmail.com"]
 
-  spec.summary = "Reliable delivery of PostgreSQL change events."
+  spec.summary = "Reliable delivery of PostgreSQL logical replication events with retries, dead letters, and operational state."
   spec.description = <<~TEXT
     Mammoth is an OSS PostgreSQL change-event delivery appliance for Ruby.
 
