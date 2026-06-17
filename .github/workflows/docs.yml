@@ -1,6 +1,21 @@
 name: Docs
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "lib/**"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "CODE_OF_CONDUCT.md"
+      - "LICENSE.txt"
+      - ".yardopts"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "mammoth.gemspec"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -27,36 +42,16 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "4.0.5"
+          ruby-version: "4.0"
           bundler-cache: true
 
-      - name: Build YARD API docs
-        run: bundle exec yard doc --no-private --output-dir public/api
+      - name: Build YARD documentation
+        run: bundle exec yard doc --no-private --output-dir public
 
-      - name: Build static docs shell
+      - name: Verify documentation output
         run: |
-          mkdir -p public
-          cat > public/index.html <<'HTML'
-          <!doctype html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8">
-              <title>Mammoth - Reliable delivery of PostgreSQL change events</title>
-            </head>
-            <body>
-              <h1>Mammoth</h1>
-              <p><strong>Reliable delivery of PostgreSQL change events.</strong></p>
-              <pre>PostgreSQL → Mammoth → Webhook</pre>
-              <p>
-                Mammoth is a self-hosted PostgreSQL change-event relay focused on
-                reliable arrival, retries, checkpoints, dead letters, and replay metadata.
-              </p>
-              <ul>
-                <li><a href="api/">API Reference</a></li>
-              </ul>
-            </body>
-          </html>
-          HTML
+          test -f public/index.html
+          test -d public/file.README.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
