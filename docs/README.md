@@ -25,14 +25,14 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 
 ## Start here
 
-- [Quick start](quick-start.md)
-- [PostgreSQL requirements](postgresql.md)
-- [Configuration](configuration.md)
-- [CLI reference](cli.md)
-- [Operational state](operational-state.md)
-- [Examples](examples.md)
-- [Kubernetes and Helm](helm.md)
-- [Troubleshooting](troubleshooting.md)
+- [Quick Start](file.quick-start.html)
+- [PostgreSQL](file.postgresql.html)
+- [Configuration](file.configuration.html)
+- [CLI](file.cli.html)
+- [Operational State](file.operational-state.html)
+- [Examples](file.examples.html)
+- [Helm](file.helm.html)
+- [Troubleshooting](file.troubleshooting.html)
 
 ## Current release scope
 
