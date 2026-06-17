@@ -2,6 +2,54 @@
 
 ## Unreleased
 
+## [0.1.1] - 2026-06-17
+
+Documentation and operational guidance release.
+
+### Added
+
+* Documentation site structure under `docs/`.
+* Quick Start guide.
+* PostgreSQL setup guide.
+* Configuration reference.
+* CLI reference.
+* Operational state guide.
+* Examples guide.
+* Helm deployment guide.
+* Troubleshooting guide.
+
+### Improved
+
+* GitHub Pages documentation experience.
+* API documentation discoverability.
+* Documentation navigation and onboarding flow.
+* Cross-linking between guides and API reference.
+
+### Clarified
+
+* PostgreSQL logical replication requirements.
+* Publication and replication slot expectations.
+* SQLite operational state responsibilities.
+* Checkpoint persistence behavior.
+* Dead-letter persistence behavior.
+* Helm deployment assumptions.
+* Kubernetes operational considerations.
+
+### Validation
+
+Documentation was aligned with manually validated deployment scenarios:
+
+* PostgreSQL logical replication.
+* Live webhook delivery.
+* Retry exhaustion and dead-letter persistence.
+* SQLite operational state.
+* Helm chart deployment.
+* Kind-based Kubernetes deployment.
+
+### Notes
+
+This release focuses on documentation, onboarding, and operational clarity. No runtime or configuration changes were introduced.
+
 
 ## [0.1.0] - 2026-06-17
 
