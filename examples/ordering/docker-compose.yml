@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:17
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mammoth -d mammoth_demo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    ports:
+      - "54332:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command: sh -c "gem install webrick --no-document && ruby webhook_receiver.rb"
+    ports:
+      - "9295:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    volumes:
+      - ${MAMMOTH_ORDERING_CONFIG:-./config/preserve_order_true.yml}:/config/mammoth.yml:ro
+      - mammoth_ordering_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webhook_receiver:
+        condition: service_started
+
+  transaction_producer:
+    image: postgres:17
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mammoth:
+        condition: service_started
+    environment:
+      PGPASSWORD: mammoth
+    volumes:
+      - ./producer/produce_transactions.sql:/producer/produce_transactions.sql:ro
+    command:
+      - sh
+      - -c
+      - |
+        sleep 3
+        psql -h postgres -U mammoth -d mammoth_demo -v ON_ERROR_STOP=1 -f /producer/produce_transactions.sql
+
+volumes:
+  mammoth_ordering_data:

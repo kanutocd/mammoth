@@ -79,6 +79,56 @@ docker compose up --build
 The receiver should log a `transaction.committed` payload with multiple row-level
 events in the `events` array.
 
+## `examples/ordering`
+
+Purpose:
+
+```text
+PostgreSQL transactions A, B, C
+    ↓
+TransactionEnvelope delivery
+    ↓
+cdc-concurrent scheduling
+    ↓
+preserve_order true vs false
+```
+
+Use this to validate the operational tradeoff controlled by:
+
+```yaml
+runtime:
+  adapter: concurrent
+  concurrency: 25
+  preserve_order: true
+```
+
+With `preserve_order: true`, the receiver should complete transactions in commit order:
+
+```text
+A
+B
+C
+```
+
+With `preserve_order: false`, the receiver intentionally makes transaction `A` slow, so `B` and `C` may complete first. This demonstrates the throughput-oriented mode where strict delivery order is not guaranteed.
+
+Run the default ordered example:
+
+```bash
+cd examples/ordering
+docker compose down -v
+docker compose up --force-recreate --build
+```
+
+Run the unordered variant:
+
+```bash
+cd examples/ordering
+docker compose down -v
+MAMMOTH_ORDERING_CONFIG=./config/preserve_order_false.yml \
+  docker compose up --force-recreate --build
+```
+
 ## `examples/operational_state`
 
 Purpose:

@@ -252,6 +252,11 @@
           "minimum": 1,
           "description": "Number of downstream delivery workers. Does not create extra PostgreSQL replication slots or connections."
         },
+        "batch_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of work units submitted to the concurrent runtime together. Values greater than 1 allow ordering-insensitive deliveries to overlap more visibly."
+        },
         "preserve_order": {
           "type": "boolean",
           "description": "When true, preserve configured delivery ordering while using the runtime. Disable only for idempotent ordering-insensitive destinations."

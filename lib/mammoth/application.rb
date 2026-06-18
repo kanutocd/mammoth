@@ -29,12 +29,22 @@ module Mammoth
     def start
       runtime = build_runtime
       processed = 0
+      batch = []
 
       consumer.start do |work|
-        process_work(runtime, work)
-        processed += 1
+        if runtime_batching?(runtime)
+          batch << work
+          next unless batch.size >= runtime_batch_size
+
+          processed += process_batch(runtime, batch)
+          batch = []
+        else
+          process_work(runtime, work)
+          processed += 1
+        end
       end
 
+      processed += process_batch(runtime, batch) if runtime_batching?(runtime) && batch.any?
       processed
     ensure
       runtime&.shutdown if runtime.respond_to?(:shutdown)
@@ -50,6 +60,15 @@ module Mammoth
       else
         delivery_worker.deliver(work)
       end
+    end
+
+    def process_batch(runtime, batch)
+      runtime.process_many(batch)
+      batch.size
+    end
+
+    def runtime_batching?(runtime)
+      runtime && runtime_batch_size > 1
     end
 
     def build_runtime
@@ -91,6 +110,10 @@ module Mammoth
 
     def runtime_timeout
       config.dig("runtime", "timeout_seconds")
+    end
+
+    def runtime_batch_size
+      config.dig("runtime", "batch_size") || 1
     end
 
     def runtime_preserve_order?

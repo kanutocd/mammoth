@@ -11,6 +11,7 @@ unit tests Docker-free.
 | [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered to a webhook with SQLite checkpoints. | No |
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
+| [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
 | [`failing_webhook_retry`](./failing_webhook_retry) | Retry exhaustion and dead-letter persistence when a webhook fails. | No |
 | [`operational_state`](./operational_state) | SQLite bootstrap/status workflow for checkpoints and dead letters. | No |
 | [`kubernetes_helm`](./kubernetes_helm) | Helm deployment walkthrough using the public chart. | Deployment only |
