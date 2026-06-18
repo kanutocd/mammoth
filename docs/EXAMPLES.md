@@ -200,3 +200,8 @@ PVC-backed SQLite operational state
 Use this to validate chart rendering, installation, and persistence wiring.
 
 The example expects you to provide real deployment dependencies such as PostgreSQL, secrets, publications, and webhook destinations.
+
+
+## Checkpoint Recovery
+
+`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using a persistent SQLite checkpoint store and permanent PostgreSQL replication slot. It validates that delivered transactions are not replayed after Mammoth restarts and that later transactions continue to flow.

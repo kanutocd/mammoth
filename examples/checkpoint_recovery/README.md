@@ -1,0 +1,106 @@
+# Checkpoint Recovery Example
+
+This example demonstrates that Mammoth resumes from persisted checkpoint state
+across a process restart.
+
+It proves the operational recovery path:
+
+```text
+transaction A
+transaction B
+        ↓
+Mammoth delivers and checkpoints
+        ↓
+Mammoth restarts
+        ↓
+transaction C
+        ↓
+Mammoth continues without replaying A/B
+```
+
+Expected final receiver state:
+
+```text
+delivered=ABC
+```
+
+Not:
+
+```text
+delivered=ABABC
+```
+
+and not:
+
+```text
+delivered=AB
+```
+
+## Run
+
+Start PostgreSQL, the webhook receiver, and Mammoth:
+
+```bash
+docker compose up -d postgres webhook_receiver mammoth
+```
+
+Produce two transactions before the restart:
+
+```bash
+docker compose run --rm producer_before_restart
+```
+
+Check the receiver log:
+
+```bash
+docker compose logs webhook_receiver
+```
+
+You should see:
+
+```text
+delivered=A
+delivered=AB
+```
+
+Restart Mammoth only:
+
+```bash
+docker compose stop mammoth
+docker compose start mammoth
+```
+
+Produce one more transaction after the restart:
+
+```bash
+docker compose run --rm producer_after_restart
+```
+
+Inspect the receiver log again:
+
+```bash
+docker compose logs webhook_receiver
+```
+
+Expected final output includes:
+
+```text
+delivered=ABC
+```
+
+## Why This Matters
+
+Mammoth stores operational state in SQLite and uses a permanent PostgreSQL
+logical replication slot in this example.
+
+The important property is not just that Mammoth restarts. The important property
+is that already delivered and checkpointed transactions are not replayed after
+restart, while later transactions continue to be delivered.
+
+## Reset
+
+To remove all PostgreSQL, Mammoth, and receiver state:
+
+```bash
+docker compose down -v
+```

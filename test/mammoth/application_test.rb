@@ -100,6 +100,17 @@ module Mammoth
       end
     end
 
+    def test_default_postgres_source_receives_application_checkpoint_store
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+        app = Application.new(Configuration.load(config_path), sink: DeliveryWorkerTest::RecordingSink.new)
+
+        assert_instance_of Sources::Postgres, app.consumer.source
+        assert_same app.checkpoint_store, app.consumer.source.checkpoint_store
+      end
+    end
+
     def test_concurrent_runtime_defaults_to_preserve_order
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")

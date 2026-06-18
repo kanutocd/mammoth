@@ -209,7 +209,7 @@ kubectl rollout restart deploy/mammoth
 
 See:
 
-* `docs/troubleshooting.md`
+* [Troubleshooting](file.TROUBLESHOOTING.html)
 
 Common topics include:
 

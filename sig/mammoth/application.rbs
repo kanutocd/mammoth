@@ -25,6 +25,7 @@ module Mammoth
     attr_reader consumer: untyped
 
     attr_reader delivery_worker: untyped
+    attr_reader checkpoint_store: untyped
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -43,6 +44,7 @@ module Mammoth
 
     def build_runtime: () -> untyped
 
+    def build_source: () -> untyped
     def build_delivery_worker: (sink: untyped, sleeper: untyped) -> untyped
 
     def transaction_delivery?: () -> bool

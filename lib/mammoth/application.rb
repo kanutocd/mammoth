@@ -10,7 +10,7 @@ module Mammoth
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
   class Application
-    attr_reader :config, :sqlite_store, :consumer, :delivery_worker
+    attr_reader :config, :sqlite_store, :consumer, :delivery_worker, :checkpoint_store
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -19,7 +19,8 @@ module Mammoth
     def initialize(config, source: nil, sink: nil, sleeper: Kernel.method(:sleep))
       @config = config
       @sqlite_store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
-      @consumer = ReplicationConsumer.new(source: source, delivery_unit: delivery_unit)
+      @checkpoint_store = CheckpointStore.new(sqlite_store)
+      @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
       @delivery_worker = build_delivery_worker(sink: sink || WebhookSink.from_config(config), sleeper: sleeper)
     end
 
@@ -82,11 +83,15 @@ module Mammoth
       )
     end
 
+    def build_source
+      Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
+    end
+
     def build_delivery_worker(sink:, sleeper:)
       DeliveryWorker.from_config(
         config,
         sink: sink,
-        checkpoint_store: CheckpointStore.new(sqlite_store),
+        checkpoint_store: checkpoint_store,
         dead_letter_store: DeadLetterStore.new(sqlite_store),
         sleeper: sleeper
       )

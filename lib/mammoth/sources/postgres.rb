@@ -23,6 +23,8 @@ module Mammoth
       attr_reader :decoder
       # @return [Object, nil] injected CDC source adapter
       attr_reader :adapter
+      # @return [Mammoth::CheckpointStore, nil] checkpoint store used for restart resume
+      attr_reader :checkpoint_store
 
       # Build a PostgreSQL CDC source.
       #
@@ -31,12 +33,14 @@ module Mammoth
       # @param parser [Object, nil] injected pgoutput parser or relation tracker
       # @param decoder [Object, nil] injected pgoutput decoder
       # @param adapter [Object, nil] injected source adapter
-      def initialize(config, runner: nil, parser: nil, decoder: nil, adapter: nil)
+      # @param checkpoint_store [Mammoth::CheckpointStore, nil] persisted checkpoints for restart resume
+      def initialize(config, runner: nil, parser: nil, decoder: nil, adapter: nil, checkpoint_store: nil)
         @config = config
         @runner = runner
         @parser = parser
         @decoder = decoder
         @adapter = adapter
+        @checkpoint_store = checkpoint_store
       end
 
       # Stream CDC::Core-shaped work from PostgreSQL logical replication.
@@ -281,13 +285,46 @@ module Mammoth
           database_url: database_url,
           slot_name: required_config("replication", "slot"),
           publication_names: required_publications,
-          start_lsn: config.dig("replication", "start_lsn"),
+          start_lsn: replication_start_lsn,
           auto_create_slot: config.dig("replication", "auto_create_slot") == true,
           temporary_slot: config.dig("replication", "temporary_slot") == true
         }.tap do |options|
           feedback_interval = config.dig("replication", "feedback_interval")
           options[:feedback_interval] = feedback_interval unless feedback_interval.nil?
         end
+      end
+
+
+      def replication_start_lsn
+        configured = config.dig("replication", "start_lsn")
+        return configured unless blank?(configured)
+
+        checkpoint_lsn
+      end
+
+      def checkpoint_lsn
+        return nil unless checkpoint_store
+
+        row = checkpoint_store.fetch(source_name: source_name, slot_name: required_config("replication", "slot"))
+        normalize_lsn(row&.fetch("last_lsn", nil))
+      end
+
+      def source_name
+        required_config("mammoth", "name")
+      end
+
+      def normalize_lsn(value)
+        return nil if blank?(value)
+
+        lsn = value.to_s
+        return lsn if lsn.include?("/")
+        return "0/#{lsn.to_i.to_s(16).upcase}" if lsn.match?(/\A\d+\z/)
+
+        lsn
+      end
+
+      def blank?(value)
+        value.nil? || value == ""
       end
 
       def required_publications

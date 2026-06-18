@@ -20,3 +20,5 @@ Gemfile.lock
 .sqlite3/*.db-wal
 
 /test/tmp/
+
+/public/

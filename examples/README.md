@@ -23,3 +23,8 @@ DLQ behavior can be exercised without requiring Docker or PostgreSQL in the unit
 suite. The live replication examples are the place where PostgreSQL, logical
 replication, TransactionEnvelope delivery, and the CDC Ecosystem source adapter
 are intentionally exercised together.
+
+
+## Checkpoint Recovery
+
+`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using a persistent SQLite checkpoint store and permanent PostgreSQL replication slot. It validates that delivered transactions are not replayed after Mammoth restarts and that later transactions continue to flow.

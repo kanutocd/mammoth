@@ -1,0 +1,13 @@
+module Mammoth
+  class DeliveredEnvelopeStore
+    SCHEMA: String
+    attr_reader sqlite_store: untyped
+    def initialize: (untyped sqlite_store) -> void
+    def delivered?: (untyped idempotency_key) -> bool
+    def record!: (idempotency_key: untyped, source_name: untyped, slot_name: untyped, destination_name: untyped, delivery_unit: untyped, transaction_id: untyped, source_position: untyped) -> untyped
+    def all: () -> untyped
+    def count: () -> untyped
+    def ensure_schema!: () -> untyped
+    def database: () -> untyped
+  end
+end

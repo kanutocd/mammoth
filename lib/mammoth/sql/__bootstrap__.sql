@@ -53,3 +53,27 @@ ON dead_letters(namespace, entity);
 
 CREATE INDEX IF NOT EXISTS idx_dead_letters_failed_at
 ON dead_letters(failed_at);
+
+
+CREATE TABLE IF NOT EXISTS delivered_envelopes (
+  id INTEGER PRIMARY KEY,
+  idempotency_key TEXT NOT NULL,
+  source_name TEXT NOT NULL,
+  slot_name TEXT NOT NULL,
+  destination_name TEXT NOT NULL,
+  delivery_unit TEXT NOT NULL,
+  transaction_id TEXT,
+  source_position TEXT,
+  delivered_at TEXT NOT NULL,
+
+  UNIQUE (idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_delivered_envelopes_source
+ON delivered_envelopes(source_name, slot_name);
+
+CREATE INDEX IF NOT EXISTS idx_delivered_envelopes_destination
+ON delivered_envelopes(destination_name);
+
+CREATE INDEX IF NOT EXISTS idx_delivered_envelopes_source_position
+ON delivered_envelopes(source_position);

@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:17
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mammoth -d mammoth_demo"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    ports:
+      - "54333:5432"
+    volumes:
+      - checkpoint_postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        gem install webrick --no-document
+        ruby /app/webhook_receiver.rb
+    ports:
+      - "9296:9292"
+    environment:
+      RECEIVER_DATA_DIR: /data
+    volumes:
+      - ./receiver:/app:ro
+      - checkpoint_receiver_data:/data
+
+  mammoth:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - checkpoint_mammoth_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webhook_receiver:
+        condition: service_started
+
+  producer_before_restart:
+    image: postgres:17
+    profiles: ["producer"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: mammoth
+    volumes:
+      - ./producer/before_restart.sql:/producer/before_restart.sql:ro
+    command:
+      - sh
+      - -c
+      - |
+        psql -h postgres -U mammoth -d mammoth_demo -v ON_ERROR_STOP=1 -f /producer/before_restart.sql
+
+  producer_after_restart:
+    image: postgres:17
+    profiles: ["producer"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: mammoth
+    volumes:
+      - ./producer/after_restart.sql:/producer/after_restart.sql:ro
+    command:
+      - sh
+      - -c
+      - |
+        psql -h postgres -U mammoth -d mammoth_demo -v ON_ERROR_STOP=1 -f /producer/after_restart.sql
+
+volumes:
+  checkpoint_postgres_data:
+  checkpoint_mammoth_data:
+  checkpoint_receiver_data:

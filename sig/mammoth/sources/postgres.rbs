@@ -7,6 +7,7 @@ module Mammoth
       @parser: untyped
       @decoder: untyped
       @adapter: untyped
+      @checkpoint_store: untyped
       @effective_runner: untyped
       @effective_parser: untyped
       @effective_decoder: untyped
@@ -20,8 +21,9 @@ module Mammoth
       attr_reader parser: untyped
       attr_reader decoder: untyped
       attr_reader adapter: untyped
+      attr_reader checkpoint_store: untyped
 
-      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped) -> void
+      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped, ?checkpoint_store: untyped) -> void
 
       def each: () ?{ (untyped work) -> untyped } -> (Enumerator[untyped, nil] | nil)
 
@@ -54,6 +56,11 @@ module Mammoth
       def build_parser: () -> untyped
       def build_decoder: () -> untyped
       def build_adapter: () -> untyped
+      def replication_start_lsn: () -> untyped
+      def checkpoint_lsn: () -> untyped
+      def source_name: () -> untyped
+      def normalize_lsn: (untyped value) -> untyped
+      def blank?: (untyped value) -> bool
       def required_publications: () -> Array[String]
       def database_url: () -> String
       def callable_accepts_metadata?: (untyped object, Symbol method_name) -> bool

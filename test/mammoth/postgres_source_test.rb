@@ -345,6 +345,52 @@ module Mammoth
       refute_includes source.send(:runner_options), :feedback_interval
     end
 
+    def test_runner_options_resume_from_persisted_checkpoint_when_start_lsn_is_not_configured
+      with_temp_dir do |dir|
+        config = Configuration.load(fixture_config_path)
+        config.data.fetch("sqlite")["path"] = File.join(dir, "mammoth.db")
+        config.data.fetch("replication").delete("start_lsn")
+        store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
+        checkpoint_store = CheckpointStore.new(store)
+        checkpoint_store.write(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod",
+          publication_name: "mammoth_publication",
+          last_lsn: "26622536"
+        )
+        source = Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
+
+        assert_equal "0/1963098", source.send(:runner_options).fetch(:start_lsn)
+      end
+    end
+
+    def test_runner_options_prefer_explicit_start_lsn_over_persisted_checkpoint
+      with_temp_dir do |dir|
+        config = Configuration.load(fixture_config_path)
+        config.data.fetch("sqlite")["path"] = File.join(dir, "mammoth.db")
+        config.data.fetch("replication")["start_lsn"] = "0/CONFIG"
+        store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
+        checkpoint_store = CheckpointStore.new(store)
+        checkpoint_store.write(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod",
+          publication_name: "mammoth_publication",
+          last_lsn: "0/CHECKPOINT"
+        )
+        source = Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
+
+        assert_equal "0/CONFIG", source.send(:runner_options).fetch(:start_lsn)
+      end
+    end
+
+    def test_runner_options_do_not_resume_without_checkpoint
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication").delete("start_lsn")
+      source = Sources::Postgres.new(config)
+
+      assert_nil source.send(:runner_options).fetch(:start_lsn)
+    end
+
     def test_rejects_empty_publications
       config = Configuration.load(fixture_config_path)
       config.data.fetch("replication")["publications"] = []

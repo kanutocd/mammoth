@@ -90,7 +90,7 @@ module Mammoth
 
     def start
       config = load_config
-      processed = Application.new(config, source: Sources::Postgres.new(config)).start
+      processed = Application.new(config).start
       puts "Processed events: #{processed}"
       0
     end
