@@ -26,6 +26,7 @@ target :lib do
   library "pgoutput-decoder"
   library "pgoutput-source-adapter"
   library "cdc-core"
+  library "webrick"
 
   signature "sig"
   check "lib"

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added optional observability support with `/healthz`, `/readyz`, and `/metrics` endpoints, plus CLI startup, configuration, and documentation coverage.
+
 ## 0.3.0
 
 ### Added

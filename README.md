@@ -53,6 +53,7 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - Docker image support
 - public Helm chart support
 - unit and e2e test tasks
+- Health and metrics endpoints
 
 ## Boundary
 
@@ -84,6 +85,7 @@ bundle exec ./exe/mammoth validate config/mammoth.example.yml
 bundle exec ./exe/mammoth bootstrap config/mammoth.example.yml
 bundle exec ./exe/mammoth status config/mammoth.example.yml
 bundle exec ./exe/mammoth start config/mammoth.example.yml
+bundle exec ./exe/mammoth observability config/mammoth.example.yml
 ```
 
 Deliver a single normalized event JSON file through Mammoth's delivery path:

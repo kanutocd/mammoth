@@ -183,7 +183,6 @@ module Mammoth
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
     def test_concurrent_runtime_processes_configured_batches
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -209,7 +208,6 @@ module Mammoth
         assert_equal 3, DeliveredEnvelopeStore.new(app.sqlite_store).count
       end
     end
-    # rubocop:enable Metrics/MethodLength
 
     def test_shutdown_skips_runtime_without_shutdown_hook
       runtime = Object.new

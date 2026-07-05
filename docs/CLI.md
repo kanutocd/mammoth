@@ -101,3 +101,21 @@ mammoth dead-letters replay config/mammoth.yml 12
 ```
 
 `list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. `replay` re-delivers the stored payload through the current Mammoth configuration and marks the row resolved on success.
+
+
+## Observability server
+
+Start the optional health, readiness, and metrics HTTP server:
+
+```bash
+bundle exec ./exe/mammoth observability config/mammoth.example.yml
+```
+
+Endpoints:
+
+- `GET /healthz`
+- `GET /readyz`
+- `GET /metrics`
+
+The server reads Mammoth's SQLite operational state and does not start a
+PostgreSQL replication stream.

@@ -274,6 +274,13 @@ sqlite:
   # In Kubernetes, back this path with a PersistentVolumeClaim.
   path: data/mammoth.db
 
+observability:
+  # Bind host for the optional health, readiness, and metrics server.
+  host: 0.0.0.0
+
+  # HTTP port for /healthz, /readyz, and /metrics.
+  port: 9393
+
 logging:
   # Log verbosity.
   #

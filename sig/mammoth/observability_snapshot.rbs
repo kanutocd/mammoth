@@ -1,0 +1,51 @@
+module Mammoth
+  # Builds health, readiness, and metrics snapshots from Mammoth's local
+  # operational state.
+  class ObservabilitySnapshot
+    @config: untyped
+
+    @sqlite_store: untyped
+
+    @clock: untyped
+
+    attr_reader config: untyped
+
+    attr_reader sqlite_store: untyped
+
+    attr_reader clock: untyped
+
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+    # @param clock [#call] time source returning a Time-like object
+    def initialize: (untyped config, ?sqlite_store: untyped?, ?clock: untyped?) -> void
+
+    # Build a liveness response.
+    #
+    # @return [Hash] health payload
+    def health: () -> untyped
+
+    # Build a readiness response.
+    #
+    # @return [Hash] readiness payload
+    def readiness: () -> untyped
+
+    # Build a Prometheus text exposition document.
+    #
+    # @return [String] Prometheus metrics text
+    def prometheus: () -> String
+
+    private
+
+    def operational_store: () -> untyped
+
+    def mammoth_name: () -> untyped
+
+    def checked_at: () -> untyped
+
+    def metric_headers: () -> untyped
+
+    def metric_line: (untyped name, untyped value) -> String
+
+    def escape_label: (untyped value) -> String
+  end
+end

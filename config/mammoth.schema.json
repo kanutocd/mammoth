@@ -319,6 +319,24 @@
         }
       },
       "description": "Downstream delivery runtime settings. Runtime concurrency affects webhook/destination delivery only, not PostgreSQL replication stream count."
+    },
+    "observability": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Bind host for the optional Mammoth observability HTTP server exposing /healthz, /readyz, and /metrics."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "TCP port for the optional Mammoth observability HTTP server."
+        }
+      },
+      "description": "Optional health, readiness, and metrics endpoint settings."
     }
   },
   "description": "Mammoth relay configuration. Mammoth consumes PostgreSQL logical replication changes and delivers them to downstream destinations while preserving checkpoint, retry, and dead-letter semantics."

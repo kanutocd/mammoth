@@ -5,6 +5,7 @@ require "test_helper"
 require "webrick"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class CLITest < Minitest::Test
     def test_version_command
       stdout, stderr = capture_io do
@@ -89,6 +90,22 @@ module Mammoth
           assert_empty stderr
           assert_match(/Processed events: 7/, stdout)
         end
+      end
+    end
+
+    def test_observability_command_starts_server
+      fake_server = Object.new
+      def fake_server.host = "127.0.0.1"
+      def fake_server.port = 9393
+      def fake_server.start = nil
+
+      ObservabilityServer.stub(:new, fake_server) do
+        stdout, stderr = capture_io do
+          assert_equal 0, CLI.call(["observability", fixture_config_path])
+        end
+
+        assert_empty stderr
+        assert_match(/Mammoth observability listening on 127.0.0.1:9393/, stdout)
       end
     end
 
@@ -178,4 +195,5 @@ module Mammoth
       thread&.join
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

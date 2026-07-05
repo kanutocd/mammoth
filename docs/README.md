@@ -33,6 +33,7 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 - [CLI](file.CLI.html)
 - [Benchmarks](file.BENCHMARKS.html)
 - [Operational State](file.OPERATIONAL-STATE.html)
+- [Observability](file.OBSERVABILITY.html)
 - [Examples](file.EXAMPLES.html)
 - [Helm](file.HELM.html)
 - [Troubleshooting](file.TROUBLESHOOTING.html)

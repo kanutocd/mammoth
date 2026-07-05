@@ -26,7 +26,8 @@ module Mammoth
       "  mammoth deliver-sample CONFIG EVENT_JSON",
       "  mammoth dead-letters list CONFIG [--status STATUS] [--limit N]",
       "  mammoth dead-letters show CONFIG ID",
-      "  mammoth dead-letters replay CONFIG [ID ...]"
+      "  mammoth dead-letters replay CONFIG [ID ...]",
+      "  mammoth observability CONFIG"
     ].join("\n")
 
     # Run the CLI.
@@ -56,6 +57,7 @@ module Mammoth
       when "start" then start
       when "deliver-sample" then deliver_sample
       when "dead-letters" then dead_letters
+      when "observability" then observability
       else
         warn USAGE
         1
@@ -128,6 +130,14 @@ module Mammoth
     # @return [Integer] process status code
     def dead_letters
       DeadLetterCommands.call(argv)
+    end
+
+    def observability
+      config = load_config
+      server = ObservabilityServer.new(config)
+      puts "Mammoth observability listening on #{server.host}:#{server.port}"
+      server.start
+      0
     end
 
     def load_config

@@ -1,0 +1,63 @@
+module Mammoth
+  # Small HTTP server exposing Mammoth health, readiness, and metrics endpoints.
+  class ObservabilityServer
+    @config: untyped
+
+    @host: untyped
+
+    @port: untyped
+
+    @sqlite_store: untyped
+
+    @logger: untyped
+
+    @server: untyped
+
+    DEFAULT_HOST: "0.0.0.0"
+
+    DEFAULT_PORT: 9393
+
+    attr_reader config: untyped
+
+    attr_reader host: untyped
+
+    attr_reader port: untyped
+
+    attr_reader sqlite_store: untyped
+
+    attr_reader logger: untyped
+
+    attr_reader server: untyped
+
+    # @param config [Mammoth::Configuration] loaded configuration
+    # @param host [String, nil] bind host override
+    # @param port [Integer, nil] bind port override
+    # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+    # @param logger [WEBrick::Log, nil] optional WEBrick logger
+    def initialize: (untyped config, ?host: untyped?, ?port: untyped?, ?sqlite_store: untyped?, ?logger: untyped?) -> void
+
+    # Start the blocking HTTP server.
+    #
+    # @return [void]
+    def start: () -> untyped
+
+    # Stop the HTTP server.
+    #
+    # @return [void]
+    def shutdown: () -> untyped
+
+    private
+
+    def build_server: () -> untyped
+
+    def mount_endpoints: () -> untyped
+
+    def write_readiness: (untyped response) -> untyped
+
+    def write_metrics: (untyped response) -> untyped
+
+    def write_json: (untyped response, untyped payload, status: untyped) -> untyped
+
+    def snapshot: () -> untyped
+  end
+end

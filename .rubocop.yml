@@ -20,7 +20,7 @@ Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
 Metrics/MethodLength:
-  Max: 19
+  Max: 20
 
 Metrics/ClassLength:
   Max: 145

@@ -222,3 +222,18 @@ error
 ```bash
 mammoth validate config/mammoth.yml
 ```
+
+
+## Observability
+
+Mammoth can expose optional health, readiness, and metrics endpoints.
+
+```yaml
+observability:
+  host: 0.0.0.0
+  port: 9393
+```
+
+`host` controls the bind address. `port` controls the HTTP port. The endpoints
+are started with `mammoth observability CONFIG` and include `/healthz`,
+`/readyz`, and `/metrics`.

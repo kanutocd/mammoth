@@ -43,6 +43,8 @@ module Mammoth
 
     def dead_letters: () -> untyped
 
+    def observability: () -> 0
+
     def load_config: () -> untyped
   end
 end

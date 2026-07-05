@@ -150,7 +150,7 @@ module Mammoth
       assert_match(/source adapter must respond/, error.message)
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize
     def test_buffers_pgoutput_transaction_until_commit
       decoded_messages = {
         "begin" => FakeBegin.new("tx-1"),
@@ -175,9 +175,8 @@ module Mammoth
       assert_equal 2, envelope.events.length
       assert_equal(%w[row-1 row-2], envelope.events.map { |event| event.fetch("source_position") })
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize
 
-    # rubocop:disable Metrics/MethodLength
     def test_commit_metadata_supplies_transaction_commit_lsn
       decoded_messages = {
         "begin" => FakeBegin.new("tx-2"),
@@ -202,7 +201,6 @@ module Mammoth
       assert_equal "0/3", envelope.commit_lsn
       assert_equal "0/2", envelope.events.first.fetch("source_position")
     end
-    # rubocop:enable Metrics/MethodLength
 
     def test_decoder_can_emit_array_of_decoded_messages
       source = Sources::Postgres.new(
