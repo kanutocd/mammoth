@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## 0.3.0
+
 ### Added
 
 - Added dead-letter inspection and replay commands for operational recovery.
+- Added dead-letter support for list, show, and replay, with replay routing both event and transaction dead letters back through the existing delivery path and resolving successful rows
+
 
 ## 0.2.0
 
