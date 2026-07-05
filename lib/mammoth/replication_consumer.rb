@@ -74,7 +74,7 @@ module Mammoth
     def synthetic_transaction_envelope(event)
       validate_cdc_event!(event)
 
-      event_hash = event.respond_to?(:to_h) ? event.to_h : event
+      event_hash = event.to_h
       SyntheticTransactionEnvelope.new(
         [event],
         event_hash["transaction_id"] || event_hash[:transaction_id] ||

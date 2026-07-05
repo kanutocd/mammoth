@@ -48,7 +48,7 @@ module Mammoth
       processed += process_batch(runtime, batch) if runtime_batching?(runtime) && batch.any?
       processed
     ensure
-      runtime&.shutdown if runtime.respond_to?(:shutdown)
+      runtime.shutdown if runtime.respond_to?(:shutdown)
     end
 
     private

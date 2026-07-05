@@ -11,6 +11,13 @@ module Mammoth
       assert_equal({ kind: :event, work: "event-1" }, processor.process("event-1"))
     end
 
+    def test_call_delegates_to_process
+      worker = RecordingWorker.new
+      processor = DeliveryProcessor.new(delivery_worker: worker)
+
+      assert_equal({ kind: :event, work: "event-1" }, processor.call("event-1"))
+    end
+
     def test_declares_concurrent_safety_for_cdc_concurrent_processor_pool
       processor = DeliveryProcessor.new(delivery_worker: RecordingWorker.new)
 

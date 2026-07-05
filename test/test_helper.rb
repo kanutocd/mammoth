@@ -7,7 +7,7 @@ SimpleCov.external_at_exit = true
 SimpleCov.start do
   enable_coverage :branch
   add_filter "/test/"
-  minimum_coverage line: 95, branch: 95 unless ENV["MAMMOTH_E2E"] == "1"
+  minimum_coverage line: 99, branch: 99 unless ENV["MAMMOTH_E2E"] == "1"
 end
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)

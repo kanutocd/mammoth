@@ -94,6 +94,42 @@ module Mammoth
       end
     end
 
+    def test_from_config_resolves_signing_defaults
+      original_secret = ENV["MAMMOTH_WEBHOOK_SIGNING_SECRET"]
+      ENV["MAMMOTH_WEBHOOK_SIGNING_SECRET"] = "configured-secret"
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("webhook")["signing"] = { "secret_env" => "MAMMOTH_WEBHOOK_SIGNING_SECRET" }
+
+      sink = WebhookSink.from_config(config)
+
+      assert_equal "configured-secret", sink.signing.fetch(:secret)
+      assert_equal "X-Mammoth-Signature", sink.signing.fetch(:signature_header)
+      assert_equal "X-Mammoth-Timestamp", sink.signing.fetch(:timestamp_header)
+    ensure
+      ENV["MAMMOTH_WEBHOOK_SIGNING_SECRET"] = original_secret
+    end
+
+    def test_from_config_rejects_unsupported_signing_algorithm
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("webhook")["signing"] = {
+        "algorithm" => "rsa_sha256",
+        "secret_env" => "MAMMOTH_WEBHOOK_SIGNING_SECRET"
+      }
+
+      error = assert_raises(ConfigurationError) { WebhookSink.from_config(config) }
+
+      assert_match(/webhook.signing.algorithm/, error.message)
+    end
+
+    def test_from_config_rejects_missing_signing_secret_env
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("webhook")["signing"] = { "secret_env" => "MAMMOTH_MISSING_WEBHOOK_SECRET" }
+
+      error = assert_raises(ConfigurationError) { WebhookSink.from_config(config) }
+
+      assert_match(/MAMMOTH_MISSING_WEBHOOK_SECRET/, error.message)
+    end
+
     def test_delivers_transaction_envelope_to_webhook
       with_test_server(202) do |url, received|
         sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)

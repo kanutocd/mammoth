@@ -47,6 +47,22 @@ module Mammoth
       assert_match(/requires cdc-concurrent/, error.message)
     end
 
+    def test_build_pool_wraps_load_error
+      runtime_class = Class.new(ConcurrentDeliveryRuntime) do
+        private
+
+        def require(_feature)
+          raise LoadError, "missing runtime"
+        end
+      end
+
+      error = assert_raises(ConfigurationError) do
+        runtime_class.new(processor: RecordingProcessor.new, concurrency: 1, timeout: nil, preserve_order: true)
+      end
+
+      assert_match(/missing runtime/, error.message)
+    end
+
     def test_shutdown_is_noop_when_pool_does_not_support_shutdown
       runtime = ConcurrentDeliveryRuntime.allocate
       runtime.instance_variable_set(:@pool, Object.new)

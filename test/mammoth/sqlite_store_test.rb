@@ -54,6 +54,36 @@ module Mammoth
       end
     end
 
+    def test_migrate_applies_new_migration
+      migration = File.join(SQLiteStore::MIGRATION_DIR, "coverage_extra.sql")
+      File.write(migration, "CREATE TABLE coverage_extra(id INTEGER PRIMARY KEY);")
+
+      with_temp_dir do |dir|
+        store = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+
+        assert_same store, store.migrate!("coverage_extra.sql")
+        assert store.table_exists?("coverage_extra")
+        assert store.version_exists?("coverage_extra")
+      end
+    ensure
+      FileUtils.rm_f(migration) if migration
+    end
+
+    def test_migrate_wraps_sqlite_errors
+      migration = File.join(SQLiteStore::MIGRATION_DIR, "coverage_invalid.sql")
+      File.write(migration, "CREATE TABLE broken(")
+
+      with_temp_dir do |dir|
+        store = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+
+        error = assert_raises(StoreError) { store.migrate!("coverage_invalid.sql") }
+
+        assert_match(/failed to apply migration coverage_invalid.sql/, error.message)
+      end
+    ensure
+      FileUtils.rm_f(migration) if migration
+    end
+
     def test_connect_wraps_sqlite_open_errors
       with_temp_dir do |dir|
         error = assert_raises(StoreError) { SQLiteStore.connect(dir) }

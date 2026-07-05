@@ -55,6 +55,13 @@ module Mammoth
         assert_equal({ operation: "insert" }, source.send(:enrich_work_position, { operation: "insert" }, nil, nil))
       end
 
+      def test_enrich_work_position_noops_for_non_hash_work_with_metadata_position
+        source = Postgres.new(Configuration.load(fixture_config_path))
+        object = Object.new
+
+        assert_same object, source.send(:enrich_work_position, object, { lsn: "0/metadata" }, nil)
+      end
+
       def test_enrich_work_position_handles_symbol_keyed_and_existing_positions
         source = Postgres.new(Configuration.load(fixture_config_path))
 
@@ -76,6 +83,16 @@ module Mammoth
 
         assert_equal "0/decoded", enriched.fetch("source_position")
         assert_equal "0/decoded", enriched.fetch("commit_lsn")
+      end
+
+      def test_enrich_work_position_preserves_existing_string_keyed_position
+        source = Postgres.new(Configuration.load(fixture_config_path))
+        work = { "operation" => "insert", "commit_lsn" => "0/existing" }
+
+        enriched = source.send(:enrich_work_position, work, { lsn: "0/new" }, Object.new)
+
+        assert_same work, enriched
+        assert_equal "0/existing", enriched.fetch("commit_lsn")
       end
 
       def test_value_from_handles_nil_plain_objects_and_string_keys
@@ -100,6 +117,45 @@ module Mammoth
         source.send(:process_decoded, "row", nil) { |work| emitted << work }
 
         assert_empty emitted
+      end
+
+      def test_process_decoded_skips_nil_work_from_mixed_adapter_result
+        source = Postgres.new(
+          Configuration.load(fixture_config_path),
+          adapter: ->(_decoded) { [nil, { "operation" => "insert", "source_position" => "0/mixed" }] }
+        )
+        emitted = []
+
+        source.send(:process_decoded, "row", nil) { |work| emitted << work }
+
+        assert_equal [{ "operation" => "insert", "source_position" => "0/mixed" }], emitted
+      end
+
+      def test_decode_message_reports_unsupported_decoder_interface
+        source = Postgres.new(Configuration.load(fixture_config_path), decoder: Object.new)
+
+        error = assert_raises(ReplicationError) { source.send(:decode_message, "payload", nil) }
+
+        assert_match(/pgoutput decoder must respond/, error.message)
+      end
+
+      def test_default_pgoutput_component_builders_are_memoized
+        source = Postgres.new(Configuration.load(fixture_config_path))
+
+        assert_same source.send(:effective_parser), source.send(:effective_parser)
+        assert_same source.send(:effective_decoder), source.send(:effective_decoder)
+        assert_same source.send(:effective_adapter), source.send(:effective_adapter)
+        assert_same source.send(:effective_runner), source.send(:effective_runner)
+      end
+
+      def test_require_optional_reports_missing_feature
+        source = Postgres.new(Configuration.load(fixture_config_path))
+
+        error = assert_raises(ReplicationError) do
+          source.send(:require_optional!, "mammoth/missing/coverage_feature", "missing-gem")
+        end
+
+        assert_match(/missing-gem is required/, error.message)
       end
 
       def test_checkpoint_lsn_is_nil_when_checkpoint_row_is_missing

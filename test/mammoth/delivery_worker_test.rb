@@ -92,6 +92,18 @@ module Mammoth
       end
     end
 
+    def test_checkpoint_helper_serializes_work
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        worker = build_worker(sqlite, sink: RecordingSink.new)
+
+        worker.send(:checkpoint, sample_event, serializer: EventSerializer)
+
+        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+        assert_equal "0/16F4A8B0", checkpoint.fetch("last_lsn")
+      end
+    end
+
     private
 
     def build_worker(sqlite, sink:, sleeper: ->(_seconds) {})

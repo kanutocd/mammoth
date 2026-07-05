@@ -75,7 +75,7 @@ module Mammoth
         process_decoded(decoded, metadata, &block)
       end
 
-      # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
+      # rubocop:disable Metrics/MethodLength
       def process_decoded(decoded, metadata, &block)
         return if decoded.nil?
 
@@ -95,18 +95,15 @@ module Mammoth
         end
 
         normalize_decoded(decoded).each do |work|
-          next unless work
-
           work = enrich_work_position(work, metadata, decoded)
           if transaction_buffer_active?
-            transaction_events = @transaction_events
-            transaction_events << work if transaction_events
+            Array(@transaction_events) << work
           else
             block.call(work)
           end
         end
       end
-      # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/MethodLength
 
       def parse_payload(payload)
         parser = effective_parser
