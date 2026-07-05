@@ -12,6 +12,10 @@
 - Added `DeliveryProcessor` abstraction for runtime execution.
 - Added `TransactionEnvelopeSerializer` for transaction payload serialization.
 - Added rich self-documenting YAML configuration examples.
+- Added configurable webhook HTTP headers through `webhook.headers`.
+- Added environment-backed webhook headers through `webhook.header_env` for secrets such as bearer tokens.
+- Added optional HMAC-SHA256 webhook request signing through `webhook.signing`.
+- Added E2E coverage for duplicate delivery suppression, transaction webhook payloads, dead-letter persistence, and signed/authenticated webhook requests.
 
 ### Changed
 
@@ -20,6 +24,7 @@
 - Delivery pipeline now preserves transaction boundaries from ingestion through webhook delivery.
 - Replication slot creation now correctly honors configured temporary/permanent slot settings.
 - Concurrent runtime integration now complies with `cdc-concurrent` processor safety requirements.
+- Webhook delivery now applies configured static headers, env-backed headers, and per-request signature headers before sending payloads.
 
 ### Fixed
 
@@ -28,6 +33,7 @@
 - Fixed replication slot option handling for boolean configuration values.
 - Fixed transaction webhook example startup and producer execution flow.
 - Fixed `cdc-concurrent` runtime compatibility and processor validation failures.
+- Fixed quality gate drift by restoring passing coverage, RuboCop, Steep, and YARD validation.
 
 ### Examples
 
@@ -44,6 +50,7 @@
 - Established the foundation for transaction-aware checkpointing.
 - Established the foundation for ordering policies based on transaction boundaries.
 - Established the foundation for future multi-destination fanout delivery.
+- Added real `cdc-concurrent` runtime coverage outside the unit-test fake runtime.
 
 
 ## [0.1.1] - 2026-06-17

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "openssl"
 require "webrick"
 
 module Mammoth
@@ -11,6 +12,7 @@ module Mammoth
 
       assert_equal "primary_webhook", sink.name
       assert_equal 5, sink.timeout_seconds
+      assert_equal "local_mammoth", sink.headers.fetch("X-Mammoth-Source")
     end
 
     def test_delivers_event_to_webhook
@@ -21,6 +23,74 @@ module Mammoth
         assert_equal "delivered", result.fetch(:status)
         assert_equal 201, result.fetch(:http_status)
         assert_match(/event-1/, received.fetch(:body))
+      end
+    end
+
+    def test_sends_configured_static_and_env_headers
+      original_token = ENV["MAMMOTH_WEBHOOK_TOKEN"]
+      ENV["MAMMOTH_WEBHOOK_TOKEN"] = "Bearer test-token"
+
+      with_test_server(204) do |url, received|
+        sink = WebhookSink.new(
+          name: "primary_webhook",
+          url: url,
+          timeout_seconds: 2,
+          headers: {
+            "X-Static" => "static-value",
+            "Authorization" => ENV.fetch("MAMMOTH_WEBHOOK_TOKEN")
+          }
+        )
+
+        sink.deliver("event_id" => "event-headers", "operation" => "insert")
+
+        assert_equal "static-value", received.fetch(:headers).fetch("x-static").fetch(0)
+        assert_equal "Bearer test-token", received.fetch(:headers).fetch("authorization").fetch(0)
+      end
+    ensure
+      ENV["MAMMOTH_WEBHOOK_TOKEN"] = original_token
+    end
+
+    def test_from_config_resolves_env_headers
+      original_token = ENV["MAMMOTH_WEBHOOK_TOKEN"]
+      ENV["MAMMOTH_WEBHOOK_TOKEN"] = "Bearer configured-token"
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("webhook")["header_env"] = { "Authorization" => "MAMMOTH_WEBHOOK_TOKEN" }
+
+      sink = WebhookSink.from_config(config)
+
+      assert_equal "Bearer configured-token", sink.headers.fetch("Authorization")
+    ensure
+      ENV["MAMMOTH_WEBHOOK_TOKEN"] = original_token
+    end
+
+    def test_from_config_rejects_missing_env_header
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("webhook")["header_env"] = { "Authorization" => "MAMMOTH_MISSING_WEBHOOK_TOKEN" }
+
+      error = assert_raises(ConfigurationError) { WebhookSink.from_config(config) }
+
+      assert_match(/MAMMOTH_MISSING_WEBHOOK_TOKEN/, error.message)
+    end
+
+    def test_signs_webhook_request_body
+      with_test_server(204) do |url, received|
+        sink = WebhookSink.new(
+          name: "primary_webhook",
+          url: url,
+          timeout_seconds: 2,
+          signing: {
+            secret: "test-secret",
+            signature_header: "X-Test-Signature",
+            timestamp_header: "X-Test-Timestamp"
+          }
+        )
+
+        sink.deliver("event_id" => "event-signed", "operation" => "insert")
+
+        timestamp = received.fetch(:headers).fetch("x-test-timestamp").fetch(0)
+        signature = received.fetch(:headers).fetch("x-test-signature").fetch(0)
+        expected = OpenSSL::HMAC.hexdigest("SHA256", "test-secret", "#{timestamp}.#{received.fetch(:body)}")
+        assert_equal "sha256=#{expected}", signature
       end
     end
 
@@ -67,6 +137,7 @@ module Mammoth
       server = WEBrick::HTTPServer.new(Port: 0, Logger: WEBrick::Log.new(File::NULL), AccessLog: [])
       server.mount_proc "/webhook" do |request, response|
         received[:body] = request.body
+        received[:headers] = request.header
         response.status = status
         response.body = "ok"
       end

@@ -33,6 +33,15 @@ webhook:
   name: primary_webhook
   url: https://example.com/webhooks/postgres
   timeout_seconds: 5
+  headers:
+    X-Mammoth-Source: local_mammoth
+  header_env:
+    Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing:
+    algorithm: hmac_sha256
+    secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
+    signature_header: X-Mammoth-Signature
+    timestamp_header: X-Mammoth-Timestamp
 
 retry:
   max_attempts: 5
@@ -99,9 +108,25 @@ webhook:
   name: primary_webhook
   url: https://example.com/webhooks/postgres
   timeout_seconds: 5
+  headers:
+    X-Mammoth-Source: local_mammoth
+  header_env:
+    Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing:
+    algorithm: hmac_sha256
+    secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
 ```
 
 `name` is used in operational records such as dead letters. `url` is the destination endpoint.
+
+`headers` adds static HTTP headers to every webhook request. Use it only for
+non-secret values. `header_env` maps header names to environment variable names,
+which is the recommended path for API keys and bearer tokens.
+
+`signing` enables HMAC-SHA256 request signing. Mammoth signs
+`<timestamp>.<json request body>` with the secret read from `secret_env`, sends
+the timestamp in `timestamp_header`, and sends a `sha256=<hex digest>` signature
+in `signature_header`.
 
 ### `retry`
 

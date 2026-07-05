@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "json"
+require "openssl"
 require "webrick"
 require "yaml"
 
@@ -85,6 +86,35 @@ module Mammoth
       end
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def test_delivers_with_env_auth_header_and_signature
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        event_path = write_file(File.join(dir, "event.json"), JSON.generate(event_payload))
+        original_token = ENV["MAMMOTH_E2E_WEBHOOK_TOKEN"]
+        original_secret = ENV["MAMMOTH_E2E_WEBHOOK_SECRET"]
+        ENV["MAMMOTH_E2E_WEBHOOK_TOKEN"] = "Bearer e2e-token"
+        ENV["MAMMOTH_E2E_WEBHOOK_SECRET"] = "e2e-secret"
+
+        with_receiver do |url, received|
+          config_path = write_config(dir, sqlite_path: db_path, webhook_url: url, auth: true, signing: true)
+
+          assert_equal 0, CLI.call(["deliver-sample", config_path, event_path])
+
+          headers = received.fetch(:headers)
+          timestamp = headers.fetch("x-mammoth-timestamp").fetch(0)
+          signature = headers.fetch("x-mammoth-signature").fetch(0)
+          expected = OpenSSL::HMAC.hexdigest("SHA256", "e2e-secret", "#{timestamp}.#{received.fetch(:body)}")
+          assert_equal "Bearer e2e-token", headers.fetch("authorization").fetch(0)
+          assert_equal "sha256=#{expected}", signature
+        end
+      ensure
+        ENV["MAMMOTH_E2E_WEBHOOK_TOKEN"] = original_token
+        ENV["MAMMOTH_E2E_WEBHOOK_SECRET"] = original_secret
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
     private
 
     def event_payload
@@ -98,10 +128,17 @@ module Mammoth
       }
     end
 
-    def write_config(dir, sqlite_path:, webhook_url:, delivery_unit: nil, max_attempts: nil)
+    def write_config(dir, sqlite_path:, webhook_url:, delivery_unit: nil, max_attempts: nil, auth: false, signing: false)
       config = YAML.safe_load(minimal_config(sqlite_path: sqlite_path, webhook_url: webhook_url), aliases: false)
       config["delivery"] = { "unit" => delivery_unit } if delivery_unit
       config["retry"]["max_attempts"] = max_attempts if max_attempts
+      config["webhook"]["header_env"] = { "Authorization" => "MAMMOTH_E2E_WEBHOOK_TOKEN" } if auth
+      if signing
+        config["webhook"]["signing"] = {
+          "algorithm" => "hmac_sha256",
+          "secret_env" => "MAMMOTH_E2E_WEBHOOK_SECRET"
+        }
+      end
       write_file(File.join(dir, "mammoth.yml"), YAML.dump(config))
     end
 
@@ -111,6 +148,7 @@ module Mammoth
       server.mount_proc "/webhook" do |request, response|
         received[:body] = request.body
         received[:bodies] << request.body
+        received[:headers] = request.header
         response.status = status
       end
       thread = Thread.new { server.start }

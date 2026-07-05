@@ -222,6 +222,35 @@ webhook:
   # HTTP timeout in seconds for webhook delivery attempts.
   timeout_seconds: 5
 
+  # Optional static HTTP headers sent with every webhook request.
+  #
+  # Use these for non-secret routing or receiver metadata. Secret values should
+  # use header_env instead.
+  headers:
+    X-Mammoth-Source: local_mammoth
+
+  # Optional HTTP headers whose values are read from environment variables.
+  #
+  # Example:
+  #   header_env:
+  #     Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  header_env: {}
+
+  # Optional HMAC-SHA256 webhook signing.
+  #
+  # When enabled, Mammoth signs:
+  #
+  #   <timestamp>.<json request body>
+  #
+  # using the secret from secret_env, then sends the timestamp and signature in
+  # configurable headers. The signature value is prefixed with "sha256=".
+  #
+  # signing:
+  #   algorithm: hmac_sha256
+  #   secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
+  #   signature_header: X-Mammoth-Signature
+  #   timestamp_header: X-Mammoth-Timestamp
+
 retry:
   # Maximum delivery attempts before the event/envelope is moved to the dead
   # letter store.

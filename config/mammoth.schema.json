@@ -138,6 +138,53 @@
           "type": "integer",
           "minimum": 1,
           "description": "HTTP timeout in seconds for webhook delivery attempts."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Static HTTP headers added to every webhook request. Do not put secrets here; use header_env for secret-backed values."
+        },
+        "header_env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "HTTP headers whose values are read from environment variables. Keys are header names; values are environment variable names."
+        },
+        "signing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "secret_env"
+          ],
+          "properties": {
+            "algorithm": {
+              "type": "string",
+              "enum": [
+                "hmac_sha256"
+              ],
+              "description": "Webhook signing algorithm. Mammoth signs '<timestamp>.<body>' using HMAC-SHA256."
+            },
+            "secret_env": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Environment variable containing the webhook signing secret."
+            },
+            "signature_header": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Header name used for the generated signature. Defaults to X-Mammoth-Signature."
+            },
+            "timestamp_header": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Header name used for the signing timestamp. Defaults to X-Mammoth-Timestamp."
+            }
+          },
+          "description": "Optional HMAC-SHA256 request signing for webhook receivers."
         }
       },
       "description": "HTTP webhook destination settings."

@@ -2,7 +2,9 @@
 
 require "json"
 require "net/http"
+require "openssl"
 require "socket"
+require "time"
 require "uri"
 
 module Mammoth
@@ -11,27 +13,72 @@ module Mammoth
     # HTTP status range treated as successful webhook delivery.
     SUCCESS_RANGE = 200..299
 
-    attr_reader :name, :url, :timeout_seconds
+    SIGNING_ALGORITHM = "hmac_sha256"
+    SIGNATURE_PREFIX = "sha256="
+
+    attr_reader :name, :url, :timeout_seconds, :headers, :signing
 
     # @param name [String] destination name
     # @param url [String] webhook endpoint URL
     # @param timeout_seconds [Integer] HTTP open/read timeout in seconds
-    def initialize(name:, url:, timeout_seconds: 5)
+    # @param headers [Hash] static HTTP headers applied to every request
+    # @param signing [Hash, nil] HMAC signing configuration
+    def initialize(name:, url:, timeout_seconds: 5, headers: {}, signing: nil)
       @name = name
       @url = URI(url)
       @timeout_seconds = timeout_seconds
+      @headers = headers.transform_keys(&:to_s)
+      @signing = signing
     end
 
-    # Build a sink from Mammoth configuration.
-    #
-    # @param config [Mammoth::Configuration] loaded configuration
-    # @return [Mammoth::WebhookSink]
-    def self.from_config(config)
-      new(
-        name: config.dig("webhook", "name"),
-        url: config.dig("webhook", "url"),
-        timeout_seconds: config.dig("webhook", "timeout_seconds")
-      )
+    class << self
+      # Build a sink from Mammoth configuration.
+      #
+      # @param config [Mammoth::Configuration] loaded configuration
+      # @return [Mammoth::WebhookSink]
+      def from_config(config)
+        new(
+          name: config.dig("webhook", "name"),
+          url: config.dig("webhook", "url"),
+          timeout_seconds: config.dig("webhook", "timeout_seconds"),
+          headers: configured_headers(config),
+          signing: configured_signing(config)
+        )
+      end
+
+      private
+
+      def configured_headers(config)
+        static_headers = config.dig("webhook", "headers") || {}
+        env_headers = config.dig("webhook", "header_env") || {}
+
+        static_headers.merge(resolve_env_headers(env_headers))
+      end
+
+      def resolve_env_headers(env_headers)
+        env_headers.each_with_object(Hash.new) do |(header, env_name), resolved| # rubocop:disable Style/EmptyLiteral
+          resolved[header] = ENV.fetch(env_name) do
+            raise ConfigurationError, "webhook.header_env.#{header} references missing environment variable #{env_name}"
+          end
+        end
+      end
+
+      def configured_signing(config)
+        signing = config.dig("webhook", "signing")
+        return unless signing
+
+        algorithm = signing.fetch("algorithm", SIGNING_ALGORITHM)
+        raise ConfigurationError, "webhook.signing.algorithm must be #{SIGNING_ALGORITHM}" unless algorithm == SIGNING_ALGORITHM
+
+        secret_env = signing.fetch("secret_env")
+        {
+          secret: ENV.fetch(secret_env) do
+            raise ConfigurationError, "webhook.signing.secret_env references missing environment variable #{secret_env}"
+          end,
+          signature_header: signing.fetch("signature_header", "X-Mammoth-Signature"),
+          timestamp_header: signing.fetch("timestamp_header", "X-Mammoth-Timestamp")
+        }
+      end
     end
 
     # Deliver an event to the webhook endpoint.
@@ -71,9 +118,12 @@ module Mammoth
     end
 
     def build_request(payload)
+      body = JSON.generate(payload)
       Net::HTTP::Post.new(url.request_uri).tap do |request|
         request["Content-Type"] = "application/json"
-        request.body = JSON.generate(payload)
+        headers.each { |header, value| request[header] = value }
+        apply_signature_headers(request, body)
+        request.body = body
       end
     end
 
@@ -85,6 +135,19 @@ module Mammoth
         status: "delivered",
         http_status: response.code.to_i
       }
+    end
+
+    def apply_signature_headers(request, body)
+      return unless signing
+
+      timestamp = Time.now.utc.iso8601
+      request[signing.fetch(:timestamp_header)] = timestamp
+      request[signing.fetch(:signature_header)] = signed_body(timestamp, body)
+    end
+
+    def signed_body(timestamp, body)
+      digest = OpenSSL::HMAC.hexdigest("SHA256", signing.fetch(:secret), "#{timestamp}.#{body}")
+      "#{SIGNATURE_PREFIX}#{digest}"
     end
   end
 end

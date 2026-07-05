@@ -5,6 +5,7 @@ target :lib do
   library "fileutils"
   library "json"
   library "net-http"
+  library "openssl"
   library "socket"
   library "securerandom"
   library "stringio"

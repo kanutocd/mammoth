@@ -7,18 +7,26 @@ module Mammoth
 
     @timeout_seconds: untyped
 
+    @headers: untyped
+
+    @signing: untyped
+
     SUCCESS_RANGE: ::Range[::Integer]
+    SIGNING_ALGORITHM: String
+    SIGNATURE_PREFIX: String
 
     attr_reader name: untyped
 
     attr_reader url: untyped
 
     attr_reader timeout_seconds: untyped
+    attr_reader headers: untyped
+    attr_reader signing: untyped
 
     # @param name [String] destination name
     # @param url [String] webhook endpoint URL
     # @param timeout_seconds [Integer] HTTP open/read timeout in seconds
-    def initialize: (name: untyped, url: untyped, ?timeout_seconds: ::Integer) -> void
+    def initialize: (name: untyped, url: untyped, ?timeout_seconds: ::Integer, ?headers: untyped, ?signing: untyped) -> void
 
     # Build a sink from Mammoth configuration.
     #
@@ -44,5 +52,15 @@ module Mammoth
     def build_request: (untyped payload) -> untyped
 
     def delivery_result: (untyped payload, untyped response) -> untyped
+
+    def apply_signature_headers: (untyped request, String body) -> untyped
+
+    def signed_body: (String timestamp, String body) -> String
+
+    def self.configured_headers: (untyped config) -> untyped
+
+    def self.resolve_env_headers: (untyped env_headers) -> untyped
+
+    def self.configured_signing: (untyped config) -> untyped
   end
 end
