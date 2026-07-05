@@ -251,6 +251,27 @@ webhook:
   #   signature_header: X-Mammoth-Signature
   #   timestamp_header: X-Mammoth-Timestamp
 
+# Optional fanout configuration.
+#
+# Use destinations instead of webhook when one PostgreSQL replication stream
+# should deliver the same CDC work item to multiple webhook receivers. Each
+# destination gets independent retry, delivered-ledger, and dead-letter state.
+#
+# destinations:
+#   - name: primary_webhook
+#     type: webhook
+#     url: https://example.com/webhooks/postgres
+#     timeout_seconds: 5
+#     header_env:
+#       Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+#     signing:
+#       algorithm: hmac_sha256
+#       secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+#   - name: audit_webhook
+#     type: webhook
+#     url: https://audit.example.com/cdc
+#     timeout_seconds: 5
+
 retry:
   # Maximum delivery attempts before the event/envelope is moved to the dead
   # letter store.

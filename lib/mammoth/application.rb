@@ -21,7 +21,7 @@ module Mammoth
       @sqlite_store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
       @checkpoint_store = CheckpointStore.new(sqlite_store)
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
-      @delivery_worker = build_delivery_worker(sink: sink || WebhookSink.from_config(config), sleeper: sleeper)
+      @delivery_worker = sink ? build_delivery_worker(sink: sink, sleeper: sleeper) : build_configured_delivery_worker(sleeper:)
     end
 
     # Start the application runtime and deliver consumed CDC work.
@@ -95,6 +95,22 @@ module Mammoth
         dead_letter_store: DeadLetterStore.new(sqlite_store),
         sleeper: sleeper
       )
+    end
+
+    def build_configured_delivery_worker(sleeper:)
+      workers = destination_sinks.map { |sink| build_delivery_worker(sink:, sleeper:) }
+      return workers.fetch(0) if workers.one?
+
+      FanoutDeliveryWorker.new(workers)
+    end
+
+    def destination_sinks
+      destinations = config.data["destinations"]
+      return [WebhookSink.from_config(config)] unless destinations
+
+      destinations.map.with_index(1) do |destination, index|
+        WebhookSink.from_destination_config(destination, label: "destinations[#{index - 1}]")
+      end
     end
 
     def transaction_delivery?

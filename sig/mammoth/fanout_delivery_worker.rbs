@@ -1,0 +1,45 @@
+module Mammoth
+  # Delivers one CDC work item to multiple destination-specific workers.
+  class FanoutDeliveryWorker
+    @delivery_workers: untyped
+
+    attr_reader delivery_workers: untyped
+
+    # @param delivery_workers [Array<Mammoth::DeliveryWorker>] destination workers
+    def initialize: (untyped delivery_workers) -> void
+
+    # Deliver an event to every configured destination.
+    #
+    # @param event [Hash, #to_h] normalized event
+    # @return [Hash] aggregate fanout summary
+    def deliver: (untyped event) -> untyped
+
+    # Deliver a transaction envelope to every configured destination.
+    #
+    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @return [Hash] aggregate fanout summary
+    def deliver_transaction: (untyped envelope) -> untyped
+
+    # Deliver an event to one configured destination.
+    #
+    # @param destination_name [String] destination name
+    # @param event [Hash, #to_h] normalized event
+    # @return [Hash] destination delivery summary
+    def deliver_to: (String destination_name, untyped event) -> untyped
+
+    # Deliver a transaction envelope to one configured destination.
+    #
+    # @param destination_name [String] destination name
+    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @return [Hash] destination delivery summary
+    def deliver_transaction_to: (String destination_name, untyped envelope) -> untyped
+
+    private
+
+    def fanout: (untyped delivery_method, untyped work) -> untyped
+
+    def aggregate_status: (untyped results) -> String
+
+    def worker_for: (String destination_name) -> untyped
+  end
+end

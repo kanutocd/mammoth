@@ -20,7 +20,7 @@ CDC::Core::TransactionEnvelope
     ↓
 Mammoth
     ↓
-Webhook
+Webhook fanout
 ```
 
 Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON Schema validation, SQLite-backed operational memory, retries, checkpoints, and dead letters so operators can inspect and recover delivery state.
@@ -40,10 +40,11 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 
 ## Current release scope
 
-Mammoth 0.2.x focuses on:
+Mammoth 0.5.x focuses on:
 
 - PostgreSQL logical replication ingestion
 - normalized CDC event and transaction delivery to webhooks
+- multi-destination webhook fanout
 - transaction envelope preservation
 - concurrent downstream delivery with one PostgreSQL replication stream
 - retry handling
@@ -55,13 +56,11 @@ Mammoth 0.2.x focuses on:
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.2.x
+## Non-goals for 0.5.x
 
-Mammoth 0.2.x does not yet provide:
+Mammoth 0.5.x does not yet provide:
 
 - a web dashboard
-- health or metrics HTTP endpoints
-- multi-destination routing
 - multiple active consumers for the same PostgreSQL replication slot
 
 Those are future operational layers.

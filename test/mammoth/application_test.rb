@@ -112,6 +112,31 @@ module Mammoth
       end
     end
 
+    def test_builds_fanout_delivery_worker_from_destinations_config
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(
+          File.join(dir, "mammoth.yml"),
+          minimal_config(sqlite_path: db_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+            destinations:
+              - name: primary_webhook
+                type: webhook
+                url: https://example.com/webhooks/postgres
+                timeout_seconds: 5
+              - name: audit_webhook
+                type: webhook
+                url: https://example.com/webhooks/audit
+                timeout_seconds: 5
+
+          YAML
+        )
+        app = Application.new(Configuration.load(config_path), source: [])
+
+        assert_instance_of FanoutDeliveryWorker, app.delivery_worker
+        assert_equal %w[primary_webhook audit_webhook], app.delivery_worker.delivery_workers.map(&:sink).map(&:name)
+      end
+    end
+
     def test_concurrent_runtime_defaults_to_preserve_order
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")

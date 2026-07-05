@@ -17,7 +17,7 @@ CDC::Core::TransactionEnvelope
       ↓
 Mammoth
       ↓
-Webhook
+Webhook fanout
 ```
 
 🦣 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
@@ -46,6 +46,7 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - checkpoint persistence
 - dead letter persistence
 - webhook delivery sink
+- webhook fanout to multiple destinations
 - delivery worker with retry, checkpoint, and DLQ handling
 - dead-letter inspection and replay commands
 - CDC-core event serialization boundary

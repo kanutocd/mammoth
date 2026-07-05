@@ -39,43 +39,52 @@ module Mammoth
       # @param config [Mammoth::Configuration] loaded configuration
       # @return [Mammoth::WebhookSink]
       def from_config(config)
+        from_destination_config(config.data["webhook"], label: "webhook")
+      end
+
+      # Build a sink from one destination configuration entry.
+      #
+      # @param destination [Hash] destination configuration
+      # @param label [String] configuration path used in error messages
+      # @return [Mammoth::WebhookSink]
+      def from_destination_config(destination, label: "destination")
         new(
-          name: config.dig("webhook", "name"),
-          url: config.dig("webhook", "url"),
-          timeout_seconds: config.dig("webhook", "timeout_seconds"),
-          headers: configured_headers(config),
-          signing: configured_signing(config)
+          name: destination.fetch("name"),
+          url: destination.fetch("url"),
+          timeout_seconds: destination.fetch("timeout_seconds"),
+          headers: configured_headers(destination, label: label),
+          signing: configured_signing(destination, label: label)
         )
       end
 
       private
 
-      def configured_headers(config)
-        static_headers = config.dig("webhook", "headers") || {}
-        env_headers = config.dig("webhook", "header_env") || {}
+      def configured_headers(destination, label:)
+        static_headers = destination["headers"] || {}
+        env_headers = destination["header_env"] || {}
 
-        static_headers.merge(resolve_env_headers(env_headers))
+        static_headers.merge(resolve_env_headers(env_headers, label: label))
       end
 
-      def resolve_env_headers(env_headers)
+      def resolve_env_headers(env_headers, label:)
         env_headers.each_with_object(Hash.new) do |(header, env_name), resolved| # rubocop:disable Style/EmptyLiteral
           resolved[header] = ENV.fetch(env_name) do
-            raise ConfigurationError, "webhook.header_env.#{header} references missing environment variable #{env_name}"
+            raise ConfigurationError, "#{label}.header_env.#{header} references missing environment variable #{env_name}"
           end
         end
       end
 
-      def configured_signing(config)
-        signing = config.dig("webhook", "signing")
+      def configured_signing(destination, label:)
+        signing = destination["signing"]
         return unless signing
 
         algorithm = signing.fetch("algorithm", SIGNING_ALGORITHM)
-        raise ConfigurationError, "webhook.signing.algorithm must be #{SIGNING_ALGORITHM}" unless algorithm == SIGNING_ALGORITHM
+        raise ConfigurationError, "#{label}.signing.algorithm must be #{SIGNING_ALGORITHM}" unless algorithm == SIGNING_ALGORITHM
 
         secret_env = signing.fetch("secret_env")
         {
           secret: ENV.fetch(secret_env) do
-            raise ConfigurationError, "webhook.signing.secret_env references missing environment variable #{secret_env}"
+            raise ConfigurationError, "#{label}.signing.secret_env references missing environment variable #{secret_env}"
           end,
           signature_header: signing.fetch("signature_header", "X-Mammoth-Signature"),
           timestamp_header: signing.fetch("timestamp_header", "X-Mammoth-Timestamp")

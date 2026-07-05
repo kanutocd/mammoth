@@ -8,10 +8,21 @@
     "mammoth",
     "postgres",
     "replication",
-    "webhook",
     "retry",
     "sqlite",
     "logging"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "webhook"
+      ]
+    },
+    {
+      "required": [
+        "destinations"
+      ]
+    }
   ],
   "properties": {
     "mammoth": {
@@ -187,7 +198,93 @@
           "description": "Optional HMAC-SHA256 request signing for webhook receivers."
         }
       },
-      "description": "HTTP webhook destination settings."
+      "description": "HTTP webhook destination settings. This is shorthand for a single webhook destination; use destinations for fanout."
+    },
+    "destinations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type",
+          "url",
+          "timeout_seconds"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Destination name used in delivered ledgers, dead-letter records, logs, and metrics."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "webhook"
+            ],
+            "description": "Destination adapter type. Mammoth OSS 0.5.0 supports webhook destinations."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Webhook URL for delivered CDC payloads. Transaction delivery sends a TransactionEnvelope payload; event delivery sends a single event payload."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "HTTP timeout in seconds for this destination's delivery attempts."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Static HTTP headers added to every request for this destination. Do not put secrets here; use header_env for secret-backed values."
+          },
+          "header_env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "HTTP headers whose values are read from environment variables. Keys are header names; values are environment variable names."
+          },
+          "signing": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "secret_env"
+            ],
+            "properties": {
+              "algorithm": {
+                "type": "string",
+                "enum": [
+                  "hmac_sha256"
+                ],
+                "description": "Webhook signing algorithm. Mammoth signs '<timestamp>.<body>' using HMAC-SHA256."
+              },
+              "secret_env": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Environment variable containing the webhook signing secret."
+              },
+              "signature_header": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Header name used for the generated signature. Defaults to X-Mammoth-Signature."
+              },
+              "timestamp_header": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Header name used for the signing timestamp. Defaults to X-Mammoth-Timestamp."
+              }
+            },
+            "description": "Optional HMAC-SHA256 request signing for this webhook destination."
+          }
+        }
+      },
+      "description": "Fanout destination list. Each CDC work item is delivered independently to each configured destination."
     },
     "retry": {
       "type": "object",

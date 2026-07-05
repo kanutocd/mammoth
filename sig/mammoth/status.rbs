@@ -29,6 +29,8 @@ module Mammoth
 
     def sqlite_path: () -> untyped
 
+    def destination_names: () -> untyped
+
     def print_store_state: () -> untyped
   end
 end

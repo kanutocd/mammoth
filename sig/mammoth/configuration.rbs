@@ -47,5 +47,7 @@ module Mammoth
     def validate_schema!: () -> untyped
 
     def schema_error_message: (untyped errors) -> untyped
+
+    def validate_destination_names!: () -> untyped
   end
 end

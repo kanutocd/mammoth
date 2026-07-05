@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.4.0"
+  tag: "0.5.0"
   pullPolicy: IfNotPresent
 
 # Private PRO images can be used by overriding image.repository and setting
@@ -65,6 +65,31 @@ webhook:
     # keys:
     #   MAMMOTH_WEBHOOK_AUTHORIZATION: authorization
     #   MAMMOTH_WEBHOOK_SIGNING_SECRET: signing-secret
+
+# Optional fanout destination list. When set, this replaces the single webhook
+# shorthand above in the rendered Mammoth configuration.
+destinations: []
+# Example:
+# destinations:
+#   - name: "primary_webhook"
+#     type: "webhook"
+#     url: "https://yourservice.com/webhooks/postgres"
+#     timeout_seconds: 5
+#     headers: {}
+#     header_env:
+#       Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+#     signing:
+#       algorithm: hmac_sha256
+#       secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+#     existingSecret:
+#       name: "primary-webhook-secrets"
+#       keys:
+#         MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION: authorization
+#         MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
+#   - name: "audit_webhook"
+#     type: "webhook"
+#     url: "https://audit.example.com/cdc"
+#     timeout_seconds: 5
 
 retry:
   max_attempts: 5

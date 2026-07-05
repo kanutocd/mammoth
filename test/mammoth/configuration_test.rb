@@ -80,6 +80,30 @@ module Mammoth
       end
     end
 
+    def test_accepts_destinations_fanout_configuration
+      with_temp_dir do |dir|
+        path = write_file(File.join(dir, "fanout.yml"), fanout_config(sqlite_path: File.join(dir, "mammoth.db")))
+        config = Configuration.load(path)
+
+        assert_equal 2, config.data["destinations"].length
+        assert_equal "audit_webhook", config.dig("destinations", 1, "name")
+      end
+    end
+
+    def test_rejects_duplicate_destination_names
+      with_temp_dir do |dir|
+        path = write_file(
+          File.join(dir, "duplicate-destinations.yml"),
+          fanout_config(sqlite_path: File.join(dir, "mammoth.db")).sub("audit_webhook", "primary_webhook")
+        )
+
+        error = assert_raises(ConfigurationError) { Configuration.load(path) }
+
+        assert_match(/destination names must be unique/, error.message)
+        assert_match(/primary_webhook/, error.message)
+      end
+    end
+
     def test_rejects_invalid_feedback_interval
       with_temp_dir do |dir|
         path = write_file(
@@ -114,6 +138,23 @@ module Mammoth
 
         assert_match(/invalid JSON schema/, error.message)
       end
+    end
+
+    private
+
+    def fanout_config(sqlite_path:)
+      minimal_config(sqlite_path: sqlite_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+        destinations:
+          - name: primary_webhook
+            type: webhook
+            url: https://example.com/webhooks/postgres
+            timeout_seconds: 5
+          - name: audit_webhook
+            type: webhook
+            url: https://example.com/webhooks/audit
+            timeout_seconds: 5
+
+      YAML
     end
   end
 end

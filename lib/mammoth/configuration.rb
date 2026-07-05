@@ -44,6 +44,7 @@ module Mammoth
       raise ConfigurationError, "configuration must be a YAML mapping" unless data.is_a?(Hash)
 
       validate_schema!
+      validate_destination_names!
       self
     rescue Psych::SyntaxError => e
       raise ConfigurationError, "invalid YAML in #{path}: #{e.message}"
@@ -72,6 +73,17 @@ module Mammoth
 
     def schema_error_message(errors)
       (["configuration failed schema validation:"] + errors.map { |error| "- #{error}" }).join("\n")
+    end
+
+    def validate_destination_names!
+      destinations = data["destinations"]
+      return unless destinations
+
+      names = destinations.map { |destination| destination["name"] }
+      duplicates = names.tally.select { |_name, count| count > 1 }.keys
+      return if duplicates.empty?
+
+      raise ConfigurationError, "destination names must be unique: #{duplicates.join(", ")}"
     end
   end
 end

@@ -36,6 +36,27 @@ data:
       preserve_order: {{ .Values.runtime.preserve_order | default true }}
       timeout_seconds: {{ .Values.runtime.timeout_seconds | default "null" }}
 
+    {{- if .Values.destinations }}
+    destinations:
+      {{- range .Values.destinations }}
+      - name: {{ .name | quote }}
+        type: {{ .type | default "webhook" | quote }}
+        url: {{ .url | quote }}
+        timeout_seconds: {{ .timeout_seconds | default 5 }}
+        {{- with .headers }}
+        headers:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .header_env }}
+        header_env:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .signing }}
+        signing:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+    {{- else }}
     webhook:
       name: {{ .Values.webhook.name | quote }}
       url: {{ .Values.webhook.url | quote }}
@@ -52,6 +73,7 @@ data:
       signing:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    {{- end }}
 
     retry:
       max_attempts: {{ .Values.retry.max_attempts | default 5 }}

@@ -2,6 +2,7 @@
 
 require "open3"
 require "test_helper"
+require "tempfile"
 
 module Mammoth
   class HelmChartTest < Minitest::Test
@@ -10,6 +11,18 @@ module Mammoth
 
       assert status.success?, stderr
       expected_rendered_config.each { |content| assert_includes stdout, content }
+    end
+
+    def test_chart_renders_fanout_destinations_with_secret_backed_env
+      Tempfile.create(["mammoth-values", ".yml"]) do |file|
+        file.write(fanout_values)
+        file.flush
+
+        stdout, stderr, status = Open3.capture3("helm", "template", "mammoth", "charts/mammoth", "--values", file.path)
+
+        assert status.success?, stderr
+        fanout_expected_rendered_config.each { |content| assert_includes stdout, content }
+      end
     end
 
     private
@@ -37,7 +50,7 @@ module Mammoth
 
     def expected_rendered_config
       [
-        "image: \"ghcr.io/kanutocd/mammoth:0.4.0\"",
+        "image: \"ghcr.io/kanutocd/mammoth:0.5.0\"",
         "unit: \"transaction\"",
         "adapter: \"concurrent\"",
         "Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION",
@@ -45,6 +58,44 @@ module Mammoth
         "name: MAMMOTH_WEBHOOK_AUTHORIZATION",
         "key: authorization",
         "name: MAMMOTH_WEBHOOK_SIGNING_SECRET",
+        "key: signing-secret"
+      ]
+    end
+
+    def fanout_values
+      <<~YAML
+        destinations:
+          - name: primary_webhook
+            type: webhook
+            url: https://example.com/webhooks/postgres
+            timeout_seconds: 5
+            header_env:
+              Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+            signing:
+              algorithm: hmac_sha256
+              secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+            existingSecret:
+              name: primary-webhook-secrets
+              keys:
+                MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION: authorization
+                MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
+          - name: audit_webhook
+            type: webhook
+            url: https://audit.example.com/cdc
+            timeout_seconds: 5
+      YAML
+    end
+
+    def fanout_expected_rendered_config
+      [
+        "destinations:",
+        "name: \"primary_webhook\"",
+        "name: \"audit_webhook\"",
+        "Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION",
+        "secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET",
+        "name: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION",
+        "key: authorization",
+        "name: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET",
         "key: signing-secret"
       ]
     end

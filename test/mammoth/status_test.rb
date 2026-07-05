@@ -13,8 +13,33 @@ module Mammoth
       assert_match(/Mammoth: local_mammoth/, stdout)
       assert_match(/Runtime: not started/, stdout)
       assert_match(/Replication publications: mammoth_publication/, stdout)
-      assert_match(/Webhook: primary_webhook/, stdout)
+      assert_match(/Destinations: primary_webhook/, stdout)
       refute_match(/Tables:/, stdout)
+    end
+
+    def test_prints_fanout_destinations
+      with_temp_dir do |dir|
+        config_path = write_file(
+          File.join(dir, "mammoth.yml"),
+          minimal_config(sqlite_path: File.join(dir, "mammoth.db")).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+            destinations:
+              - name: primary_webhook
+                type: webhook
+                url: https://example.com/webhooks/postgres
+                timeout_seconds: 5
+              - name: audit_webhook
+                type: webhook
+                url: https://audit.example.com/cdc
+                timeout_seconds: 5
+
+          YAML
+        )
+
+        stdout, stderr = capture_io { Status.call(Configuration.load(config_path)) }
+
+        assert_empty stderr
+        assert_match(/Destinations: primary_webhook, audit_webhook/, stdout)
+      end
     end
   end
 end

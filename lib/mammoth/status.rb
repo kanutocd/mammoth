@@ -30,7 +30,7 @@ module Mammoth
       puts "Replication publications: #{Array(config.dig("replication", "publications")).join(", ")}"
       puts "Runtime: not started"
       puts "SQLite: #{sqlite_path}"
-      puts "Webhook: #{config.dig("webhook", "name")}"
+      puts "Destinations: #{destination_names.join(", ")}"
       print_store_state if sqlite_store
     end
 
@@ -38,6 +38,13 @@ module Mammoth
 
     def sqlite_path
       config.dig("sqlite", "path")
+    end
+
+    def destination_names
+      destinations = config.data["destinations"]
+      return destinations.map { |destination| destination.fetch("name") } if destinations
+
+      [config.dig("webhook", "name")]
     end
 
     def print_store_state

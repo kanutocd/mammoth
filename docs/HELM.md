@@ -172,6 +172,34 @@ webhook:
       MAMMOTH_WEBHOOK_SIGNING_SECRET: signing-secret
 ```
 
+For fanout, set `destinations`. Each destination can map its own env-backed
+headers and signing secret env vars to a Kubernetes Secret:
+
+```yaml
+destinations:
+  - name: primary_webhook
+    type: webhook
+    url: https://example.com/webhooks/postgres
+    timeout_seconds: 5
+    header_env:
+      Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+    signing:
+      algorithm: hmac_sha256
+      secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+    existingSecret:
+      name: primary-webhook-secrets
+      keys:
+        MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION: authorization
+        MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
+  - name: audit_webhook
+    type: webhook
+    url: https://audit.example.com/cdc
+    timeout_seconds: 5
+```
+
+The rendered Mammoth config stores only environment variable names. The
+Deployment sources those variables from the referenced Kubernetes Secret keys.
+
 ## Delivery Runtime
 
 The chart renders Mammoth's transaction delivery and downstream runtime

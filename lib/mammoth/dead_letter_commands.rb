@@ -163,7 +163,23 @@ module Mammoth
 
     def replay_row(row)
       payload = JSON.parse(row.fetch("payload_json"))
-      transaction_payload?(payload) ? worker.deliver_transaction(transaction_envelope(payload)) : worker.deliver(payload)
+      if transaction_payload?(payload)
+        replay_transaction(row.fetch("destination_name"), transaction_envelope(payload))
+      else
+        replay_event(row.fetch("destination_name"), payload)
+      end
+    end
+
+    def replay_event(destination_name, payload)
+      return worker.deliver_to(destination_name, payload) if worker.respond_to?(:deliver_to)
+
+      worker.deliver(payload)
+    end
+
+    def replay_transaction(destination_name, envelope)
+      return worker.deliver_transaction_to(destination_name, envelope) if worker.respond_to?(:deliver_transaction_to)
+
+      worker.deliver_transaction(envelope)
     end
 
     def transaction_payload?(payload)

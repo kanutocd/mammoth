@@ -34,6 +34,13 @@ module Mammoth
     # @return [Mammoth::WebhookSink]
     def self.from_config: (untyped config) -> untyped
 
+    # Build a sink from one destination configuration entry.
+    #
+    # @param destination [Hash] destination configuration
+    # @param label [String] configuration path used in error messages
+    # @return [Mammoth::WebhookSink]
+    def self.from_destination_config: (untyped destination, ?label: String) -> untyped
+
     # Deliver an event to the webhook endpoint.
     #
     # @param event [Hash, #to_h] normalized event
@@ -57,10 +64,10 @@ module Mammoth
 
     def signed_body: (String timestamp, String body) -> String
 
-    def self.configured_headers: (untyped config) -> untyped
+    def self.configured_headers: (untyped destination, label: String) -> untyped
 
-    def self.resolve_env_headers: (untyped env_headers) -> untyped
+    def self.resolve_env_headers: (untyped env_headers, label: String) -> untyped
 
-    def self.configured_signing: (untyped config) -> untyped
+    def self.configured_signing: (untyped destination, label: String) -> untyped
   end
 end

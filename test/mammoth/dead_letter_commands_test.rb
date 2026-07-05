@@ -222,6 +222,51 @@ module Mammoth
       end
     end
 
+    def test_dead_letters_replay_targets_fanout_event_destination
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+
+        with_two_test_servers do |primary_url, primary_received, audit_url, audit_received|
+          config_path = write_file(File.join(dir, "mammoth.yml"), fanout_config(db_path, primary_url, audit_url))
+          id = dead_letter_store(db_path).write(
+            event: sample_event,
+            destination_name: "audit_webhook",
+            error: RuntimeError.new("boom"),
+            retry_count: 3
+          )
+
+          stdout, stderr = capture_io do
+            assert_equal 0, CLI.call(["dead-letters", "replay", config_path, id.to_s])
+          end
+
+          assert_empty stderr
+          assert_match(/Dead letter #{id}: delivered/, stdout)
+          assert_nil primary_received[:body]
+          assert_match(/"event_id":"event-1"/, audit_received.fetch(:body))
+        end
+      end
+    end
+
+    def test_dead_letters_replay_targets_fanout_transaction_destination
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+
+        with_two_test_servers do |primary_url, primary_received, audit_url, audit_received|
+          config_path = write_file(File.join(dir, "mammoth.yml"), fanout_config(db_path, primary_url, audit_url))
+          id = write_fanout_transaction_dead_letter(db_path)
+
+          stdout, stderr = capture_io do
+            assert_equal 0, CLI.call(["dead-letters", "replay", config_path, id.to_s])
+          end
+
+          assert_empty stderr
+          assert_match(/Dead letter #{id}: delivered/, stdout)
+          assert_nil primary_received[:body]
+          assert_match(/"type":"transaction.committed"/, audit_received.fetch(:body))
+        end
+      end
+    end
+
     def test_dead_letters_replay_keeps_pending_when_delivery_still_fails
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -303,6 +348,32 @@ module Mammoth
       [config_path, id]
     end
 
+    def fanout_config(db_path, primary_url, audit_url)
+      minimal_config(sqlite_path: db_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+        destinations:
+          - name: primary_webhook
+            type: webhook
+            url: #{primary_url}
+            timeout_seconds: 5
+          - name: audit_webhook
+            type: webhook
+            url: #{audit_url}
+            timeout_seconds: 5
+
+      YAML
+    end
+
+    def write_fanout_transaction_dead_letter(db_path)
+      transaction = transaction_envelope([sample_event.merge("event_id" => "transaction-event-1")])
+      dead_letter_store(db_path).write(
+        event: transaction,
+        destination_name: "audit_webhook",
+        error: RuntimeError.new("boom"),
+        retry_count: 3,
+        serializer: TransactionEnvelopeSerializer
+      )
+    end
+
     def assert_transaction_replay_resolved(db_path)
       sqlite = SQLiteStore.connect(db_path).bootstrap!
       store = DeadLetterStore.new(sqlite)
@@ -324,6 +395,14 @@ module Mammoth
     ensure
       server&.shutdown
       thread&.join
+    end
+
+    def with_two_test_servers
+      with_test_server(200) do |primary_url, primary_received|
+        with_test_server(200) do |audit_url, audit_received|
+          yield primary_url, primary_received, audit_url, audit_received
+        end
+      end
     end
   end
   # rubocop:enable Metrics/ClassLength

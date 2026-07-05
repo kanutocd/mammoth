@@ -34,7 +34,22 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.postgres.existingSecret.name }}
                   key: {{ .Values.postgres.existingSecret.key }}
-            {{- if .Values.webhook.existingSecret.name }}
+            {{- if .Values.destinations }}
+            {{- range $destination := .Values.destinations }}
+            {{- with $destination.existingSecret }}
+            {{- if .name }}
+            {{- $secret := . }}
+            {{- range $envName, $secretKey := .keys }}
+            - name: {{ $envName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret.name }}
+                  key: {{ $secretKey }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- else if .Values.webhook.existingSecret.name }}
             {{- range $envName, $secretKey := .Values.webhook.existingSecret.keys }}
             - name: {{ $envName }}
               valueFrom:

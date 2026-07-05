@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.5.0
+
+### Added
+
+- Added multi-destination webhook fanout through `destinations`, with independent per-destination retry, delivered-ledger, and dead-letter state.
+- Added targeted fanout dead-letter replay so replay sends failed work back only to the original destination.
+- Added Helm rendering for fanout destinations, including secret-backed environment variables for Authorization headers and HMAC signing secrets.
+
 ## 0.4.0
 
 ### Added

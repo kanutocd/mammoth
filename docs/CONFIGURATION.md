@@ -139,6 +139,37 @@ which is the recommended path for API keys and bearer tokens.
 the timestamp in `timestamp_header`, and sends a `sha256=<hex digest>` signature
 in `signature_header`.
 
+### `destinations`
+
+Use `destinations` instead of `webhook` when Mammoth should fan out each CDC
+work item to multiple webhook receivers.
+
+```yaml
+destinations:
+  - name: primary_webhook
+    type: webhook
+    url: https://example.com/webhooks/postgres
+    timeout_seconds: 5
+    header_env:
+      Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+    signing:
+      algorithm: hmac_sha256
+      secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+  - name: audit_webhook
+    type: webhook
+    url: https://audit.example.com/cdc
+    timeout_seconds: 5
+```
+
+Mammoth OSS 0.5.0 supports webhook destinations. Each destination receives the
+same event or transaction envelope and keeps independent delivered-ledger,
+retry, and dead-letter state. Dead-letter replay targets the destination that
+originally failed.
+
+`header_env` and `signing.secret_env` are environment variable names. Mammoth
+reads the actual bearer token or signing secret from the process environment at
+startup.
+
 ### `delivery`
 
 ```yaml
