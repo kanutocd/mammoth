@@ -50,6 +50,7 @@ Mammoth 0.2.x focuses on:
 - SQLite dead-letter storage
 - SQLite delivered-envelope ledger storage
 - webhook static headers, env-backed headers, and HMAC-SHA256 signing
+- dead-letter inspection and replay commands
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
@@ -59,7 +60,6 @@ Mammoth 0.2.x does not yet provide:
 
 - a web dashboard
 - health or metrics HTTP endpoints
-- dead-letter replay commands
 - multi-destination routing
 - multiple active consumers for the same PostgreSQL replication slot
 

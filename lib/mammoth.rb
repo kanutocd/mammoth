@@ -18,6 +18,7 @@ require_relative "mammoth/sources/postgres"
 require_relative "mammoth/cdc_source"
 require_relative "mammoth/replication_consumer"
 require_relative "mammoth/application"
+require_relative "mammoth/dead_letter_commands"
 require_relative "mammoth/cli"
 
 # Mammoth is a self-hosted PostgreSQL event relay.

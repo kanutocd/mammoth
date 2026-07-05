@@ -56,6 +56,10 @@ module Mammoth
       process(work)
     end
 
+    # Process one work item using the configured delivery unit.
+    #
+    # @param work [Object] event or transaction envelope
+    # @return [Hash] delivery summary
     def process(work)
       case delivery_unit
       when :transaction

@@ -47,6 +47,7 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - dead letter persistence
 - webhook delivery sink
 - delivery worker with retry, checkpoint, and DLQ handling
+- dead-letter inspection and replay commands
 - CDC-core event serialization boundary
 - CDC Ecosystem source-adapter integration boundary
 - Docker image support

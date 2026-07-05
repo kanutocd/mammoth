@@ -9,6 +9,7 @@ module Mammoth
   # keeps a small delivery ledger so a transaction replayed by the upstream
   # replication source after restart does not have to be delivered downstream again.
   class DeliveredEnvelopeStore
+    # SQLite schema used to bootstrap the delivered-envelope ledger.
     SCHEMA = <<~SQL
       CREATE TABLE IF NOT EXISTS delivered_envelopes (
         id INTEGER PRIMARY KEY,
@@ -81,6 +82,9 @@ module Mammoth
       database.execute("SELECT * FROM delivered_envelopes ORDER BY id")
     end
 
+    # Count delivered envelopes.
+    #
+    # @return [Integer] delivered envelope count
     def count
       database.get_first_value("SELECT COUNT(*) FROM delivered_envelopes")
     end

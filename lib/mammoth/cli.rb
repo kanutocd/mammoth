@@ -5,6 +5,16 @@ require "json"
 module Mammoth
   # Small command dispatcher for Mammoth's operator-facing CLI.
   class CLI
+    # Internal replay envelope used for transaction dead-letter recovery.
+    DEAD_LETTER_TRANSACTION_ENVELOPE = Data.define(
+      :events,
+      :transaction_id,
+      :source_position,
+      :commit_lsn,
+      :committed_at,
+      :metadata
+    )
+
     # Human-readable command usage printed for invalid or incomplete invocations.
     USAGE = [
       "Usage:",
@@ -13,7 +23,10 @@ module Mammoth
       "  mammoth bootstrap CONFIG",
       "  mammoth status CONFIG",
       "  mammoth start CONFIG",
-      "  mammoth deliver-sample CONFIG EVENT_JSON"
+      "  mammoth deliver-sample CONFIG EVENT_JSON",
+      "  mammoth dead-letters list CONFIG [--status STATUS] [--limit N]",
+      "  mammoth dead-letters show CONFIG ID",
+      "  mammoth dead-letters replay CONFIG [ID ...]"
     ].join("\n")
 
     # Run the CLI.
@@ -42,6 +55,7 @@ module Mammoth
       when "status" then status
       when "start" then start
       when "deliver-sample" then deliver_sample
+      when "dead-letters" then dead_letters
       else
         warn USAGE
         1
@@ -107,6 +121,13 @@ module Mammoth
       0
     rescue JSON::ParserError => e
       raise ConfigurationError, "invalid event JSON in #{event_path}: #{e.message}"
+    end
+
+    # Dispatch the nested dead-letter command group.
+    #
+    # @return [Integer] process status code
+    def dead_letters
+      DeadLetterCommands.call(argv)
     end
 
     def load_config

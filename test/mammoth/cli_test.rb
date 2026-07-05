@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "test_helper"
 require "json"
+require "test_helper"
 require "webrick"
 
 module Mammoth
@@ -151,9 +151,9 @@ module Mammoth
 
     private
 
-    def sample_event
+    def sample_event(event_id = "event-1")
       {
-        "event_id" => "event-1",
+        "event_id" => event_id,
         "source" => "postgresql",
         "operation" => "insert",
         "namespace" => "public",

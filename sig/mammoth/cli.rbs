@@ -3,6 +3,8 @@ module Mammoth
   class CLI
     @argv: untyped
 
+    DEAD_LETTER_TRANSACTION_ENVELOPE: untyped
+
     USAGE: untyped
 
     # Run the CLI.
@@ -38,6 +40,8 @@ module Mammoth
     def start: () -> 0
 
     def deliver_sample: () -> untyped
+
+    def dead_letters: () -> untyped
 
     def load_config: () -> untyped
   end

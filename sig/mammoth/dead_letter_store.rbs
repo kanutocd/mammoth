@@ -23,6 +23,19 @@ module Mammoth
     # @return [Array<Hash>] pending dead letter rows
     def pending: (?limit: ::Integer) -> untyped
 
+    # Fetch dead letters, optionally filtered by status.
+    #
+    # @param status [String, nil] optional dead-letter status filter
+    # @param limit [Integer] maximum number of rows
+    # @return [Array<Hash>] dead letter rows
+    def rows: (?status: untyped?, ?limit: ::Integer) -> untyped
+
+    # Fetch one dead letter by id.
+    #
+    # @param id [Integer] dead letter id
+    # @return [Hash, nil] dead letter row
+    def fetch: (untyped id) -> untyped
+
     # Count dead letters by status.
     #
     # @param status [String, nil] optional status

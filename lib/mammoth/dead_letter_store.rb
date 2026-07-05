@@ -66,10 +66,31 @@ module Mammoth
     # @param limit [Integer] maximum number of rows
     # @return [Array<Hash>] pending dead letter rows
     def pending(limit: 100)
-      database.execute(
-        "SELECT * FROM dead_letters WHERE status = ? ORDER BY failed_at ASC LIMIT ?",
-        ["pending", limit]
-      )
+      rows(status: "pending", limit: limit)
+    end
+
+    # Fetch dead letters, optionally filtered by status.
+    #
+    # @param status [String, nil] optional dead-letter status filter
+    # @param limit [Integer] maximum number of rows
+    # @return [Array<Hash>] dead letter rows
+    def rows(status: nil, limit: 100)
+      if status && status != "all"
+        return database.execute(
+          "SELECT * FROM dead_letters WHERE status = ? ORDER BY failed_at ASC LIMIT ?",
+          [status, limit]
+        )
+      end
+
+      database.execute("SELECT * FROM dead_letters ORDER BY failed_at ASC LIMIT ?", [limit])
+    end
+
+    # Fetch one dead letter by id.
+    #
+    # @param id [Integer] dead letter id
+    # @return [Hash, nil] dead letter row
+    def fetch(id)
+      database.get_first_row("SELECT * FROM dead_letters WHERE id = ?", [id])
     end
 
     # Count dead letters by status.

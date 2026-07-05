@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added dead-letter inspection and replay commands for operational recovery.
+
 ## 0.2.0
 
 ### Added

@@ -13,7 +13,9 @@ module Mammoth
     # HTTP status range treated as successful webhook delivery.
     SUCCESS_RANGE = 200..299
 
+    # Supported webhook signing algorithm.
     SIGNING_ALGORITHM = "hmac_sha256"
+    # Prefix added to generated webhook signatures.
     SIGNATURE_PREFIX = "sha256="
 
     attr_reader :name, :url, :timeout_seconds, :headers, :signing

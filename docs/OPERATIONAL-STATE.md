@@ -143,6 +143,14 @@ sqlite3 data/mammoth.db \
   "SELECT event_id, destination_name, operation, namespace, entity, retry_count, status, error_class, error_message FROM dead_letters;"
 ```
 
+Inspect and replay dead letters with Mammoth:
+
+```bash
+mammoth dead-letters list config/mammoth.yml
+mammoth dead-letters show config/mammoth.yml 12
+mammoth dead-letters replay config/mammoth.yml 12
+```
+
 Inspect delivered envelopes:
 
 ```bash

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mammoth
+  # Namespace for Mammoth source adapters.
   module Sources
     # Concrete PostgreSQL CDC source for Mammoth.
     #

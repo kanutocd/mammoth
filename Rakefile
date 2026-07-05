@@ -45,7 +45,14 @@ namespace :yard do
 
     coverage = match[1].to_f
     minimum = 95.0
-    abort(format("YARD coverage %<coverage> is below %<minimum>", { coverage:, minimum: })) if coverage < minimum
+    if coverage < minimum
+      message = format(
+        "YARD coverage %<coverage>.2f%% is below %<minimum>.2f%%",
+        coverage: coverage,
+        minimum: minimum
+      )
+      abort(message)
+    end
 
     puts format("YARD coverage %.2f%%", coverage)
   end

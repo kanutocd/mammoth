@@ -1,0 +1,63 @@
+module Mammoth
+  # Operator commands for inspecting and replaying dead letters.
+  class DeadLetterCommands
+    @argv: untyped
+
+    DEAD_LETTER_TRANSACTION_ENVELOPE: untyped
+
+    attr_reader argv: untyped
+
+    # @param argv [Array<String>] command line arguments
+    def self.call: (untyped argv) -> untyped
+
+    # @param argv [Array<String>] command line arguments
+    def initialize: (untyped argv) -> void
+
+    # Dispatch the nested dead-letter subcommand.
+    #
+    # @return [Integer] process status code
+    def call: () -> untyped
+
+    private
+
+    def command: () -> untyped
+
+    def config_path: () -> untyped
+
+    def list: () -> untyped
+
+    def show: () -> untyped
+
+    def replay: () -> untyped
+
+    def load_config: () -> untyped
+
+    def dead_letter_store: () -> untyped
+
+    def worker: () -> untyped
+
+    def dead_letter_id: () -> untyped
+
+    def list_options: () -> untyped
+
+    def parse_list_option: (untyped args, untyped index, untyped options) -> untyped
+
+    def replay_rows: () -> untyped
+
+    def fetch_dead_letter!: (untyped id) -> untyped
+
+    def replay_row: (untyped row) -> untyped
+
+    def transaction_payload?: (untyped payload) -> bool
+
+    def transaction_envelope: (untyped payload) -> untyped
+
+    def show_payload: (untyped row) -> untyped
+
+    def list_header: () -> String
+
+    def list_row: (untyped row) -> String
+
+    def replay_message: (untyped row, untyped result) -> String
+  end
+end

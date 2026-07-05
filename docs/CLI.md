@@ -9,6 +9,9 @@ mammoth bootstrap CONFIG
 mammoth status CONFIG
 mammoth start CONFIG
 mammoth deliver-sample CONFIG EVENT_JSON
+mammoth dead-letters list CONFIG [--status STATUS] [--limit N]
+mammoth dead-letters show CONFIG ID
+mammoth dead-letters replay CONFIG [ID ...]
 ```
 
 ## `mammoth version`
@@ -86,3 +89,15 @@ mammoth deliver-sample \
 ```
 
 This command is useful for demos, smoke tests, and delivery-path validation. It does not start PostgreSQL logical replication.
+
+## `mammoth dead-letters`
+
+Inspect and replay failed deliveries stored in SQLite.
+
+```bash
+mammoth dead-letters list config/mammoth.yml
+mammoth dead-letters show config/mammoth.yml 12
+mammoth dead-letters replay config/mammoth.yml 12
+```
+
+`list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. `replay` re-delivers the stored payload through the current Mammoth configuration and marks the row resolved on success.
