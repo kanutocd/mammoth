@@ -58,7 +58,7 @@ CDC::Concurrent::ProcessorPool
 webhook receiver
 ```
 
-Use this when you want to validate Mammoth 0.2 transaction-level delivery.
+Use this when you want to validate Mammoth transaction-level delivery.
 
 This example exercises:
 
@@ -78,6 +78,37 @@ docker compose up --build
 
 The receiver should log a `transaction.committed` payload with multiple row-level
 events in the `events` array.
+
+## `examples/webhook_fanout`
+
+Purpose:
+
+```text
+sample CDC-shaped event or TransactionEnvelope
+    ↓
+Mammoth fanout delivery path
+    ↓
+primary webhook + audit webhook
+```
+
+Use this when you want to inspect the `destinations` configuration shape for
+multi-destination webhook fanout. The example is config-only: it demonstrates
+the YAML contract, per-destination env-backed Authorization headers, and
+per-destination HMAC signing secrets without adding another Docker stack.
+
+This example exercises:
+
+- `destinations`
+- multiple webhook destinations
+- per-destination `header_env`
+- per-destination `signing.secret_env`
+- independent destination names used by delivered ledgers and dead letters
+
+Validate the config with:
+
+```bash
+bundle exec ./exe/mammoth validate examples/webhook_fanout/config/mammoth.yml
+```
 
 ## `examples/ordering`
 

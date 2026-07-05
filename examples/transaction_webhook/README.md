@@ -1,6 +1,6 @@
 # Mammoth Transaction Webhook Demo
 
-This example demonstrates the Mammoth 0.2 transaction delivery shape:
+This example demonstrates Mammoth transaction-level delivery:
 
 ```text
 PostgreSQL transaction

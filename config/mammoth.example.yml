@@ -2,9 +2,10 @@
 
 # Mammoth example configuration.
 #
-# This file is intentionally verbose. It is both a runnable starting point and
-# the primary operator-facing documentation for local development, Kubernetes
-# values, and production deployments.
+# This file is intentionally verbose. It is the primary operator-facing
+# reference for local development, Kubernetes values, and production
+# deployments. Update URLs, environment variables, and PostgreSQL settings
+# before using it as a runtime config.
 #
 # Architecture reminder:
 #
@@ -24,7 +25,7 @@
 mammoth:
   # Human-readable Mammoth instance name.
   #
-  # Used in logs, status output, metrics, and future operational dashboards.
+  # Used in logs, status output, metrics, and operational dashboards.
   # Keep this stable per environment.
   #
   # Examples:
@@ -177,8 +178,7 @@ runtime:
   #
   # concurrent:
   #   Use CDC::Concurrent::ProcessorPool for I/O-heavy delivery workloads such as
-  #   webhook HTTP calls, retry sleeps/backoff, and future multi-destination
-  #   fanout.
+  #   webhook HTTP calls, retry sleeps/backoff, and multi-destination fanout.
   adapter: concurrent
 
   # Number of downstream delivery workers.
@@ -193,6 +193,12 @@ runtime:
   #   webhook-heavy production: 10-50, after soak testing
   concurrency: 1
 
+  # Number of work units submitted to the runtime together.
+  #
+  # Keep this at 1 unless you have validated downstream ordering, retry, and
+  # receiver idempotency behavior under load.
+  batch_size: 1
+
   # Preserve configured ordering while using the runtime.
   #
   # true:
@@ -206,11 +212,17 @@ runtime:
   # Optional runtime timeout in seconds.
   #
   # Leave blank to let destination-specific timeouts control delivery behavior.
-  # Useful later for bounding end-to-end processor execution.
+  # Use this to bound end-to-end processor execution.
   timeout_seconds:
 
+# Single webhook destination shorthand.
+#
+# Use this for one destination. Use destinations below instead when Mammoth
+# should fan out to multiple webhook receivers. Do not configure both unless you
+# intentionally want destinations to replace this shorthand.
 webhook:
-  # Destination name used in logs, dead-letter records, and future metrics.
+  # Destination name used in logs, dead-letter records, delivered ledgers, and
+  # metrics.
   name: primary_webhook
 
   # Destination URL for delivered CDC payloads.
@@ -230,6 +242,7 @@ webhook:
     X-Mammoth-Source: local_mammoth
 
   # Optional HTTP headers whose values are read from environment variables.
+  # In Kubernetes, set these variables from Secrets.
   #
   # Example:
   #   header_env:
@@ -244,6 +257,7 @@ webhook:
   #
   # using the secret from secret_env, then sends the timestamp and signature in
   # configurable headers. The signature value is prefixed with "sha256=".
+  # In Kubernetes, set the secret_env variable from a Secret.
   #
   # signing:
   #   algorithm: hmac_sha256
@@ -256,6 +270,7 @@ webhook:
 # Use destinations instead of webhook when one PostgreSQL replication stream
 # should deliver the same CDC work item to multiple webhook receivers. Each
 # destination gets independent retry, delivered-ledger, and dead-letter state.
+# The destinations list replaces the webhook shorthand above.
 #
 # destinations:
 #   - name: primary_webhook
@@ -291,8 +306,8 @@ retry:
 sqlite:
   # Local operational database path.
   #
-  # Mammoth stores checkpoints, delivery attempts, and dead-letter records here.
-  # In Kubernetes, back this path with a PersistentVolumeClaim.
+  # Mammoth stores checkpoints, delivered-envelope ledgers, and dead-letter
+  # records here. In Kubernetes, back this path with a PersistentVolumeClaim.
   path: data/mammoth.db
 
 observability:

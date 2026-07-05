@@ -7,7 +7,8 @@
 #   TransactionEnvelope -> ConcurrentDeliveryRuntime -> DeliveryProcessor
 #
 # It is intentionally not a PostgreSQL logical-replication benchmark. Use this
-# to measure downstream delivery fan-out behavior under controlled sink latency.
+# to measure downstream concurrent delivery behavior under controlled sink
+# latency. It does not benchmark 0.5.0 multi-destination webhook fanout.
 
 require "json"
 require "securerandom"

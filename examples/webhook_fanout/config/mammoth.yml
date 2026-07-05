@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../config/mammoth.schema.json
 
 mammoth:
-  name: transaction_mammoth
+  name: fanout_mammoth
 
 postgres:
   host: postgres
@@ -11,7 +11,7 @@ postgres:
   password_env: MAMMOTH_POSTGRES_PASSWORD
 
 replication:
-  slot: mammoth_transaction
+  slot: mammoth_fanout
   publications:
     - mammoth_publication
   auto_create_slot: true
@@ -19,25 +19,36 @@ replication:
   feedback_interval: 2.0
 
 delivery:
-  # This example demonstrates Mammoth transaction-level delivery.
-  # The webhook receives one TransactionEnvelope payload containing all
-  # row-level events that PostgreSQL committed together.
   unit: transaction
   ordering:
     scope: transaction
 
 runtime:
-  # Keep concurrency at 1 for the demo so log output is deterministic.
-  # Increase this value when validating downstream I/O-heavy delivery.
   adapter: concurrent
-  concurrency: 1
+  concurrency: 4
+  batch_size: 1
   preserve_order: true
   timeout_seconds:
 
-webhook:
-  name: transaction_webhook
-  url: http://webhook_receiver:9292/webhook
-  timeout_seconds: 5
+destinations:
+  - name: primary_webhook
+    type: webhook
+    url: https://example.com/webhooks/postgres
+    timeout_seconds: 5
+    header_env:
+      Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION
+    signing:
+      algorithm: hmac_sha256
+      secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
+      signature_header: X-Mammoth-Signature
+      timestamp_header: X-Mammoth-Timestamp
+
+  - name: audit_webhook
+    type: webhook
+    url: https://audit.example.com/cdc
+    timeout_seconds: 5
+    headers:
+      X-Mammoth-Route: audit
 
 retry:
   max_attempts: 5

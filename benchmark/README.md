@@ -24,9 +24,13 @@ synthetic delivery worker
 ```
 
 It intentionally does **not** start PostgreSQL or a webhook server. The goal is
-to isolate downstream delivery fan-out behavior and prove that increasing
+to isolate downstream concurrent delivery behavior and prove that increasing
 `runtime.concurrency` improves I/O-bound delivery throughput without requiring
 additional PostgreSQL replication connections.
+
+This benchmark uses one synthetic destination. It does not measure 0.5.0
+multi-destination webhook fanout, per-destination retry behavior, or
+per-destination dead-letter behavior.
 
 ### Defaults
 
@@ -69,7 +73,8 @@ N concurrent delivery workers
 ```
 
 It is not a logical replication throughput benchmark and should not be used to
-measure `pgoutput-client`, PostgreSQL WAL decoding, or end-to-end database load.
+measure `pgoutput-client`, PostgreSQL WAL decoding, multi-destination webhook
+fanout, or end-to-end database load.
 
 For end-to-end validation, use the examples under `examples/`.
 

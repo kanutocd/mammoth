@@ -54,11 +54,11 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - Docker image support
 - public Helm chart support
 - unit and e2e test tasks
-- Health and metrics endpoints
+- health and metrics endpoints
 
 ## Boundary
 
-Mammoth begins at CDC-core work items and ends at webhook delivery.
+Mammoth begins at CDC-core work items and ends at webhook fanout delivery.
 
 Mammoth does not own pgoutput protocol parsing, value decoding, source
 normalization, ordering policy, or runtime execution. Those belong to the
@@ -104,6 +104,7 @@ Mammoth stores operational memory in SQLite:
 - `schema_migrations`
 - `checkpoints`
 - `dead_letters`
+- `delivered_envelopes`
 
 ## Performance
 

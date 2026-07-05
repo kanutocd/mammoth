@@ -67,6 +67,10 @@ many downstream concurrent deliveries
 It does not create extra PostgreSQL replication slots or replication
 connections. That separation is the core Mammoth runtime story.
 
+The current benchmark uses one synthetic destination. It measures
+`cdc-concurrent` delivery throughput, not 0.5.0 multi-destination webhook
+fanout or per-destination retry/dead-letter behavior.
+
 ## Not Covered
 
 This benchmark does not measure:
@@ -76,6 +80,7 @@ This benchmark does not measure:
 - network behavior
 - retry behavior
 - checkpoint recovery
+- multi-destination webhook fanout
 - Toxiproxy failure scenarios
 
 Those should be covered by separate end-to-end examples and resilience tests.

@@ -5,7 +5,7 @@
 [![Ruby Version](https://img.shields.io/badge/ruby-%3E%3D%204.0-ruby.svg)](https://www.ruby-lang.org/en/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-🦣 Mammoth is a self-hosted PostgreSQL TransactionEnvelope-driven Change Data Capture relay focused on reliable delivery of database change events to webhooks.
+🦣 Mammoth is a self-hosted PostgreSQL TransactionEnvelope-driven Change Data Capture relay focused on reliable delivery of database change events to webhook destinations.
 
 ```text
 PostgreSQL
