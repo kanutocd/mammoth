@@ -85,8 +85,18 @@ module Mammoth
     # Count delivered envelopes.
     #
     # @return [Integer] delivered envelope count
-    def count
-      database.get_first_value("SELECT COUNT(*) FROM delivered_envelopes")
+    def count(destination: nil)
+      if destination
+        database.get_first_value("SELECT COUNT(*) FROM delivered_envelopes WHERE destination_name = ?", [destination])
+      else
+        database.get_first_value("SELECT COUNT(*) FROM delivered_envelopes")
+      end
+    end
+
+    def counts_by_destination
+      database.execute(
+        "SELECT destination_name, COUNT(*) AS count FROM delivered_envelopes GROUP BY destination_name"
+      )
     end
 
     private

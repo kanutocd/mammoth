@@ -1,0 +1,32 @@
+module Mammoth
+  # Matches CDC events and transaction envelopes against destination route rules.
+  class RouteFilter
+    @schemas: untyped
+
+    @tables: untyped
+
+    @operations: untyped
+
+    attr_reader schemas: untyped
+
+    attr_reader tables: untyped
+
+    attr_reader operations: untyped
+
+    def initialize: (?untyped config) -> void
+
+    def match?: (untyped work, serializer: untyped) -> bool
+
+    def match_payload?: (untyped payload) -> bool
+
+    private
+
+    def normalized_set: (untyped values) -> untyped
+
+    def transaction_payload?: (untyped payload) -> bool
+
+    def event_match?: (untyped payload) -> bool
+
+    def matches?: (untyped allowed_values, untyped actual_value) -> bool
+  end
+end

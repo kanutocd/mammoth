@@ -19,7 +19,7 @@ entrypoint stay aligned.
 | --- | --- | --- |
 | `benchmark/concurrent_delivery.rb` | `cdc-concurrent` downstream runtime | `runtime.concurrency`, `runtime.preserve_order` |
 | `benchmark/webhook_delivery.rb` | real `WebhookSink` HTTP delivery | `webhook.timeout_seconds`, `webhook.headers`, `webhook.header_env`, `webhook.signing`, `delivery.unit` |
-| `benchmark/webhook_fanout.rb` | multi-destination webhook fanout | `destinations`, destination count, destination `timeout_seconds`, `delivery.unit` |
+| `benchmark/webhook_fanout.rb` | multi-destination webhook fanout | `destinations`, destination count, destination `timeout_seconds`, `route`, destination `retry`, `delivery.unit` |
 | `benchmark/sqlite_operational_state.rb` | SQLite operational state | SQLite volume performance, checkpoint cadence, ledger/DLQ size |
 | `benchmark/observability_snapshot.rb` | `/readyz` and `/metrics` snapshot cost | SQLite size, scrape frequency |
 | `benchmark/dlq_replay.rb` | dead-letter replay | DLQ size, fanout destination count, `delivery.unit` |
@@ -95,7 +95,7 @@ MAMMOTH_BENCH_PRESERVE_ORDER=false \
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
-This benchmark uses one synthetic destination. It does not measure 0.5.1
+This benchmark uses one synthetic destination. It does not measure 0.6.0
 multi-destination webhook fanout, per-destination retry behavior, or
 per-destination dead-letter behavior.
 
@@ -135,6 +135,8 @@ Useful for tuning:
 
 - number of `destinations`
 - destination `timeout_seconds`
+- route selectivity, when compared with expected destination count
+- destination-specific retry/backoff policy planning
 - `delivery.unit`
 - `runtime.concurrency` planning, when compared with `concurrent_delivery.rb`
 

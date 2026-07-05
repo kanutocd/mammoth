@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.5.1"
+  tag: "0.6.0"
   pullPolicy: IfNotPresent
 
 # Private PRO images can be used by overriding image.repository and setting
@@ -73,6 +73,7 @@ destinations: []
 # destinations:
 #   - name: "primary_webhook"
 #     type: "webhook"
+#     enabled: true
 #     url: "https://yourservice.com/webhooks/postgres"
 #     timeout_seconds: 5
 #     headers: {}
@@ -88,8 +89,22 @@ destinations: []
 #         MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
 #   - name: "audit_webhook"
 #     type: "webhook"
+#     enabled: true
 #     url: "https://audit.example.com/cdc"
 #     timeout_seconds: 5
+#     route:
+#       schemas:
+#         - "public"
+#       tables:
+#         - "orders"
+#       operations:
+#         - "insert"
+#         - "update"
+#     retry:
+#       max_attempts: 3
+#       schedule_seconds:
+#         - 1
+#         - 10
 
 retry:
   max_attempts: 5

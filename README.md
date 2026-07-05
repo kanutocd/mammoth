@@ -47,8 +47,10 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - dead letter persistence
 - webhook delivery sink
 - webhook fanout to multiple destinations
+- fanout route filters by schema, table, and operation
+- per-destination enable/disable and retry policy controls
 - delivery worker with retry, checkpoint, and DLQ handling
-- dead-letter inspection and replay commands
+- dead-letter inspection and filtered replay commands
 - CDC-core event serialization boundary
 - CDC Ecosystem source-adapter integration boundary
 - Docker image support
@@ -76,6 +78,24 @@ Validate configuration:
 
 ```bash
 bundle exec ./exe/mammoth validate config/mammoth.example.yml
+```
+
+Fanout destinations can be routed and tuned independently:
+
+```yaml
+destinations:
+  - name: audit_webhook
+    type: webhook
+    enabled: true
+    url: https://audit.example.com/cdc
+    timeout_seconds: 5
+    route:
+      schemas: [public]
+      tables: [orders]
+      operations: [insert, update]
+    retry:
+      max_attempts: 3
+      schedule_seconds: [1, 10]
 ```
 
 ## CLI

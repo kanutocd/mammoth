@@ -21,14 +21,14 @@ module Mammoth
     #
     # @param limit [Integer] maximum number of rows
     # @return [Array<Hash>] pending dead letter rows
-    def pending: (?limit: ::Integer) -> untyped
+    def pending: (?limit: ::Integer, ?destination: untyped?, ?failed_after: untyped?, ?failed_before: untyped?) -> untyped
 
     # Fetch dead letters, optionally filtered by status.
     #
     # @param status [String, nil] optional dead-letter status filter
     # @param limit [Integer] maximum number of rows
     # @return [Array<Hash>] dead letter rows
-    def rows: (?status: untyped?, ?limit: ::Integer) -> untyped
+    def rows: (?status: untyped?, ?limit: ::Integer, ?destination: untyped?, ?failed_after: untyped?, ?failed_before: untyped?) -> untyped
 
     # Fetch one dead letter by id.
     #
@@ -40,7 +40,9 @@ module Mammoth
     #
     # @param status [String, nil] optional status
     # @return [Integer] dead letter count
-    def count: (?status: untyped?) -> untyped
+    def count: (?status: untyped?, ?destination: untyped?) -> untyped
+
+    def counts_by_destination: (?status: untyped?) -> untyped
 
     # Mark a dead letter as resolved.
     #
@@ -59,5 +61,7 @@ module Mammoth
     def database: () -> untyped
 
     def update_status: (untyped id, untyped status) -> untyped
+
+    def row_filters: (?status: untyped?, ?destination: untyped?, ?failed_after: untyped?, ?failed_before: untyped?) -> untyped
   end
 end

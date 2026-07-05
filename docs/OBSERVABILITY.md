@@ -36,7 +36,7 @@ Example response:
   "status": "ok",
   "service": "mammoth",
   "name": "local_mammoth",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "checked_at": "2026-07-06T00:00:00Z"
 }
 ```
@@ -75,6 +75,8 @@ mammoth_dead_letters_pending_total{mammoth_name="local_mammoth"} 0
 mammoth_dead_letters_resolved_total{mammoth_name="local_mammoth"} 0
 mammoth_dead_letters_ignored_total{mammoth_name="local_mammoth"} 0
 mammoth_delivered_envelopes_total{mammoth_name="local_mammoth"} 3
+mammoth_dead_letters_pending_total{mammoth_name="local_mammoth",destination="primary_webhook"} 0
+mammoth_delivered_envelopes_total{mammoth_name="local_mammoth",destination="audit_webhook"} 3
 ```
 
 ## Operational model
@@ -88,6 +90,7 @@ The endpoints expose local relay state only:
 - checkpoint row count
 - dead-letter row counts
 - delivered-envelope ledger row count
+- destination-labeled dead-letter and delivered-envelope counts
 - SQLite readiness
 
 The endpoints do not inspect PostgreSQL replication slots, send feedback, replay

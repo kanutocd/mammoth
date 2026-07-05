@@ -82,6 +82,24 @@ module Mammoth
     end
     # rubocop:enable Metrics/MethodLength
 
+    def test_prometheus_reports_destination_labeled_counts
+      with_temp_dir do |dir|
+        store = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), fanout_config(store.path)))
+        seed_destination_metrics(store)
+
+        metrics = ObservabilitySnapshot.new(config, sqlite_store: store).prometheus
+
+        assert_includes metrics, %(mammoth_delivered_envelopes_total{mammoth_name="local_mammoth"} 1)
+        assert_includes metrics,
+                        %(mammoth_delivered_envelopes_total{mammoth_name="local_mammoth",destination="audit_webhook"} 1)
+        assert_includes metrics,
+                        %(mammoth_dead_letters_pending_total{mammoth_name="local_mammoth",destination="primary_webhook"} 1)
+        assert_includes metrics,
+                        %(mammoth_dead_letters_pending_total{mammoth_name="local_mammoth",destination="audit_webhook"} 0)
+      end
+    end
+
     def test_prometheus_reports_down_when_store_fails
       metrics = ObservabilitySnapshot.new(Configuration.load(fixture_config_path), sqlite_store: BrokenStore.new).prometheus
 
@@ -93,6 +111,48 @@ module Mammoth
       def bootstrap!
         raise StoreError, "broken sqlite"
       end
+    end
+
+    private
+
+    def fanout_config(sqlite_path)
+      minimal_config(sqlite_path: sqlite_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+        destinations:
+          - name: primary_webhook
+            type: webhook
+            url: https://example.com/webhooks/postgres
+            timeout_seconds: 5
+          - name: audit_webhook
+            type: webhook
+            url: https://example.com/webhooks/audit
+            timeout_seconds: 5
+
+      YAML
+    end
+
+    def seed_destination_metrics(store)
+      DeliveredEnvelopeStore.new(store).record!(
+        idempotency_key: "key-1",
+        source_name: "local_mammoth",
+        slot_name: "mammoth_prod",
+        destination_name: "audit_webhook",
+        delivery_unit: "transaction",
+        transaction_id: "1",
+        source_position: "0/1"
+      )
+      DeadLetterStore.new(store).write(event: sample_event, destination_name: "primary_webhook")
+    end
+
+    def sample_event
+      {
+        "event_id" => "event-1",
+        "source" => "postgresql",
+        "operation" => "insert",
+        "namespace" => "public",
+        "entity" => "orders",
+        "source_position" => "0/1",
+        "data" => { "id" => 1 }
+      }
     end
   end
 end

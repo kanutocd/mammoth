@@ -71,7 +71,20 @@ module Mammoth
       dead_letter_store = DeadLetterStore.new(store)
       delivered_store = DeliveredEnvelopeStore.new(store)
 
-      lines = metric_headers + [
+      lines = metric_headers + aggregate_metric_lines(
+        checkpoint_store: checkpoint_store,
+        dead_letter_store: dead_letter_store,
+        delivered_store: delivered_store
+      ) + destination_metric_lines(dead_letter_store:, delivered_store:)
+      "#{lines.join("\n")}\n"
+    rescue Mammoth::Error, SQLite3::Exception
+      "#{(metric_headers + [metric_line("mammoth_up", 0)]).join("\n")}\n"
+    end
+
+    private
+
+    def aggregate_metric_lines(checkpoint_store:, dead_letter_store:, delivered_store:)
+      [
         metric_line("mammoth_up", 1),
         metric_line("mammoth_checkpoints_total", checkpoint_store.count),
         metric_line("mammoth_dead_letters_total", dead_letter_store.count),
@@ -80,12 +93,24 @@ module Mammoth
         metric_line("mammoth_dead_letters_ignored_total", dead_letter_store.count(status: "ignored")),
         metric_line("mammoth_delivered_envelopes_total", delivered_store.count)
       ]
-      "#{lines.join("\n")}\n"
-    rescue Mammoth::Error, SQLite3::Exception
-      "#{(metric_headers + [metric_line("mammoth_up", 0)]).join("\n")}\n"
     end
 
-    private
+    def destination_metric_lines(dead_letter_store:, delivered_store:)
+      destination_names.flat_map do |destination|
+        [
+          metric_line("mammoth_dead_letters_total", dead_letter_store.count(destination: destination),
+                      destination: destination),
+          metric_line("mammoth_dead_letters_pending_total",
+                      dead_letter_store.count(status: "pending", destination: destination), destination: destination),
+          metric_line("mammoth_dead_letters_resolved_total",
+                      dead_letter_store.count(status: "resolved", destination: destination), destination: destination),
+          metric_line("mammoth_dead_letters_ignored_total",
+                      dead_letter_store.count(status: "ignored", destination: destination), destination: destination),
+          metric_line("mammoth_delivered_envelopes_total", delivered_store.count(destination: destination),
+                      destination: destination)
+        ]
+      end
+    end
 
     def operational_store
       sqlite_store || SQLiteStore.connect(config.dig("sqlite", "path"))
@@ -93,6 +118,13 @@ module Mammoth
 
     def mammoth_name
       config.dig("mammoth", "name")
+    end
+
+    def destination_names
+      destinations = config.data["destinations"]
+      return destinations.map { |destination| destination.fetch("name") } if destinations
+
+      [config.dig("webhook", "name")]
     end
 
     def checked_at
@@ -118,8 +150,10 @@ module Mammoth
       ]
     end
 
-    def metric_line(name, value)
-      %(#{name}{mammoth_name="#{escape_label(mammoth_name)}"} #{Integer(value)})
+    def metric_line(name, value, destination: nil)
+      labels = { "mammoth_name" => mammoth_name }
+      labels["destination"] = destination if destination
+      %(#{name}{#{labels.map { |label, label_value| %(#{label}="#{escape_label(label_value)}") }.join(",")}} #{Integer(value)})
     end
 
     def escape_label(value)

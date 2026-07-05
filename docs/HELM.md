@@ -87,7 +87,7 @@ Default values:
 ```yaml
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.5.1"
+  tag: "0.6.0"
   pullPolicy: IfNotPresent
 ```
 
@@ -96,7 +96,7 @@ Override image settings:
 ```bash
 helm upgrade --install mammoth ./charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=0.5.1
+  --set image.tag=0.6.0
 ```
 
 ## Kind Local Development
@@ -179,6 +179,7 @@ headers and signing secret env vars to a Kubernetes Secret:
 destinations:
   - name: primary_webhook
     type: webhook
+    enabled: true
     url: https://example.com/webhooks/postgres
     timeout_seconds: 5
     header_env:
@@ -193,8 +194,22 @@ destinations:
         MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
   - name: audit_webhook
     type: webhook
+    enabled: true
     url: https://audit.example.com/cdc
     timeout_seconds: 5
+    route:
+      schemas:
+        - public
+      tables:
+        - orders
+      operations:
+        - insert
+        - update
+    retry:
+      max_attempts: 3
+      schedule_seconds:
+        - 1
+        - 10
 ```
 
 The rendered Mammoth config stores only environment variable names. The

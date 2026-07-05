@@ -40,11 +40,13 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 
 ## Current release scope
 
-Mammoth 0.5.x focuses on:
+Mammoth 0.6.x focuses on:
 
 - PostgreSQL logical replication ingestion
 - normalized CDC event and transaction delivery to webhooks
 - multi-destination webhook fanout
+- fanout route filters by schema, table, and operation
+- per-destination enable/disable and retry policy controls
 - transaction envelope preservation
 - concurrent downstream delivery with one PostgreSQL replication stream
 - retry handling
@@ -52,13 +54,13 @@ Mammoth 0.5.x focuses on:
 - SQLite dead-letter storage
 - SQLite delivered-envelope ledger storage
 - webhook static headers, env-backed headers, and HMAC-SHA256 signing
-- dead-letter inspection and replay commands
+- dead-letter inspection and filtered replay commands
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.5.x
+## Non-goals for 0.6.x
 
-Mammoth 0.5.x does not yet provide:
+Mammoth 0.6.x does not provide:
 
 - a web dashboard
 - multiple active consumers for the same PostgreSQL replication slot

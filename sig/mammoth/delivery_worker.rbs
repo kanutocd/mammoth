@@ -26,6 +26,10 @@ module Mammoth
 
     @sleeper: untyped
 
+    @route_filter: untyped
+
+    @enabled: untyped
+
     DEFAULT_SOURCE: "postgresql"
 
     attr_reader sink: untyped
@@ -48,6 +52,10 @@ module Mammoth
 
     attr_reader publication_name: untyped
 
+    attr_reader route_filter: untyped
+
+    attr_reader enabled: untyped
+
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
@@ -57,8 +65,8 @@ module Mammoth
     # @param max_attempts [Integer] maximum delivery attempts
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
-    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped) -> void
-                  | (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, delivered_envelope_store: untyped?, ?sleeper: untyped) -> void
+    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
+                  | (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, delivered_envelope_store: untyped?, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
 
     # Build a delivery worker from Mammoth configuration and stores.
     #
@@ -68,7 +76,7 @@ module Mammoth
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
     # @param sleeper [#call] sleep strategy
     # @return [Mammoth::DeliveryWorker]
-    def self.from_config: (untyped config, sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, ?sleeper: untyped) -> untyped
+    def self.from_config: (untyped config, sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, ?sleeper: untyped, ?delivery_policy: untyped) -> untyped
 
     # Deliver an event with retry, checkpoint, and DLQ handling.
     #
@@ -91,6 +99,10 @@ module Mammoth
     def delivery_unit_for: (untyped delivery_method) -> Symbol
 
     def destination_name: () -> untyped
+
+    def skip_result_for: (untyped payload, idempotency_key: untyped) -> untyped
+
+    def skipped: (untyped payload, idempotency_key: untyped, reason: untyped) -> untyped
 
     def dead_letter: (untyped event, untyped error, untyped attempts, serializer: untyped) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
 

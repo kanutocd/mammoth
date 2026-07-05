@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 Unreleased
+
+### Added
+
+- Added fanout route filters by schema, table, and operation for webhook destinations.
+- Added destination `enabled` controls for config-driven delivery cutovers.
+- Added per-destination retry policy overrides for `max_attempts` and `schedule_seconds`.
+- Added dead-letter replay filters by destination, status, and failed-at time window.
+- Added destination-labeled Prometheus metrics for dead-letter and delivered-envelope counts.
+
+### Changed
+
+- Bumped Mammoth version to `0.6.0`.
 
 ## 0.5.1
 

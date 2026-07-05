@@ -9,9 +9,9 @@ mammoth bootstrap CONFIG
 mammoth status CONFIG
 mammoth start CONFIG
 mammoth deliver-sample CONFIG EVENT_JSON
-mammoth dead-letters list CONFIG [--status STATUS] [--limit N]
+mammoth dead-letters list CONFIG [--status STATUS] [--destination NAME] [--failed-after ISO8601] [--failed-before ISO8601] [--limit N]
 mammoth dead-letters show CONFIG ID
-mammoth dead-letters replay CONFIG [ID ...]
+mammoth dead-letters replay CONFIG [ID ...] [--destination NAME] [--status STATUS] [--failed-after ISO8601] [--failed-before ISO8601] [--limit N]
 ```
 
 ## `mammoth version`
@@ -100,7 +100,12 @@ mammoth dead-letters show config/mammoth.yml 12
 mammoth dead-letters replay config/mammoth.yml 12
 ```
 
-`list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. `replay` re-delivers the stored payload through the current Mammoth configuration and marks the row resolved on success.
+`list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. Use `--destination`, `--failed-after`, `--failed-before`, and `--limit` to narrow the result set.
+
+`replay` re-delivers the stored payload through the current Mammoth configuration and marks the row resolved on success. Passing explicit IDs replays those rows. Without IDs, replay uses the same filters as `list`, so operators can replay a specific destination, status, and failed-at time window.
+
+If the current configuration disables the destination or its route no longer
+matches the payload, replay reports `skipped` and leaves the row pending.
 
 
 ## Observability server

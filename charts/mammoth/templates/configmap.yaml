@@ -41,6 +41,7 @@ data:
       {{- range .Values.destinations }}
       - name: {{ .name | quote }}
         type: {{ .type | default "webhook" | quote }}
+        enabled: {{- if hasKey . "enabled" }} {{ .enabled }}{{- else }} true{{- end }}
         url: {{ .url | quote }}
         timeout_seconds: {{ .timeout_seconds | default 5 }}
         {{- with .headers }}
@@ -53,6 +54,14 @@ data:
         {{- end }}
         {{- with .signing }}
         signing:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .route }}
+        route:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .retry }}
+        retry:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       {{- end }}

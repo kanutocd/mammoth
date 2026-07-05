@@ -136,6 +136,22 @@ module Mammoth
       end
     end
 
+    def test_dead_letters_show_prints_payload
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+        id = write_dead_letter(db_path)
+
+        stdout, stderr = capture_io do
+          assert_equal 0, CLI.call(["dead-letters", "show", config_path, id.to_s])
+        end
+
+        assert_empty stderr
+        assert_match(/"payload"/, stdout)
+        assert_match(/"event_id": "event-1"/, stdout)
+      end
+    end
+
     def test_dead_letters_replay_requires_integer_id
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -267,6 +283,87 @@ module Mammoth
       end
     end
 
+    def test_dead_letters_replay_keeps_pending_when_destination_is_disabled
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), disabled_audit_fanout_config(db_path))
+        id = dead_letter_store(db_path).write(event: sample_event, destination_name: "audit_webhook")
+
+        stdout, stderr = capture_io do
+          assert_equal 0, CLI.call(["dead-letters", "replay", config_path, id.to_s])
+        end
+
+        assert_empty stderr
+        assert_match(/Dead letter #{id}: skipped/, stdout)
+        assert_equal 1, dead_letter_store(db_path).count(status: "pending")
+        assert_equal 0, dead_letter_store(db_path).count(status: "resolved")
+      end
+    end
+
+    def test_dead_letters_replay_filters_by_destination_status_and_time_window
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+
+        with_two_test_servers do |primary_url, _primary_received, audit_url, _audit_received|
+          config_path = write_file(File.join(dir, "mammoth.yml"), fanout_config(db_path, primary_url, audit_url))
+          store = dead_letter_store(db_path)
+          ids = write_time_window_dead_letters(store)
+
+          stdout, stderr = capture_io do
+            assert_equal 0, CLI.call(filtered_replay_command(config_path))
+          end
+
+          assert_empty stderr
+          assert_match(/Dead letter #{ids.fetch(:replay_id)}: delivered/, stdout)
+          refute_match(/Dead letter #{ids.fetch(:old_id)}:/, stdout)
+          assert_equal 2, store.count(status: "pending")
+          assert_equal 1, store.count(status: "resolved")
+        end
+      end
+    end
+
+    def test_dead_letters_replay_rejects_invalid_time_window
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+
+        stdout, stderr = capture_io do
+          assert_equal 1, CLI.call(["dead-letters", "replay", config_path, "--failed-after", "not-time"])
+        end
+
+        assert_empty stdout
+        assert_match(/--failed-after must be an ISO-8601 timestamp/, stderr)
+      end
+    end
+
+    def test_dead_letters_list_rejects_invalid_failed_before
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+
+        stdout, stderr = capture_io do
+          assert_equal 1, CLI.call(["dead-letters", "list", config_path, "--failed-before", "not-time"])
+        end
+
+        assert_empty stdout
+        assert_match(/--failed-before must be an ISO-8601 timestamp/, stderr)
+      end
+    end
+
+    def test_dead_letters_list_rejects_missing_option_value
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+
+        stdout, stderr = capture_io do
+          assert_equal 1, CLI.call(["dead-letters", "list", config_path, "--destination"])
+        end
+
+        assert_empty stdout
+        assert_match(/missing value for dead letter option/, stderr)
+      end
+    end
+
     def test_dead_letters_replay_keeps_pending_when_delivery_still_fails
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -363,6 +460,13 @@ module Mammoth
       YAML
     end
 
+    def disabled_audit_fanout_config(db_path)
+      fanout_config(db_path, "https://example.com/primary", "https://example.com/audit").sub(
+        "name: audit_webhook\n    type: webhook",
+        "name: audit_webhook\n    type: webhook\n    enabled: false"
+      )
+    end
+
     def write_fanout_transaction_dead_letter(db_path)
       transaction = transaction_envelope([sample_event.merge("event_id" => "transaction-event-1")])
       dead_letter_store(db_path).write(
@@ -372,6 +476,26 @@ module Mammoth
         retry_count: 3,
         serializer: TransactionEnvelopeSerializer
       )
+    end
+
+    def write_time_window_dead_letters(store)
+      old_id = store.write(event: sample_event("old-audit"), destination_name: "audit_webhook")
+      replay_id = store.write(event: sample_event("new-audit"), destination_name: "audit_webhook")
+      store.write(event: sample_event("new-primary"), destination_name: "primary_webhook")
+      store.sqlite_store.database.execute("UPDATE dead_letters SET failed_at = ? WHERE id = ?",
+                                          ["2026-07-05T00:00:00Z", old_id])
+      store.sqlite_store.database.execute("UPDATE dead_letters SET failed_at = ? WHERE id = ?",
+                                          ["2026-07-06T00:00:00Z", replay_id])
+      { old_id: old_id, replay_id: replay_id }
+    end
+
+    def filtered_replay_command(config_path)
+      [
+        "dead-letters", "replay", config_path,
+        "--destination", "audit_webhook",
+        "--status", "pending",
+        "--failed-after", "2026-07-05T12:00:00Z"
+      ]
     end
 
     def assert_transaction_replay_resolved(db_path)

@@ -36,15 +36,21 @@ module Mammoth
 
     private
 
+    def aggregate_metric_lines: (checkpoint_store: untyped, dead_letter_store: untyped, delivered_store: untyped) -> untyped
+
+    def destination_metric_lines: (dead_letter_store: untyped, delivered_store: untyped) -> untyped
+
     def operational_store: () -> untyped
 
     def mammoth_name: () -> untyped
+
+    def destination_names: () -> untyped
 
     def checked_at: () -> untyped
 
     def metric_headers: () -> untyped
 
-    def metric_line: (untyped name, untyped value) -> String
+    def metric_line: (untyped name, untyped value, ?destination: untyped?) -> String
 
     def escape_label: (untyped value) -> String
   end

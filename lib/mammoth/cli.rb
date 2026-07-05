@@ -24,9 +24,11 @@ module Mammoth
       "  mammoth status CONFIG",
       "  mammoth start CONFIG",
       "  mammoth deliver-sample CONFIG EVENT_JSON",
-      "  mammoth dead-letters list CONFIG [--status STATUS] [--limit N]",
+      "  mammoth dead-letters list CONFIG [--status STATUS] [--destination NAME] " \
+      "[--failed-after ISO8601] [--failed-before ISO8601] [--limit N]",
       "  mammoth dead-letters show CONFIG ID",
-      "  mammoth dead-letters replay CONFIG [ID ...]",
+      "  mammoth dead-letters replay CONFIG [ID ...] [--destination NAME] [--status STATUS] " \
+      "[--failed-after ISO8601] [--failed-before ISO8601] [--limit N]",
       "  mammoth observability CONFIG"
     ].join("\n")
 

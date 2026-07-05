@@ -137,6 +137,22 @@ module Mammoth
       end
     end
 
+    def test_builds_destination_policy_from_destinations_config
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), destination_policy_config(db_path))
+        app = Application.new(Configuration.load(config_path), source: [])
+        worker = app.delivery_worker
+
+        assert_instance_of DeliveryWorker, worker
+        refute worker.enabled
+        assert_equal 2, worker.max_attempts
+        assert_equal [3], worker.retry_schedule
+        assert_equal 7, worker.sink.timeout_seconds
+        assert_equal ["orders"], worker.route_filter.tables
+      end
+    end
+
     def test_concurrent_runtime_defaults_to_preserve_order
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -267,6 +283,29 @@ module Mammoth
         "source_position" => position,
         "data" => { "id" => event_id }
       }
+    end
+
+    def destination_policy_config(db_path)
+      minimal_config(sqlite_path: db_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
+        destinations:
+          - name: primary_webhook
+            type: webhook
+            enabled: false
+            url: https://example.com/webhooks/postgres
+            timeout_seconds: 7
+            route:
+              schemas:
+                - public
+              tables:
+                - orders
+              operations:
+                - insert
+            retry:
+              max_attempts: 2
+              schedule_seconds:
+                - 3
+
+      YAML
     end
   end
   # rubocop:enable Metrics/ClassLength

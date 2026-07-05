@@ -41,8 +41,15 @@ module Mammoth
     def list_options: () -> untyped
 
     def parse_list_option: (untyped args, untyped index, untyped options) -> untyped
+    def assign_option: (untyped args, untyped index, untyped options, untyped key) -> untyped
+    def assign_time_option: (untyped args, untyped index, untyped options, untyped key) -> untyped
+    def assign_limit_option: (untyped args, untyped index, untyped options) -> untyped
+    def parse_limit_option: (untyped value) -> untyped
 
     def replay_rows: () -> untyped
+    def replay_options: () -> untyped
+    def parse_replay_option: (untyped args, untyped index, untyped options) -> untyped
+    def parse_time_option: (untyped value, untyped option_name) -> untyped
 
     def fetch_dead_letter!: (untyped id) -> untyped
 
@@ -51,6 +58,8 @@ module Mammoth
     def replay_event: (untyped destination_name, untyped payload) -> untyped
 
     def replay_transaction: (untyped destination_name, untyped envelope) -> untyped
+
+    def replay_resolved?: (untyped result) -> bool
 
     def transaction_payload?: (untyped payload) -> bool
 

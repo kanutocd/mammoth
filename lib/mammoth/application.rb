@@ -87,30 +87,49 @@ module Mammoth
       Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
     end
 
-    def build_delivery_worker(sink:, sleeper:)
+    def build_delivery_worker(sink:, sleeper:, delivery_policy: {})
       DeliveryWorker.from_config(
         config,
         sink: sink,
         checkpoint_store: checkpoint_store,
         dead_letter_store: DeadLetterStore.new(sqlite_store),
-        sleeper: sleeper
+        sleeper: sleeper,
+        delivery_policy: delivery_policy
       )
     end
 
     def build_configured_delivery_worker(sleeper:)
-      workers = destination_sinks.map { |sink| build_delivery_worker(sink:, sleeper:) }
+      workers = destination_specs.map do |spec|
+        build_delivery_worker(sink: spec.fetch(:sink), sleeper:, delivery_policy: spec.fetch(:delivery_policy))
+      end
       return workers.fetch(0) if workers.one?
 
       FanoutDeliveryWorker.new(workers)
     end
 
-    def destination_sinks
+    def destination_specs
       destinations = config.data["destinations"]
-      return [WebhookSink.from_config(config)] unless destinations
+      unless destinations
+        delivery_policy = {} # : Hash[String, untyped]
+        return [{ sink: WebhookSink.from_config(config), delivery_policy: delivery_policy }]
+      end
 
       destinations.map.with_index(1) do |destination, index|
-        WebhookSink.from_destination_config(destination, label: "destinations[#{index - 1}]")
+        {
+          sink: WebhookSink.from_destination_config(destination, label: "destinations[#{index - 1}]"),
+          delivery_policy: destination_delivery_policy(destination)
+        }
       end
+    end
+
+    def destination_delivery_policy(destination)
+      retry_config = destination["retry"] || {}
+      {
+        "enabled" => destination.fetch("enabled", true),
+        "max_attempts" => retry_config.fetch("max_attempts", config.dig("retry", "max_attempts")),
+        "schedule_seconds" => retry_config.fetch("schedule_seconds", config.dig("retry", "schedule_seconds")),
+        "route_filter" => RouteFilter.new(destination["route"])
+      }
     end
 
     def transaction_delivery?

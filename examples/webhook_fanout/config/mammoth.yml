@@ -33,6 +33,7 @@ runtime:
 destinations:
   - name: primary_webhook
     type: webhook
+    enabled: true
     url: https://example.com/webhooks/postgres
     timeout_seconds: 5
     header_env:
@@ -45,10 +46,24 @@ destinations:
 
   - name: audit_webhook
     type: webhook
+    enabled: true
     url: https://audit.example.com/cdc
     timeout_seconds: 5
     headers:
       X-Mammoth-Route: audit
+    route:
+      schemas:
+        - public
+      tables:
+        - orders
+      operations:
+        - insert
+        - update
+    retry:
+      max_attempts: 3
+      schedule_seconds:
+        - 1
+        - 10
 
 retry:
   max_attempts: 5

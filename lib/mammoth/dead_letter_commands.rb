@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "time"
 
 module Mammoth
   # Operator commands for inspecting and replaying dead letters.
@@ -55,7 +56,14 @@ module Mammoth
     end
 
     def list
-      rows = dead_letter_store.rows(status: list_options.fetch(:status), limit: list_options.fetch(:limit))
+      options = list_options
+      rows = dead_letter_store.rows(
+        status: options.fetch(:status),
+        destination: options.fetch(:destination),
+        failed_after: options.fetch(:failed_after),
+        failed_before: options.fetch(:failed_before),
+        limit: options.fetch(:limit)
+      )
       puts list_header
       rows.each { |row| puts list_row(row) }
       0
@@ -73,7 +81,7 @@ module Mammoth
 
       rows.each do |row|
         result = replay_row(row)
-        dead_letter_store.resolve(row.fetch("id")) unless result.fetch(:status) == "dead_lettered"
+        dead_letter_store.resolve(row.fetch("id")) if replay_resolved?(result)
         puts replay_message(row, result)
       end
       0
@@ -106,7 +114,7 @@ module Mammoth
     #
     # @return [Hash] list options
     def list_options
-      options = { status: "pending", limit: 100 }
+      options = { status: "pending", destination: nil, failed_after: nil, failed_before: nil, limit: 100 }
       index = 0
       args = argv.drop(3)
 
@@ -122,17 +130,44 @@ module Mammoth
     def parse_list_option(args, index, options)
       case args.fetch(index)
       when "--status"
-        options[:status] = args.fetch(index + 1)
-        index + 2
+        assign_option(args, index, options, :status)
+      when "--destination"
+        assign_option(args, index, options, :destination)
+      when "--failed-after"
+        assign_time_option(args, index, options, :failed_after)
+      when "--failed-before"
+        assign_time_option(args, index, options, :failed_before)
       when "--limit"
-        options[:limit] = Integer(args.fetch(index + 1))
-        index + 2
+        assign_limit_option(args, index, options)
       else
         raise ConfigurationError, "unknown option #{args[index]}\n#{CLI::USAGE}" if args[index].start_with?("--")
 
         raise ConfigurationError, "unexpected argument #{args[index]}\n#{CLI::USAGE}"
       end
-    rescue ArgumentError, IndexError
+    rescue ArgumentError
+      raise ConfigurationError, "invalid dead letter list option"
+    rescue IndexError
+      raise ConfigurationError, "missing value for dead letter option"
+    end
+
+    def assign_option(args, index, options, key)
+      options[key] = args.fetch(index + 1)
+      index + 2
+    end
+
+    def assign_time_option(args, index, options, key)
+      options[key] = parse_time_option(args.fetch(index + 1), args.fetch(index))
+      index + 2
+    end
+
+    def assign_limit_option(args, index, options)
+      options[:limit] = parse_limit_option(args.fetch(index + 1))
+      index + 2
+    end
+
+    def parse_limit_option(value)
+      Integer(value)
+    rescue ArgumentError
       raise ConfigurationError, "dead letter limit must be an integer"
     end
 
@@ -140,8 +175,17 @@ module Mammoth
     #
     # @return [Array<Hash>] replay rows
     def replay_rows
-      ids = argv.drop(3)
-      return dead_letter_store.pending if ids.empty?
+      options = replay_options
+      ids = options.fetch(:ids)
+      if ids.empty?
+        return dead_letter_store.rows(
+          status: options.fetch(:status),
+          destination: options.fetch(:destination),
+          failed_after: options.fetch(:failed_after),
+          failed_before: options.fetch(:failed_before),
+          limit: options.fetch(:limit)
+        )
+      end
 
       ids.map do |raw_id|
         id = Integer(raw_id)
@@ -152,6 +196,41 @@ module Mammoth
       rescue ArgumentError
         raise ConfigurationError, "dead letter id must be an integer"
       end
+    end
+
+    def parse_time_option(value, option_name)
+      Time.iso8601(value).utc.iso8601
+    rescue ArgumentError
+      raise ConfigurationError, "#{option_name} must be an ISO-8601 timestamp"
+    end
+
+    def replay_options
+      ids = [] # : Array[Integer]
+      options = { ids: ids, status: "pending", destination: nil, failed_after: nil, failed_before: nil, limit: 100 }
+      index = 0
+      args = argv.drop(3)
+
+      # rubocop:disable Style/WhileUntilModifier
+      while index < args.length
+        index = parse_replay_option(args, index, options)
+      end
+      # rubocop:enable Style/WhileUntilModifier
+
+      options
+    end
+
+    def parse_replay_option(args, index, options)
+      case args.fetch(index)
+      when "--status", "--destination", "--failed-after", "--failed-before", "--limit"
+        parse_list_option(args, index, options)
+      else
+        raise ConfigurationError, "unexpected argument #{args[index]}\n#{CLI::USAGE}" if args[index].start_with?("--")
+
+        options[:ids] << Integer(args.fetch(index))
+        index + 1
+      end
+    rescue ArgumentError
+      raise ConfigurationError, "dead letter id must be an integer"
     end
 
     def fetch_dead_letter!(id)
@@ -180,6 +259,10 @@ module Mammoth
       return worker.deliver_transaction_to(destination_name, envelope) if worker.respond_to?(:deliver_transaction_to)
 
       worker.deliver_transaction(envelope)
+    end
+
+    def replay_resolved?(result)
+      result.fetch(:status) == "delivered" || result.fetch(:duplicate, false)
     end
 
     def transaction_payload?(payload)

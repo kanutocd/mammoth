@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Benchmark Mammoth's 0.5.1 multi-destination webhook fanout against local
+# Benchmark Mammoth's 0.6.0 multi-destination webhook fanout against local
 # WEBrick receivers. This covers FanoutDeliveryWorker, per-destination
 # DeliveryWorker state, delivered-envelope ledger writes, and real WebhookSink
 # HTTP delivery.

@@ -12,7 +12,7 @@ module Mammoth
     DEFAULT_SOURCE = "postgresql"
 
     attr_reader :sink, :checkpoint_store, :dead_letter_store, :delivered_envelope_store, :retry_schedule, :max_attempts,
-                :sleeper, :source_name, :slot_name, :publication_name
+                :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :enabled
 
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
@@ -24,8 +24,11 @@ module Mammoth
     # @param max_attempts [Integer] maximum delivery attempts
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
+    # @param route_filter [Mammoth::RouteFilter, nil] optional destination route matcher
+    # @param enabled [Boolean] whether this destination accepts new deliveries
     def initialize(sink:, checkpoint_store:, dead_letter_store:, source_name:, slot_name:, publication_name:,
-                   max_attempts:, retry_schedule:, delivered_envelope_store: nil, sleeper: Kernel.method(:sleep))
+                   max_attempts:, retry_schedule:, delivered_envelope_store: nil, sleeper: Kernel.method(:sleep),
+                   route_filter: nil, enabled: true)
       @sink = sink
       @checkpoint_store = checkpoint_store
       @dead_letter_store = dead_letter_store
@@ -36,6 +39,8 @@ module Mammoth
       @max_attempts = max_attempts
       @retry_schedule = retry_schedule
       @sleeper = sleeper
+      @route_filter = route_filter || RouteFilter.new
+      @enabled = enabled
     end
 
     # Build a delivery worker from Mammoth configuration and stores.
@@ -46,7 +51,8 @@ module Mammoth
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
     # @param sleeper [#call] sleep strategy
     # @return [Mammoth::DeliveryWorker]
-    def self.from_config(config, sink:, checkpoint_store:, dead_letter_store:, sleeper: Kernel.method(:sleep))
+    def self.from_config(config, sink:, checkpoint_store:, dead_letter_store:, sleeper: Kernel.method(:sleep),
+                         delivery_policy: {})
       new(
         sink: sink,
         checkpoint_store: checkpoint_store,
@@ -54,9 +60,11 @@ module Mammoth
         source_name: config.dig("mammoth", "name"),
         slot_name: config.dig("replication", "slot"),
         publication_name: Array(config.dig("replication", "publications")).join(","),
-        max_attempts: config.dig("retry", "max_attempts"),
-        retry_schedule: config.dig("retry", "schedule_seconds"),
-        sleeper: sleeper
+        max_attempts: delivery_policy.fetch("max_attempts", config.dig("retry", "max_attempts")),
+        retry_schedule: delivery_policy.fetch("schedule_seconds", config.dig("retry", "schedule_seconds")),
+        sleeper: sleeper,
+        route_filter: delivery_policy.fetch("route_filter", RouteFilter.new),
+        enabled: delivery_policy.fetch("enabled", true)
       )
     end
 
@@ -84,6 +92,9 @@ module Mammoth
       payload = serializer.call(work)
       delivery_unit = delivery_unit_for(delivery_method)
       idempotency_key = idempotency_key_for(payload:, delivery_unit:)
+
+      skip_result = skip_result_for(payload, idempotency_key:)
+      return skip_result if skip_result
 
       if delivered_envelope_store.delivered?(idempotency_key)
         checkpoint_payload(payload)
@@ -149,6 +160,24 @@ module Mammoth
 
     def destination_name
       sink.respond_to?(:name) ? sink.name : sink.class.name
+    end
+
+    def skip_result_for(payload, idempotency_key:)
+      return skipped(payload, idempotency_key:, reason: "disabled") unless enabled
+
+      skipped(payload, idempotency_key:, reason: "route_mismatch") unless route_filter.match_payload?(payload)
+    end
+
+    def skipped(payload, idempotency_key:, reason:)
+      checkpoint_payload(payload)
+      {
+        status: "skipped",
+        reason: reason,
+        duplicate: false,
+        idempotency_key: idempotency_key,
+        attempts: 0,
+        destination: destination_name
+      }
     end
 
     def dead_letter(event, error, attempts, serializer:)

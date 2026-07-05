@@ -73,6 +73,40 @@ module Mammoth
       end
     end
 
+    def test_disabled_destination_skips_and_checkpoints_without_delivery
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = RecordingSink.new
+        worker = build_worker(sqlite, sink: sink, enabled: false)
+
+        result = worker.deliver(sample_event)
+        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+
+        assert_equal "skipped", result.fetch(:status)
+        assert_equal "disabled", result.fetch(:reason)
+        assert_equal 0, result.fetch(:attempts)
+        assert_equal 0, sink.delivered_events
+        assert_equal "0/16F4A8B0", checkpoint.fetch("last_lsn")
+        assert_equal 0, DeliveredEnvelopeStore.new(sqlite).count
+      end
+    end
+
+    def test_route_mismatch_skips_and_checkpoints_without_delivery
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = RecordingSink.new
+        route_filter = RouteFilter.new("tables" => ["users"])
+        worker = build_worker(sqlite, sink: sink, route_filter: route_filter)
+
+        result = worker.deliver(sample_event)
+
+        assert_equal "skipped", result.fetch(:status)
+        assert_equal "route_mismatch", result.fetch(:reason)
+        assert_equal 0, sink.delivered_events
+        assert_equal 1, CheckpointStore.new(sqlite).count
+      end
+    end
+
     def test_delivers_and_checkpoints_successful_transaction_envelope
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
@@ -106,7 +140,7 @@ module Mammoth
 
     private
 
-    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {})
+    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {}, route_filter: nil, enabled: true)
       DeliveryWorker.new(
         sink: sink,
         checkpoint_store: CheckpointStore.new(sqlite),
@@ -116,7 +150,9 @@ module Mammoth
         publication_name: "mammoth_publication",
         max_attempts: 3,
         retry_schedule: [1, 5],
-        sleeper: sleeper
+        sleeper: sleeper,
+        route_filter: route_filter,
+        enabled: enabled
       )
     end
 
@@ -135,14 +171,16 @@ module Mammoth
     FakeEnvelope = Data.define(:events, :transaction_id)
 
     class RecordingSink
-      attr_reader :name, :delivered_transactions
+      attr_reader :name, :delivered_transactions, :delivered_events
 
       def initialize
         @name = "primary_webhook"
+        @delivered_events = 0
         @delivered_transactions = []
       end
 
       def deliver(event)
+        @delivered_events += 1
         { event_id: event.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
       end
 

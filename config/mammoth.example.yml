@@ -275,6 +275,7 @@ webhook:
 # destinations:
 #   - name: primary_webhook
 #     type: webhook
+#     enabled: true
 #     url: https://example.com/webhooks/postgres
 #     timeout_seconds: 5
 #     header_env:
@@ -284,8 +285,28 @@ webhook:
 #       secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
 #   - name: audit_webhook
 #     type: webhook
+#     enabled: true
 #     url: https://audit.example.com/cdc
 #     timeout_seconds: 5
+#
+#     # Optional route filter. Omit route to receive every event/envelope.
+#     # For transaction delivery, a destination matches when any event in the
+#     # transaction matches; Mammoth still delivers the full transaction envelope.
+#     route:
+#       schemas:
+#         - public
+#       tables:
+#         - orders
+#       operations:
+#         - insert
+#         - update
+#
+#     # Optional per-destination retry override. Omit to use top-level retry.
+#     retry:
+#       max_attempts: 3
+#       schedule_seconds:
+#         - 1
+#         - 10
 
 retry:
   # Maximum delivery attempts before the event/envelope is moved to the dead

@@ -148,6 +148,7 @@ work item to multiple webhook receivers.
 destinations:
   - name: primary_webhook
     type: webhook
+    enabled: true
     url: https://example.com/webhooks/postgres
     timeout_seconds: 5
     header_env:
@@ -157,14 +158,38 @@ destinations:
       secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET
   - name: audit_webhook
     type: webhook
+    enabled: true
     url: https://audit.example.com/cdc
     timeout_seconds: 5
+    route:
+      schemas:
+        - public
+      tables:
+        - orders
+      operations:
+        - insert
+        - update
+    retry:
+      max_attempts: 3
+      schedule_seconds:
+        - 1
+        - 10
 ```
 
-Mammoth OSS 0.5.1 supports webhook destinations. Each destination receives the
-same event or transaction envelope and keeps independent delivered-ledger,
-retry, and dead-letter state. Dead-letter replay targets the destination that
-originally failed.
+Mammoth OSS 0.6.0 supports webhook destinations. Each enabled destination keeps
+independent delivered-ledger, retry, and dead-letter state. Dead-letter replay
+targets the destination that originally failed.
+
+`enabled: false` disables new delivery attempts for that destination while still
+allowing Mammoth to advance local progress for matching work.
+
+`route` filters delivery by PostgreSQL schema, table, and operation. Omit a
+route field to match every value for that field. For transaction delivery, a
+destination matches when any event in the transaction matches; Mammoth delivers
+the full transaction envelope so downstream receivers keep transaction context.
+
+`retry` overrides the top-level retry policy for one destination. This lets a
+slow audit receiver use longer backoff without weakening the primary receiver.
 
 `header_env` and `signing.secret_env` are environment variable names. Mammoth
 reads the actual bearer token or signing secret from the process environment at

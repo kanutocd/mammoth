@@ -50,7 +50,7 @@ module Mammoth
 
     def expected_rendered_config
       [
-        "image: \"ghcr.io/kanutocd/mammoth:0.5.1\"",
+        "image: \"ghcr.io/kanutocd/mammoth:0.6.0\"",
         "unit: \"transaction\"",
         "adapter: \"concurrent\"",
         "Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION",
@@ -81,8 +81,22 @@ module Mammoth
                 MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET: signing-secret
           - name: audit_webhook
             type: webhook
+            enabled: false
             url: https://audit.example.com/cdc
             timeout_seconds: 5
+            route:
+              schemas:
+                - public
+              tables:
+                - orders
+              operations:
+                - insert
+                - update
+            retry:
+              max_attempts: 3
+              schedule_seconds:
+                - 1
+                - 10
       YAML
     end
 
@@ -91,6 +105,10 @@ module Mammoth
         "destinations:",
         "name: \"primary_webhook\"",
         "name: \"audit_webhook\"",
+        "enabled: false",
+        "schemas:",
+        "- public",
+        "max_attempts: 3",
         "Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION",
         "secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET",
         "name: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION",

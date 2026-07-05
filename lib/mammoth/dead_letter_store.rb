@@ -65,8 +65,9 @@ module Mammoth
     #
     # @param limit [Integer] maximum number of rows
     # @return [Array<Hash>] pending dead letter rows
-    def pending(limit: 100)
-      rows(status: "pending", limit: limit)
+    def pending(limit: 100, destination: nil, failed_after: nil, failed_before: nil)
+      rows(status: "pending", limit: limit, destination: destination, failed_after: failed_after,
+           failed_before: failed_before)
     end
 
     # Fetch dead letters, optionally filtered by status.
@@ -74,15 +75,12 @@ module Mammoth
     # @param status [String, nil] optional dead-letter status filter
     # @param limit [Integer] maximum number of rows
     # @return [Array<Hash>] dead letter rows
-    def rows(status: nil, limit: 100)
-      if status && status != "all"
-        return database.execute(
-          "SELECT * FROM dead_letters WHERE status = ? ORDER BY failed_at ASC LIMIT ?",
-          [status, limit]
-        )
-      end
-
-      database.execute("SELECT * FROM dead_letters ORDER BY failed_at ASC LIMIT ?", [limit])
+    def rows(status: nil, limit: 100, destination: nil, failed_after: nil, failed_before: nil)
+      where, values = row_filters(status:, destination:, failed_after:, failed_before:)
+      database.execute(
+        "SELECT * FROM dead_letters#{where} ORDER BY failed_at ASC LIMIT ?",
+        values + [limit]
+      )
     end
 
     # Fetch one dead letter by id.
@@ -97,12 +95,17 @@ module Mammoth
     #
     # @param status [String, nil] optional status
     # @return [Integer] dead letter count
-    def count(status: nil)
-      if status
-        database.get_first_value("SELECT COUNT(*) FROM dead_letters WHERE status = ?", [status])
-      else
-        database.get_first_value("SELECT COUNT(*) FROM dead_letters")
-      end
+    def count(status: nil, destination: nil)
+      where, values = row_filters(status:, destination:)
+      database.get_first_value("SELECT COUNT(*) FROM dead_letters#{where}", values)
+    end
+
+    def counts_by_destination(status: nil)
+      where, values = row_filters(status:)
+      database.execute(
+        "SELECT destination_name, COUNT(*) AS count FROM dead_letters#{where} GROUP BY destination_name",
+        values
+      )
     end
 
     # Mark a dead letter as resolved.
@@ -132,6 +135,30 @@ module Mammoth
         "UPDATE dead_letters SET status = ?, updated_at = ? WHERE id = ?",
         [status, Time.now.utc.iso8601, id]
       )
+    end
+
+    def row_filters(status: nil, destination: nil, failed_after: nil, failed_before: nil)
+      predicates = [] # : Array[String]
+      values = [] # : Array[untyped]
+
+      unless status.nil? || status == "all"
+        predicates << "status = ?"
+        values << status
+      end
+      if destination
+        predicates << "destination_name = ?"
+        values << destination
+      end
+      if failed_after
+        predicates << "failed_at >= ?"
+        values << failed_after
+      end
+      if failed_before
+        predicates << "failed_at <= ?"
+        values << failed_before
+      end
+
+      [predicates.empty? ? "" : " WHERE #{predicates.join(" AND ")}", values]
     end
   end
 end

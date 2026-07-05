@@ -3,6 +3,7 @@
 require "test_helper"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class ConfigurationTest < Minitest::Test
     def test_loads_valid_configuration
       config = Configuration.load(fixture_config_path)
@@ -90,6 +91,32 @@ module Mammoth
       end
     end
 
+    def test_accepts_destination_routes_and_policy_overrides
+      with_temp_dir do |dir|
+        path = write_file(File.join(dir, "fanout-policy.yml"), fanout_config(sqlite_path: File.join(dir, "mammoth.db")))
+        config = Configuration.load(path)
+        destination = config.data.fetch("destinations").fetch(1)
+
+        assert destination.fetch("enabled")
+        assert_equal ["orders"], destination.dig("route", "tables")
+        assert_equal 2, destination.dig("retry", "max_attempts")
+      end
+    end
+
+    def test_rejects_unknown_destination_route_key
+      with_temp_dir do |dir|
+        path = write_file(
+          File.join(dir, "bad-route.yml"),
+          fanout_config(sqlite_path: File.join(dir, "mammoth.db")).sub("tables:", "columns:")
+        )
+
+        error = assert_raises(ConfigurationError) { Configuration.load(path) }
+
+        assert_match(/configuration failed schema validation/, error.message)
+        assert_match(/columns/, error.message)
+      end
+    end
+
     def test_rejects_duplicate_destination_names
       with_temp_dir do |dir|
         path = write_file(
@@ -142,7 +169,7 @@ module Mammoth
 
     private
 
-    def fanout_config(sqlite_path:)
+    def fanout_config(sqlite_path:) # rubocop:disable Metrics/MethodLength
       minimal_config(sqlite_path: sqlite_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)
         destinations:
           - name: primary_webhook
@@ -151,10 +178,25 @@ module Mammoth
             timeout_seconds: 5
           - name: audit_webhook
             type: webhook
+            enabled: true
             url: https://example.com/webhooks/audit
             timeout_seconds: 5
+            route:
+              schemas:
+                - public
+              tables:
+                - orders
+              operations:
+                - insert
+                - update
+            retry:
+              max_attempts: 2
+              schedule_seconds:
+                - 1
+                - 3
 
       YAML
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
