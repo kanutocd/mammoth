@@ -124,6 +124,12 @@ snapshot, not a universal performance claim. Re-run the scripts in
 `runtime.concurrency`, `destinations`, SQLite storage, scrape frequency, and
 DLQ replay expectations.
 
+Create a publishable benchmark snapshot with:
+
+```bash
+bundle exec ruby benchmark/snapshot.rb
+```
+
 ## E2E
 
 ```bash

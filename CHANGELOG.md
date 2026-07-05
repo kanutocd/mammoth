@@ -8,6 +8,7 @@
 
 - Added benchmark scripts for webhook delivery, webhook fanout, SQLite operational state, observability snapshots, and dead-letter replay.
 - Added shared benchmark helpers for synthetic CDC work items, local HTTP receivers, table output, JSON output, and environment-driven benchmark knobs.
+- Added a benchmark snapshot runner that writes Markdown, JSON, and per-trial logs for publishable benchmark results.
 
 ### Changed
 

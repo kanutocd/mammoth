@@ -20,6 +20,54 @@ future benchmark says so explicitly.
 Set `MAMMOTH_BENCH_JSON=1` on any benchmark to emit machine-readable JSON after
 the table.
 
+## Snapshot Runner
+
+Run all benchmarks and write publishable artifacts:
+
+```bash
+bundle exec ruby benchmark/snapshot.rb
+```
+
+The runner writes:
+
+```text
+benchmark/results/<timestamp>/snapshot.md
+benchmark/results/<timestamp>/snapshot.json
+benchmark/results/<timestamp>/*-trial-*.out
+benchmark/results/<timestamp>/*-trial-*.err
+```
+
+Use smoke mode for quick validation:
+
+```bash
+MAMMOTH_SNAPSHOT_PRESET=smoke bundle exec ruby benchmark/snapshot.rb
+```
+
+Run selected benchmarks:
+
+```bash
+MAMMOTH_SNAPSHOT_BENCHMARKS=concurrent_delivery,webhook_fanout \
+bundle exec ruby benchmark/snapshot.rb
+```
+
+Run multiple trials:
+
+```bash
+MAMMOTH_SNAPSHOT_TRIALS=3 bundle exec ruby benchmark/snapshot.rb
+```
+
+Override normal benchmark knobs the same way you would when running a benchmark
+directly:
+
+```bash
+MAMMOTH_BENCH_CONCURRENCY=1,5,10,25,50 \
+MAMMOTH_BENCH_LATENCY_MS=25 \
+bundle exec ruby benchmark/snapshot.rb
+```
+
+Publish snapshots with the generated command, environment metadata, and Mammoth
+commit SHA. Do not commit `benchmark/results/`; it is ignored by git.
+
 ## Concurrent Delivery
 
 ```bash
@@ -218,4 +266,3 @@ environment, and Mammoth commit SHA with any interpretation.
 | 5           |            99.27 |     397.07 |           50.234 |           50.419 |     100.737 |
 | 10          |           198.40 |     793.61 |           50.181 |           50.402 |      50.403 |
 | 25          |           495.11 |    1980.44 |           50.224 |           50.420 |      20.198 |
-
