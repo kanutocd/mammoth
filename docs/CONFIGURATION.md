@@ -29,6 +29,17 @@ replication:
   temporary_slot: false
   feedback_interval: 10.0
 
+delivery:
+  unit: transaction
+  ordering:
+    scope: transaction
+
+runtime:
+  adapter: concurrent
+  concurrency: 1
+  preserve_order: true
+  timeout_seconds:
+
 webhook:
   name: primary_webhook
   url: https://example.com/webhooks/postgres
@@ -127,6 +138,44 @@ which is the recommended path for API keys and bearer tokens.
 `<timestamp>.<json request body>` with the secret read from `secret_env`, sends
 the timestamp in `timestamp_header`, and sends a `sha256=<hex digest>` signature
 in `signature_header`.
+
+### `delivery`
+
+```yaml
+delivery:
+  unit: transaction
+  ordering:
+    scope: transaction
+```
+
+`unit` controls whether Mammoth delivers individual events or complete
+transaction envelopes. `transaction` is the safer default because checkpointing
+advances after the transaction payload succeeds.
+
+`ordering.scope` describes the order Mammoth asks the delivery runtime to
+preserve. Supported values are `global`, `transaction`, `relation`,
+`primary_key`, and `none`.
+
+### `runtime`
+
+```yaml
+runtime:
+  adapter: concurrent
+  concurrency: 1
+  preserve_order: true
+  batch_size: 1
+  timeout_seconds:
+```
+
+`adapter` may be `inline` or `concurrent`. The concurrent adapter uses
+`cdc-concurrent` for downstream webhook work only; it does not create extra
+PostgreSQL replication slots or replication connections.
+
+`concurrency` controls downstream delivery parallelism. `preserve_order` keeps
+configured delivery ordering when supported by the runtime. `batch_size`
+controls how many work units are submitted to the concurrent runtime together.
+`timeout_seconds` is optional; leave it blank to rely on destination-specific
+timeouts.
 
 ### `retry`
 

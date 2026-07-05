@@ -87,7 +87,7 @@ Default values:
 ```yaml
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.1.1"
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 ```
 
@@ -96,7 +96,7 @@ Override image settings:
 ```bash
 helm upgrade --install mammoth ./charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=latest
+  --set image.tag=0.2.0
 ```
 
 ## Kind Local Development
@@ -147,6 +147,12 @@ For an in-cluster receiver, use a Kubernetes Service DNS name:
 webhook:
   url: http://webhook-receiver:9292/webhook
 ```
+
+The chart currently renders core webhook fields: `name`, `url`, and
+`timeout_seconds`. Mammoth itself also supports `webhook.headers`,
+`webhook.header_env`, and `webhook.signing` in YAML configuration; use a custom
+config rendering path if your Helm deployment needs those fields before the
+chart grows first-class values for them.
 
 ## Persistence
 

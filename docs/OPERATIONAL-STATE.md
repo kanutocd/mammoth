@@ -7,7 +7,7 @@ SQLite is used for:
 - schema migration state
 - checkpoints
 - dead letters
-- future replay-related metadata
+- delivered-envelope ledger entries
 
 ## Why SQLite?
 
@@ -86,6 +86,35 @@ The dead-letter table answers:
 What failed, where was it going, and why did it fail?
 ```
 
+### `delivered_envelopes`
+
+Stores successfully delivered event or transaction idempotency keys.
+
+```sql
+CREATE TABLE delivered_envelopes (
+  id INTEGER PRIMARY KEY,
+  idempotency_key TEXT NOT NULL,
+  source_name TEXT NOT NULL,
+  slot_name TEXT NOT NULL,
+  destination_name TEXT NOT NULL,
+  delivery_unit TEXT NOT NULL,
+  transaction_id TEXT,
+  source_position TEXT,
+  delivered_at TEXT NOT NULL,
+
+  UNIQUE (idempotency_key)
+);
+```
+
+The delivered-envelope table answers:
+
+```text
+Has this event or transaction already been delivered to this destination?
+```
+
+Mammoth uses this ledger to skip duplicate downstream delivery when upstream
+replication replays already-delivered work after a restart.
+
 ## Inspect with sqlite3
 
 Install SQLite locally if needed:
@@ -112,6 +141,13 @@ Inspect dead letters:
 ```bash
 sqlite3 data/mammoth.db \
   "SELECT event_id, destination_name, operation, namespace, entity, retry_count, status, error_class, error_message FROM dead_letters;"
+```
+
+Inspect delivered envelopes:
+
+```bash
+sqlite3 data/mammoth.db \
+  "SELECT idempotency_key, destination_name, delivery_unit, transaction_id, source_position, delivered_at FROM delivered_envelopes;"
 ```
 
 ## Container volume inspection

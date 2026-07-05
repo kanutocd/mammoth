@@ -67,6 +67,17 @@ replication:
   temporary_slot: false
   feedback_interval: 10.0
 
+delivery:
+  unit: transaction
+  ordering:
+    scope: transaction
+
+runtime:
+  adapter: concurrent
+  concurrency: 1
+  preserve_order: true
+  timeout_seconds:
+
 webhook:
   name: primary_webhook
   url: http://localhost:9292/webhook
@@ -92,6 +103,18 @@ Export the password referenced by `postgres.password_env`:
 
 ```bash
 export MAMMOTH_POSTGRES_PASSWORD=secret
+```
+
+If your receiver requires authentication, add env-backed headers instead of
+placing secrets directly in YAML:
+
+```yaml
+webhook:
+  header_env:
+    Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing:
+    algorithm: hmac_sha256
+    secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
 ```
 
 ## 4. Validate configuration

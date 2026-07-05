@@ -16,6 +16,8 @@ pgoutput-source-adapter
     ↓
 CDC::Core::ChangeEvent
     ↓
+CDC::Core::TransactionEnvelope
+    ↓
 Mammoth
     ↓
 Webhook
@@ -37,19 +39,23 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 
 ## Current release scope
 
-Mammoth 0.1.x focuses on:
+Mammoth 0.2.x focuses on:
 
 - PostgreSQL logical replication ingestion
-- normalized CDC event delivery to webhooks
+- normalized CDC event and transaction delivery to webhooks
+- transaction envelope preservation
+- concurrent downstream delivery with one PostgreSQL replication stream
 - retry handling
 - SQLite checkpoint storage
 - SQLite dead-letter storage
+- SQLite delivered-envelope ledger storage
+- webhook static headers, env-backed headers, and HMAC-SHA256 signing
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.1.x
+## Non-goals for 0.2.x
 
-Mammoth 0.1.x does not yet provide:
+Mammoth 0.2.x does not yet provide:
 
 - a web dashboard
 - health or metrics HTTP endpoints

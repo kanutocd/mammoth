@@ -1,6 +1,6 @@
 # CLI Reference
 
-Mammoth 0.1.x exposes a small command surface.
+Mammoth exposes a small operator-facing command surface.
 
 ```text
 mammoth version
@@ -65,7 +65,7 @@ mammoth start config/mammoth.yml
 
 `start` runs in the foreground. Process lifecycle is managed by your shell, systemd, Docker, Docker Compose, or Kubernetes.
 
-Mammoth intentionally does not provide `stop`, `restart`, or `reload` commands in 0.1.x. Those concerns belong to the process manager or orchestrator.
+Mammoth intentionally does not provide `stop`, `restart`, or `reload` commands. Those concerns belong to the process manager or orchestrator.
 
 Examples:
 
