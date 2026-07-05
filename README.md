@@ -57,6 +57,8 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - public Helm chart support
 - unit and e2e test tasks
 - health and metrics endpoints
+- explicit extension registries for state, destination, and runtime adapters
+- node identity and local capability reporting
 
 ## Boundary
 
@@ -65,6 +67,16 @@ Mammoth begins at CDC-core work items and ends at webhook fanout delivery.
 Mammoth does not own pgoutput protocol parsing, value decoding, source
 normalization, ordering policy, or runtime execution. Those belong to the
 upstream CDC Ecosystem components.
+
+## Extensions
+
+Mammoth OSS exposes small adapter registries for future extensions:
+
+- operational state adapters
+- destination adapters
+- runtime adapters
+
+See [`docs/EXTENSIONS.md`](docs/EXTENSIONS.md).
 
 ## Configuration
 

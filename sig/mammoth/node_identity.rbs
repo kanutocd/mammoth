@@ -1,0 +1,22 @@
+module Mammoth
+  # Local Mammoth node identity used by status and future control-plane agents.
+  class NodeIdentity
+    @node_id: untyped
+    @node_name: untyped
+    @fleet_id: untyped
+    @environment: untyped
+    @labels: untyped
+    @metadata: untyped
+
+    attr_reader node_id: untyped
+    attr_reader node_name: untyped
+    attr_reader fleet_id: untyped
+    attr_reader environment: untyped
+    attr_reader labels: untyped
+    attr_reader metadata: untyped
+
+    def initialize: (node_id: untyped, node_name: untyped, ?fleet_id: untyped?, ?environment: untyped?, ?labels: untyped, ?metadata: untyped) -> void
+    def self.from_config: (untyped config) -> untyped
+    def to_h: () -> untyped
+  end
+end

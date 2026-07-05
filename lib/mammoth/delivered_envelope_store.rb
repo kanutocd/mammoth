@@ -93,6 +93,9 @@ module Mammoth
       end
     end
 
+    # Count delivered envelopes grouped by destination.
+    #
+    # @return [Array<Hash>] rows with destination_name and count
     def counts_by_destination
       database.execute(
         "SELECT destination_name, COUNT(*) AS count FROM delivered_envelopes GROUP BY destination_name"

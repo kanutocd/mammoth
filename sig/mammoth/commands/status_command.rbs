@@ -1,0 +1,17 @@
+module Mammoth
+  module Commands
+    # Reusable local command object for status inspection.
+    class StatusCommand
+      @config: untyped
+      @sqlite_store: untyped
+      @output: untyped
+
+      attr_reader config: untyped
+      attr_reader sqlite_store: untyped
+      attr_reader output: untyped
+
+      def initialize: (untyped config, ?sqlite_store: untyped?, ?output: untyped) -> void
+      def call: () -> Integer
+    end
+  end
+end

@@ -10,7 +10,7 @@ module Mammoth
   class Application
     @config: untyped
 
-    @sqlite_store: untyped
+    @state_adapter: untyped
 
     @consumer: untyped
 
@@ -22,12 +22,14 @@ module Mammoth
 
     attr_reader config: untyped
 
-    attr_reader sqlite_store: untyped
+    attr_reader state_adapter: untyped
 
     attr_reader consumer: untyped
 
     attr_reader delivery_worker: untyped
     attr_reader checkpoint_store: untyped
+
+    def sqlite_store: () -> untyped
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -57,7 +59,9 @@ module Mammoth
 
     def destination_delivery_policy: (untyped destination) -> untyped
 
-    def transaction_delivery?: () -> bool
+    def build_state_adapter: () -> untyped
+
+    def operational_state_adapter: () -> untyped
 
     def delivery_unit: () -> Symbol
 

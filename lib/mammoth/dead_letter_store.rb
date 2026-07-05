@@ -100,6 +100,10 @@ module Mammoth
       database.get_first_value("SELECT COUNT(*) FROM dead_letters#{where}", values)
     end
 
+    # Count dead letters grouped by destination.
+    #
+    # @param status [String, nil] optional status filter
+    # @return [Array<Hash>] rows with destination_name and count
     def counts_by_destination(status: nil)
       where, values = row_filters(status:)
       database.execute(

@@ -11,7 +11,14 @@ module Mammoth
 
       assert_empty stderr
       assert_match(/Mammoth: local_mammoth/, stdout)
+      assert_match(/Node ID: local-mammoth-1/, stdout)
+      assert_match(/Node name: local-mammoth-dev/, stdout)
+      assert_match(/Fleet: local-dev/, stdout)
+      assert_match(/Environment: development/, stdout)
       assert_match(/Runtime: not started/, stdout)
+      assert_match(/Runtime adapter: concurrent/, stdout)
+      assert_match(/Operational state: sqlite/, stdout)
+      assert_match(/Features: .*routing/, stdout)
       assert_match(/Replication publications: mammoth_publication/, stdout)
       assert_match(/Destinations: primary_webhook/, stdout)
       refute_match(/Tables:/, stdout)

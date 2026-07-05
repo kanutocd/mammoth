@@ -40,6 +40,47 @@
       },
       "description": "Mammoth instance identity and operator-facing metadata."
     },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable node identifier used by status output and future control-plane agents."
+        },
+        "node_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable node name."
+        },
+        "fleet_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional fleet identifier for grouping Mammoth nodes."
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional deployment environment such as development, staging, or production."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Operator-defined node labels."
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Operator-defined node metadata."
+        }
+      },
+      "description": "Optional local node identity. Mammoth OSS uses this for status and future extension surfaces only."
+    },
     "postgres": {
       "type": "object",
       "additionalProperties": false,
@@ -223,7 +264,7 @@
             "enum": [
               "webhook"
             ],
-            "description": "Destination adapter type. Mammoth OSS 0.6.0 supports webhook destinations."
+            "description": "Destination adapter type. Mammoth OSS 0.7.0 supports webhook destinations."
           },
           "enabled": {
             "type": "boolean",
@@ -384,6 +425,20 @@
         }
       },
       "description": "SQLite operational store settings for checkpoints, attempts, and dead-letter records."
+    },
+    "operational_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "enum": [
+            "sqlite"
+          ],
+          "description": "Operational state adapter. Mammoth OSS 0.7.0 ships the sqlite adapter."
+        }
+      },
+      "description": "Operational state adapter selection. SQLite remains the default OSS adapter."
     },
     "logging": {
       "type": "object",

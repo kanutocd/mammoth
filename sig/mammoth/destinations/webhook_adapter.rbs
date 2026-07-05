@@ -1,0 +1,10 @@
+module Mammoth
+  module Destinations
+    # Built-in webhook destination adapter.
+    class WebhookAdapter < Adapter
+      def self.adapter_type: () -> String
+      def self.build: (untyped destination, label: untyped) -> untyped
+      def self.capabilities: () -> untyped
+    end
+  end
+end

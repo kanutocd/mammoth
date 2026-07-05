@@ -1,0 +1,20 @@
+module Mammoth
+  # Reports local Mammoth capabilities without inspecting private internals.
+  class Capabilities
+    FEATURES: untyped
+
+    @config: untyped
+
+    attr_reader config: untyped
+
+    def initialize: (untyped config) -> void
+    def self.call: (untyped config) -> untyped
+    def to_h: () -> untyped
+
+    private
+
+    def operational_state_adapter: () -> untyped
+    def runtime_adapter: () -> untyped
+    def destination_types: () -> untyped
+  end
+end

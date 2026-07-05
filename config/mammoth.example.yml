@@ -34,6 +34,19 @@ mammoth:
   #   production_mammoth
   name: local_mammoth
 
+node:
+  # Optional local node identity for status output and future control-plane
+  # agents. Omit this section to default node_id to the host name and node_name
+  # to mammoth.name.
+  node_id: local-mammoth-1
+  node_name: local-mammoth-dev
+  fleet_id: local-dev
+  environment: development
+  labels:
+    region: local
+  metadata:
+    owner: platform
+
 postgres:
   # PostgreSQL host reachable from the Mammoth process or pod.
   #
@@ -330,6 +343,10 @@ sqlite:
   # Mammoth stores checkpoints, delivered-envelope ledgers, and dead-letter
   # records here. In Kubernetes, back this path with a PersistentVolumeClaim.
   path: data/mammoth.db
+
+operational_state:
+  # Mammoth OSS 0.7.0 ships the sqlite operational state adapter.
+  adapter: sqlite
 
 observability:
   # Bind host for the optional health, readiness, and metrics server.

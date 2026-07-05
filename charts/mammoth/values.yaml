@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.6.0"
+  tag: "0.7.0"
   pullPolicy: IfNotPresent
 
 # Private PRO images can be used by overriding image.repository and setting
@@ -10,6 +10,14 @@ imagePullSecrets: []
 
 mammoth:
   name: production_mammoth
+
+node:
+  node_id: ""
+  node_name: ""
+  fleet_id: ""
+  environment: ""
+  labels: {}
+  metadata: {}
 
 postgres:
   host: "postgres-service.internal"
@@ -114,6 +122,9 @@ retry:
     - 30
     - 60
     - 300
+
+operational_state:
+  adapter: "sqlite"
 
 logging:
   level: "info"

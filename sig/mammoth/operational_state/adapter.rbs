@@ -1,0 +1,12 @@
+module Mammoth
+  module OperationalState
+    # Base contract for operational state adapters.
+    class Adapter
+      def initialize: () -> void
+      def checkpoint_store: () -> untyped
+      def dead_letter_store: () -> untyped
+      def delivered_envelope_store: () -> untyped
+      def summary: () -> untyped
+    end
+  end
+end

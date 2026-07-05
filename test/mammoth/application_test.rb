@@ -112,6 +112,32 @@ module Mammoth
       end
     end
 
+    def test_builds_operational_state_adapter_from_config
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(
+          File.join(dir, "mammoth.yml"),
+          minimal_config(sqlite_path: db_path) + <<~YAML
+
+            operational_state:
+              adapter: sqlite
+          YAML
+        )
+
+        app = Application.new(Configuration.load(config_path), source: [])
+
+        assert_instance_of OperationalState::SQLiteAdapter, app.state_adapter
+        assert_same app.state_adapter.checkpoint_store, app.checkpoint_store
+      end
+    end
+
+    def test_sqlite_store_returns_nil_for_non_sqlite_state_adapter
+      app = Application.allocate
+      app.instance_variable_set(:@state_adapter, Object.new)
+
+      assert_nil app.sqlite_store
+    end
+
     def test_builds_fanout_delivery_worker_from_destinations_config
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")

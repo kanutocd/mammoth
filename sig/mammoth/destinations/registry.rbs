@@ -1,0 +1,12 @@
+module Mammoth
+  module Destinations
+    # Registry for destination adapters.
+    module Registry
+      def self.register: (untyped name, untyped adapter) -> untyped
+      def self.fetch: (untyped name) -> untyped
+      def self.build: (untyped destination, label: untyped) -> untyped
+      def self.names: () -> untyped
+      def self.registry: () -> untyped
+    end
+  end
+end

@@ -336,6 +336,20 @@ module Mammoth
       end
     end
 
+    def test_dead_letters_replay_rejects_unknown_option
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+
+        stdout, stderr = capture_io do
+          assert_equal 1, CLI.call(["dead-letters", "replay", config_path, "--bogus"])
+        end
+
+        assert_empty stdout
+        assert_match(/unexpected argument --bogus/, stderr)
+      end
+    end
+
     def test_dead_letters_list_rejects_invalid_failed_before
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")

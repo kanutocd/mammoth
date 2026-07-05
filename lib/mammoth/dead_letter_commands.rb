@@ -144,8 +144,6 @@ module Mammoth
 
         raise ConfigurationError, "unexpected argument #{args[index]}\n#{CLI::USAGE}"
       end
-    rescue ArgumentError
-      raise ConfigurationError, "invalid dead letter list option"
     rescue IndexError
       raise ConfigurationError, "missing value for dead letter option"
     end
@@ -188,13 +186,11 @@ module Mammoth
       end
 
       ids.map do |raw_id|
-        id = Integer(raw_id)
+        id = raw_id
         row = dead_letter_store.fetch(id)
         raise ConfigurationError, "dead letter not found: #{id}" unless row
 
         row
-      rescue ArgumentError
-        raise ConfigurationError, "dead letter id must be an integer"
       end
     end
 

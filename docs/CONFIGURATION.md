@@ -14,6 +14,16 @@ Add this comment at the top of config files to enable editor validation when usi
 mammoth:
   name: local_mammoth
 
+node:
+  node_id: local-mammoth-1
+  node_name: local-mammoth-dev
+  fleet_id: local-dev
+  environment: development
+  labels:
+    region: local
+  metadata:
+    owner: platform
+
 postgres:
   host: localhost
   port: 5432
@@ -66,6 +76,9 @@ retry:
 sqlite:
   path: data/mammoth.db
 
+operational_state:
+  adapter: sqlite
+
 logging:
   level: info
 ```
@@ -80,6 +93,24 @@ mammoth:
 ```
 
 `name` identifies this Mammoth instance in operational state and logs.
+
+### `node`
+
+```yaml
+node:
+  node_id: local-mammoth-1
+  node_name: local-mammoth-dev
+  fleet_id: local-dev
+  environment: development
+  labels:
+    region: local
+  metadata:
+    owner: platform
+```
+
+`node` is optional. It gives the local Mammoth process a stable identity for
+status output and future control-plane agents. If omitted, `node_id` defaults
+to the host name and `node_name` defaults to `mammoth.name`.
 
 ### `postgres`
 
@@ -176,7 +207,7 @@ destinations:
         - 10
 ```
 
-Mammoth OSS 0.6.0 supports webhook destinations. Each enabled destination keeps
+Mammoth OSS 0.7.0 supports webhook destinations. Each enabled destination keeps
 independent delivered-ledger, retry, and dead-letter state. Dead-letter replay
 targets the destination that originally failed.
 
@@ -256,6 +287,17 @@ sqlite:
 ```
 
 SQLite stores operational memory: schema migrations, checkpoints, and dead letters.
+
+### `operational_state`
+
+```yaml
+operational_state:
+  adapter: sqlite
+```
+
+`operational_state.adapter` selects the local operational state adapter.
+Mammoth OSS ships `sqlite`, which remains the default when this section is
+omitted.
 
 ### `logging`
 

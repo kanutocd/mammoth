@@ -9,6 +9,30 @@ data:
     mammoth:
       name: {{ .Values.mammoth.name | default (include "mammoth.fullname" .) }}
 
+    {{- if or .Values.node.node_id .Values.node.node_name .Values.node.fleet_id .Values.node.environment .Values.node.labels .Values.node.metadata }}
+    node:
+      {{- with .Values.node.node_id }}
+      node_id: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.node.node_name }}
+      node_name: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.node.fleet_id }}
+      fleet_id: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.node.environment }}
+      environment: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.node.labels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.node.metadata }}
+      metadata:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    {{- end }}
     postgres:
       host: {{ .Values.postgres.host | quote }}
       port: {{ .Values.postgres.port | default 5432 }}
@@ -91,6 +115,9 @@ data:
 
     sqlite:
       path: "/data/mammoth.db"
+
+    operational_state:
+      adapter: {{ .Values.operational_state.adapter | default "sqlite" | quote }}
 
     logging:
       level: {{ .Values.logging.level | default "info" | quote }}

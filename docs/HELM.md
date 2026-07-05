@@ -87,7 +87,7 @@ Default values:
 ```yaml
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.6.0"
+  tag: "0.7.0"
   pullPolicy: IfNotPresent
 ```
 
@@ -96,7 +96,7 @@ Override image settings:
 ```bash
 helm upgrade --install mammoth ./charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=0.6.0
+  --set image.tag=0.7.0
 ```
 
 ## Kind Local Development
@@ -128,6 +128,30 @@ helm upgrade --install mammoth ./charts/mammoth \
   --set postgres.port=5432 \
   --set postgres.database=mammoth_demo \
   --set postgres.username=postgres
+```
+
+## Node Identity
+
+The chart can render optional Mammoth node identity fields for status output and
+future control-plane agents:
+
+```yaml
+node:
+  node_id: mammoth-prod-1
+  node_name: mammoth-prod-a
+  fleet_id: payments-prod
+  environment: production
+  labels:
+    region: ap-southeast-1
+```
+
+## Operational State Adapter
+
+Mammoth OSS uses the SQLite operational state adapter by default:
+
+```yaml
+operational_state:
+  adapter: sqlite
 ```
 
 ## Webhook URL

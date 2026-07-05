@@ -1,0 +1,17 @@
+module Mammoth
+  module OperationalState
+    # SQLite-backed operational state adapter used by Mammoth OSS.
+    class SQLiteAdapter < Adapter
+      @sqlite_store: untyped
+
+      attr_reader sqlite_store: untyped
+
+      def initialize: (untyped sqlite_store) -> void
+      def self.from_config: (untyped config) -> untyped
+      def checkpoint_store: () -> untyped
+      def dead_letter_store: () -> untyped
+      def delivered_envelope_store: () -> untyped
+      def summary: () -> untyped
+    end
+  end
+end

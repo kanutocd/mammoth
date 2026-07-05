@@ -47,6 +47,28 @@ module Mammoth
       end
     end
 
+    def test_readyz_returns_503_when_store_fails
+      config = Configuration.load(fixture_config_path)
+      server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, sqlite_store: BrokenStore.new,
+                                               logger: quiet_logger)
+      thread = Thread.new { server.start }
+      port = server.server.config.fetch(:Port)
+
+      ready = Net::HTTP.get_response(URI("http://127.0.0.1:#{port}/readyz"))
+
+      assert_equal "503", ready.code
+      assert_equal "unready", JSON.parse(ready.body).fetch("status")
+    ensure
+      server&.shutdown
+      thread&.join
+    end
+
+    class BrokenStore
+      def bootstrap!
+        raise StoreError, "broken sqlite"
+      end
+    end
+
     private
 
     def quiet_logger

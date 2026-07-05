@@ -1,0 +1,9 @@
+module Mammoth
+  module Destinations
+    # Base contract for destination adapters.
+    class Adapter
+      def self.capabilities: () -> untyped
+      def self.adapter_type: () -> String
+    end
+  end
+end

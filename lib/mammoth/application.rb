@@ -10,7 +10,7 @@ module Mammoth
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
   class Application
-    attr_reader :config, :sqlite_store, :consumer, :delivery_worker, :checkpoint_store
+    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -18,10 +18,15 @@ module Mammoth
     # @param sleeper [#call] retry sleep strategy
     def initialize(config, source: nil, sink: nil, sleeper: Kernel.method(:sleep))
       @config = config
-      @sqlite_store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
-      @checkpoint_store = CheckpointStore.new(sqlite_store)
+      @state_adapter = build_state_adapter
+      @checkpoint_store = state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
       @delivery_worker = sink ? build_delivery_worker(sink: sink, sleeper: sleeper) : build_configured_delivery_worker(sleeper:)
+    end
+
+    # @return [Mammoth::SQLiteStore] underlying SQLite store for compatibility
+    def sqlite_store
+      state_adapter.respond_to?(:sqlite_store) ? state_adapter.sqlite_store : nil
     end
 
     # Start the application runtime and deliver consumed CDC work.
@@ -54,13 +59,7 @@ module Mammoth
     private
 
     def process_work(runtime, work)
-      if runtime
-        runtime.process_many([work])
-      elsif transaction_delivery?
-        delivery_worker.deliver_transaction(work)
-      else
-        delivery_worker.deliver(work)
-      end
+      runtime.process_many([work])
     end
 
     def process_batch(runtime, batch)
@@ -73,9 +72,8 @@ module Mammoth
     end
 
     def build_runtime
-      return unless runtime_adapter == "concurrent"
-
-      ConcurrentDeliveryRuntime.new(
+      Runtimes::Registry.build(
+        runtime_adapter,
         processor: DeliveryProcessor.new(delivery_worker:, delivery_unit: delivery_unit),
         concurrency: runtime_concurrency,
         timeout: runtime_timeout,
@@ -92,7 +90,7 @@ module Mammoth
         config,
         sink: sink,
         checkpoint_store: checkpoint_store,
-        dead_letter_store: DeadLetterStore.new(sqlite_store),
+        dead_letter_store: state_adapter.dead_letter_store,
         sleeper: sleeper,
         delivery_policy: delivery_policy
       )
@@ -116,7 +114,7 @@ module Mammoth
 
       destinations.map.with_index(1) do |destination, index|
         {
-          sink: WebhookSink.from_destination_config(destination, label: "destinations[#{index - 1}]"),
+          sink: Destinations::Registry.build(destination, label: "destinations[#{index - 1}]"),
           delivery_policy: destination_delivery_policy(destination)
         }
       end
@@ -132,8 +130,12 @@ module Mammoth
       }
     end
 
-    def transaction_delivery?
-      delivery_unit == :transaction
+    def build_state_adapter
+      OperationalState::Registry.build(operational_state_adapter, config)
+    end
+
+    def operational_state_adapter
+      config.dig("operational_state", "adapter") || "sqlite"
     end
 
     def delivery_unit

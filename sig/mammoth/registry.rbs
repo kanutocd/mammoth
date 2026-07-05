@@ -1,0 +1,19 @@
+module Mammoth
+  # Small explicit registry for built-in and extension-provided adapters.
+  class Registry
+    @namespace: untyped
+    @entries: untyped
+
+    attr_reader namespace: untyped
+    attr_reader entries: untyped
+
+    def initialize: (untyped namespace) -> void
+    def register: (untyped name, untyped adapter) -> untyped
+    def fetch: (untyped name) -> untyped
+    def names: () -> untyped
+
+    private
+
+    def normalize_name: (untyped name) -> String
+  end
+end

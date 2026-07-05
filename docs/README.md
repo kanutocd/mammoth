@@ -34,13 +34,14 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 - [Benchmarks](file.BENCHMARKS.html)
 - [Operational State](file.OPERATIONAL-STATE.html)
 - [Observability](file.OBSERVABILITY.html)
+- [Extensions](file.EXTENSIONS.html)
 - [Examples](file.EXAMPLES.html)
 - [Helm](file.HELM.html)
 - [Troubleshooting](file.TROUBLESHOOTING.html)
 
 ## Current release scope
 
-Mammoth 0.6.x focuses on:
+Mammoth 0.7.x focuses on:
 
 - PostgreSQL logical replication ingestion
 - normalized CDC event and transaction delivery to webhooks
@@ -55,12 +56,14 @@ Mammoth 0.6.x focuses on:
 - SQLite delivered-envelope ledger storage
 - webhook static headers, env-backed headers, and HMAC-SHA256 signing
 - dead-letter inspection and filtered replay commands
+- explicit extension registries for state, destination, and runtime adapters
+- node identity and local capability reporting
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.6.x
+## Non-goals for 0.7.x
 
-Mammoth 0.6.x does not provide:
+Mammoth 0.7.x does not provide:
 
 - a web dashboard
 - multiple active consumers for the same PostgreSQL replication slot

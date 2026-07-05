@@ -10,7 +10,9 @@ module Mammoth
   # may run it as a sidecar-like process or in a separate process that points at
   # the same SQLite operational database.
   class ObservabilityServer
+    # Default bind host for the observability server.
     DEFAULT_HOST = "0.0.0.0"
+    # Default TCP port for the observability server.
     DEFAULT_PORT = 9393
 
     attr_reader :config, :host, :port, :sqlite_store, :logger, :server

@@ -103,6 +103,14 @@ module Mammoth
       end
     end
 
+    def test_accepts_node_identity_and_operational_state_adapter
+      config = Configuration.load(fixture_config_path)
+
+      assert_equal "local-mammoth-1", config.dig("node", "node_id")
+      assert_equal "development", config.dig("node", "environment")
+      assert_equal "sqlite", config.dig("operational_state", "adapter")
+    end
+
     def test_rejects_unknown_destination_route_key
       with_temp_dir do |dir|
         path = write_file(

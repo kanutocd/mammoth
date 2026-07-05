@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 Unreleased
+
+### Added
+
+- Added explicit adapter registries for operational state, destinations, and delivery runtimes.
+- Added the built-in SQLite operational state adapter.
+- Added the built-in webhook destination adapter registration.
+- Added inline and concurrent runtime adapter registration.
+- Added optional node identity configuration for future control-plane integration.
+- Added local capability reporting for state, destination, runtime, and relay features.
+- Added a reusable status command object behind the CLI status command.
+
+### Changed
+
+- Bumped Mammoth version to `0.7.0`.
 
 ## 0.6.0
 

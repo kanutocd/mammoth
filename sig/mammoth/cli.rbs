@@ -35,7 +35,7 @@ module Mammoth
 
     def bootstrap: () -> 0
 
-    def status: () -> 0
+    def status: () -> Integer
 
     def start: () -> 0
 

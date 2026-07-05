@@ -95,7 +95,7 @@ MAMMOTH_BENCH_PRESERVE_ORDER=false \
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
-This benchmark uses one synthetic destination. It does not measure 0.6.0
+This benchmark uses one synthetic destination. It does not measure 0.7.0
 multi-destination webhook fanout, per-destination retry behavior, or
 per-destination dead-letter behavior.
 

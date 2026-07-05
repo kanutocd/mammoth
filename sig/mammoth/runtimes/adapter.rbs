@@ -1,0 +1,10 @@
+module Mammoth
+  module Runtimes
+    # Base contract for delivery runtime adapters.
+    class Adapter
+      def initialize: () -> void
+      def self.capabilities: () -> untyped
+      def self.adapter_type: () -> String
+    end
+  end
+end
