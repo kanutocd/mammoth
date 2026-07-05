@@ -1,47 +1,44 @@
 # Benchmarks
 
-Mammoth benchmarks are intentionally small and focused. They are meant to prove
-specific runtime behavior rather than produce universal performance claims.
+Mammoth benchmarks are small, repeatable scripts for validating showcase
+features and helping operators tune configuration knobs.
 
-## Concurrent Delivery Benchmark
-
-Location:
+The benchmark scripts live in:
 
 ```text
-benchmark/concurrent_delivery.rb
+benchmark/
 ```
 
-Run:
+The detailed source README is [`benchmark/README.md`](../benchmark/README.md).
+This page mirrors that benchmark map so the docs site and repository benchmark
+entrypoint stay aligned.
+
+## Benchmark Map
+
+| Script | Product surface | Primary config knobs |
+| --- | --- | --- |
+| `benchmark/concurrent_delivery.rb` | `cdc-concurrent` downstream runtime | `runtime.concurrency`, `runtime.preserve_order` |
+| `benchmark/webhook_delivery.rb` | real `WebhookSink` HTTP delivery | `webhook.timeout_seconds`, `webhook.headers`, `webhook.header_env`, `webhook.signing`, `delivery.unit` |
+| `benchmark/webhook_fanout.rb` | multi-destination webhook fanout | `destinations`, destination count, destination `timeout_seconds`, `delivery.unit` |
+| `benchmark/sqlite_operational_state.rb` | SQLite operational state | SQLite volume performance, checkpoint cadence, ledger/DLQ size |
+| `benchmark/observability_snapshot.rb` | `/readyz` and `/metrics` snapshot cost | SQLite size, scrape frequency |
+| `benchmark/dlq_replay.rb` | dead-letter replay | DLQ size, fanout destination count, `delivery.unit` |
+
+Set `MAMMOTH_BENCH_JSON=1` on any benchmark to emit machine-readable JSON after
+the table.
+
+## Concurrent Delivery
 
 ```bash
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
-This benchmark exercises the same downstream execution boundary used by Mammoth
-when `runtime.adapter: concurrent` is enabled:
+Useful for tuning:
 
-```text
-TransactionEnvelope
-      ↓
-Mammoth::ConcurrentDeliveryRuntime
-      ↓
-Mammoth::DeliveryProcessor
-      ↓
-DeliveryWorker-compatible sink
-```
+- `runtime.concurrency`
+- `runtime.preserve_order`
 
-The default matrix compares:
-
-```text
-concurrency: 1
-concurrency: 5
-concurrency: 10
-concurrency: 25
-```
-
-with configurable synthetic sink latency.
-
-## Configuration
+Options:
 
 ```bash
 MAMMOTH_BENCH_TRANSACTIONS=5000 \
@@ -52,42 +49,132 @@ MAMMOTH_BENCH_PRESERVE_ORDER=false \
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
-Set `MAMMOTH_BENCH_JSON=1` to emit machine-readable JSON after the table.
+This benchmark uses one synthetic destination. It does not measure 0.5.1
+multi-destination webhook fanout, per-destination retry behavior, or
+per-destination dead-letter behavior.
 
-## Interpretation
+## Webhook Delivery
 
-This benchmark should be read as a downstream delivery benchmark:
-
-```text
-one upstream replication stream
-        ↓
-many downstream concurrent deliveries
+```bash
+bundle exec ruby benchmark/webhook_delivery.rb
 ```
 
-It does not create extra PostgreSQL replication slots or replication
-connections. That separation is the core Mammoth runtime story.
+Useful for tuning:
 
-The current benchmark uses one synthetic destination. It measures
-`cdc-concurrent` delivery throughput, not 0.5.0 multi-destination webhook
-fanout or per-destination retry/dead-letter behavior.
+- `webhook.timeout_seconds`
+- static headers
+- `webhook.header_env`
+- `webhook.signing`
+- `delivery.unit`
 
-## Not Covered
+Options:
 
-This benchmark does not measure:
+```bash
+MAMMOTH_BENCH_REQUESTS=1000 \
+MAMMOTH_BENCH_DELIVERY_UNIT=transaction \
+MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
+MAMMOTH_BENCH_LATENCY_MS=10 \
+MAMMOTH_BENCH_AUTH=true \
+MAMMOTH_BENCH_SIGNING=true \
+bundle exec ruby benchmark/webhook_delivery.rb
+```
 
-- PostgreSQL write throughput
-- pgoutput decoding throughput
-- network behavior
-- retry behavior
-- checkpoint recovery
-- multi-destination webhook fanout
-- Toxiproxy failure scenarios
+## Webhook Fanout
 
-Those should be covered by separate end-to-end examples and resilience tests.
+```bash
+bundle exec ruby benchmark/webhook_fanout.rb
+```
 
-## Findings
+Useful for tuning:
 
-The benchmark measures Mammoth's ability to scale downstream delivery throughput while consuming a single PostgreSQL logical replication stream.
+- number of `destinations`
+- destination `timeout_seconds`
+- `delivery.unit`
+- `runtime.concurrency` planning, when compared with `concurrent_delivery.rb`
+
+Options:
+
+```bash
+MAMMOTH_BENCH_TRANSACTIONS=250 \
+MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
+MAMMOTH_BENCH_DESTINATIONS=1,2,5,10 \
+MAMMOTH_BENCH_LATENCY_MS=10 \
+bundle exec ruby benchmark/webhook_fanout.rb
+```
+
+## SQLite Operational State
+
+```bash
+bundle exec ruby benchmark/sqlite_operational_state.rb
+```
+
+Useful for tuning:
+
+- SQLite volume class and filesystem
+- checkpoint cadence assumptions
+- expected delivered ledger size
+- expected DLQ size
+
+Options:
+
+```bash
+MAMMOTH_BENCH_RECORDS=10000 \
+MAMMOTH_BENCH_DEAD_LETTERS=1000 \
+MAMMOTH_BENCH_CHECKPOINT_INTERVAL=100 \
+bundle exec ruby benchmark/sqlite_operational_state.rb
+```
+
+## Observability Snapshot
+
+```bash
+bundle exec ruby benchmark/observability_snapshot.rb
+```
+
+Useful for tuning:
+
+- metrics scrape frequency
+- expected delivered ledger size
+- expected DLQ size
+- SQLite volume choice
+
+Options:
+
+```bash
+MAMMOTH_BENCH_DELIVERED=10000 \
+MAMMOTH_BENCH_DEAD_LETTERS=1000 \
+MAMMOTH_BENCH_SNAPSHOTS=100 \
+bundle exec ruby benchmark/observability_snapshot.rb
+```
+
+## DLQ Replay
+
+```bash
+bundle exec ruby benchmark/dlq_replay.rb
+```
+
+Useful for tuning:
+
+- DLQ replay batch expectations
+- fanout destination count
+- `delivery.unit`
+- SQLite volume choice
+
+Options:
+
+```bash
+MAMMOTH_BENCH_DEAD_LETTERS=1000 \
+MAMMOTH_BENCH_DESTINATIONS=2 \
+MAMMOTH_BENCH_DELIVERY_UNIT=transaction \
+MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
+bundle exec ruby benchmark/dlq_replay.rb
+```
+
+## Existing Snapshot
+
+The tables below are retained from an earlier run of
+`benchmark/concurrent_delivery.rb`. Do not treat them as universal performance
+claims. Re-run benchmarks on your own hardware and publish the exact command,
+environment, and Mammoth commit SHA with any interpretation.
 
 ### Benchmark Configuration
 
@@ -96,11 +183,7 @@ The benchmark measures Mammoth's ability to scale downstream delivery throughput
 * 40,000 total events
 * `preserve_order: false`
 
----
-
-## Fast Sink (10ms)
-
-Simulates a fast downstream webhook.
+### Fast Sink (10ms)
 
 | Concurrency | Transactions/sec | Events/sec | Avg Latency (ms) | P95 Latency (ms) | Elapsed (s) |
 | ----------- | ---------------: | ---------: | ---------------: | ---------------: | ----------: |
@@ -109,22 +192,7 @@ Simulates a fast downstream webhook.
 | 10          |           955.04 |    3820.17 |           10.287 |           11.047 |      10.471 |
 | 25          |          2419.65 |    9678.61 |           10.173 |           10.330 |       4.133 |
 
-### Interpretation
-
-Throughput scales nearly linearly as delivery concurrency increases.
-
-At a concurrency level of 25, Mammoth achieves approximately:
-
-* 25x transaction throughput
-* 25x event throughput
-
-while maintaining essentially identical delivery latency.
-
----
-
-## Realistic Webhook (50ms)
-
-Simulates a more realistic external webhook endpoint.
+### Realistic Webhook (50ms)
 
 | Concurrency | Transactions/sec | Events/sec | Avg Latency (ms) | P95 Latency (ms) | Elapsed (s) |
 | ----------- | ---------------: | ---------: | ---------------: | ---------------: | ----------: |
@@ -133,41 +201,3 @@ Simulates a more realistic external webhook endpoint.
 | 10          |           198.40 |     793.61 |           50.181 |           50.402 |      50.403 |
 | 25          |           495.11 |    1980.44 |           50.224 |           50.420 |      20.198 |
 
-### Interpretation
-
-When downstream systems become slow, concurrency becomes increasingly valuable.
-
-With a 50ms delivery latency:
-
-* Concurrency 1 processes only 19.85 transactions/sec.
-* Concurrency 25 processes 495.11 transactions/sec.
-
-This demonstrates approximately a 25x throughput increase while maintaining a single PostgreSQL replication stream.
-
----
-
-## Architectural Implications
-
-Mammoth separates:
-
-PostgreSQL Logical Replication
-
-→ TransactionEnvelope Aggregation
-
-→ Concurrent Delivery Execution
-
-This allows delivery throughput to scale independently from PostgreSQL replication resources.
-
-Increasing delivery concurrency does not require additional logical replication connections.
-
-A single PostgreSQL replication stream can drive thousands of event deliveries per second through the `cdc-concurrent` runtime.
-
-
-## Key Result
-
-Increasing delivery concurrency from 1 to 25 improved throughput from:
-
-- 19.85 tx/sec
-- to 495.11 tx/sec
-
-while maintaining a single PostgreSQL logical replication stream.

@@ -1,6 +1,6 @@
 # Mammoth Webhook Fanout Configuration Example
 
-This example demonstrates the 0.5.0 `destinations` configuration shape for
+This example demonstrates the 0.5.1 `destinations` configuration shape for
 multi-destination webhook fanout.
 
 ```text

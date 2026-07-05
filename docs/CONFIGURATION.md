@@ -161,7 +161,7 @@ destinations:
     timeout_seconds: 5
 ```
 
-Mammoth OSS 0.5.0 supports webhook destinations. Each destination receives the
+Mammoth OSS 0.5.1 supports webhook destinations. Each destination receives the
 same event or transaction envelope and keeps independent delivered-ledger,
 retry, and dead-letter state. Dead-letter replay targets the destination that
 originally failed.

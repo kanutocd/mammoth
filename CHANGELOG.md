@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.5.1
+
+### Added
+
+- Added benchmark scripts for webhook delivery, webhook fanout, SQLite operational state, observability snapshots, and dead-letter replay.
+- Added shared benchmark helpers for synthetic CDC work items, local HTTP receivers, table output, JSON output, and environment-driven benchmark knobs.
+
+### Changed
+
+- Aligned benchmark documentation across `README.md`, `docs/BENCHMARKS.md`, and `benchmark/README.md` around operator config tuning.
+
 ## 0.5.0
 
 ### Added

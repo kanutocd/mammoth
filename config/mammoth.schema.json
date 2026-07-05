@@ -223,7 +223,7 @@
             "enum": [
               "webhook"
             ],
-            "description": "Destination adapter type. Mammoth OSS 0.5.0 supports webhook destinations."
+            "description": "Destination adapter type. Mammoth OSS 0.5.1 supports webhook destinations."
           },
           "url": {
             "type": "string",

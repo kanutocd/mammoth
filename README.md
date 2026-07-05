@@ -108,47 +108,21 @@ Mammoth stores operational memory in SQLite:
 
 ## Performance
 
-Mammoth scales downstream delivery throughput using the `cdc-concurrent` runtime while maintaining a single PostgreSQL logical replication stream.
+Mammoth includes local benchmarks for the product surfaces operators tune in
+production:
 
-### Concurrent Delivery Benchmark
+- concurrent delivery runtime
+- real webhook delivery
+- multi-destination webhook fanout
+- SQLite operational state
+- observability snapshots
+- DLQ replay
 
-Environment:
-
-* 10,000 transactions
-* 4 events per transaction
-* 40,000 total events
-
-#### Fast Downstream (10ms)
-
-| Concurrency | Transactions/sec |
-| ----------- | ---------------: |
-| 1           |            96.50 |
-| 25          |          2419.65 |
-
-#### Realistic Webhook (50ms)
-
-| Concurrency | Transactions/sec |
-| ----------- | ---------------: |
-| 1           |            19.85 |
-| 25          |           495.11 |
-
-Observed throughput improved from:
-
-- 96.50 → 2419.65 transactions/sec (10ms sink latency)
-- 19.85 → 495.11 transactions/sec (50ms sink latency)
-
-when increasing delivery concurrency from 1 to 25.
-
-The benchmark demonstrates near-linear scaling of delivery throughput without increasing PostgreSQL replication connections.
-
-See:
-
-- docs/BENCHMARKS.md
-- examples/transaction_webhook
-
-For full benchmark methodology and results see:
-
-See [Benchmarks](docs/BENCHMARKS.md).
+The historical numbers in [Benchmarks](docs/BENCHMARKS.md) are retained as a
+snapshot, not a universal performance claim. Re-run the scripts in
+[`benchmark/`](benchmark/README.md) on your own hardware when choosing
+`runtime.concurrency`, `destinations`, SQLite storage, scrape frequency, and
+DLQ replay expectations.
 
 ## E2E
 
