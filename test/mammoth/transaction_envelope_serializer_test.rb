@@ -69,7 +69,6 @@ module Mammoth
       assert_equal 1, payload.fetch("event_count")
     end
 
-
     def test_serializes_envelope_without_to_h_and_without_event_position
       envelope = ObjectEnvelope.new(
         events: [{ "event_id" => "event-no-position", "operation" => "insert" }],

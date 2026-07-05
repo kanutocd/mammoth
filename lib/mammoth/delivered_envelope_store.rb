@@ -6,8 +6,8 @@ module Mammoth
   # SQLite-backed ledger of downstream deliveries.
   #
   # The PostgreSQL replication boundary is at-least-once. Mammoth therefore
-  # keeps a small delivery ledger so a transaction replayed by pgoutput-client
-  # after restart does not have to be delivered downstream again.
+  # keeps a small delivery ledger so a transaction replayed by the upstream
+  # replication source after restart does not have to be delivered downstream again.
   class DeliveredEnvelopeStore
     SCHEMA = <<~SQL
       CREATE TABLE IF NOT EXISTS delivered_envelopes (
@@ -48,6 +48,7 @@ module Mammoth
       ).empty?
     end
 
+    # rubocop:disable Metrics/MethodLength
     def record!(idempotency_key:, source_name:, slot_name:, destination_name:, delivery_unit:, transaction_id:,
                 source_position:)
       database.execute(
@@ -74,6 +75,7 @@ module Mammoth
         [idempotency_key]
       )
     end
+    # rubocop:enable Metrics/MethodLength
 
     def all
       database.execute("SELECT * FROM delivered_envelopes ORDER BY id")

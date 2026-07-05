@@ -54,7 +54,6 @@ module Mammoth
       assert_nil runtime.shutdown
     end
 
-
     def test_shutdown_delegates_when_pool_supports_shutdown
       pool = ShutdownRecordingPool.new
       runtime = ConcurrentDeliveryRuntime.allocate

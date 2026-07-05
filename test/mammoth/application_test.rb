@@ -3,6 +3,7 @@
 require "test_helper"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class ApplicationTest < Minitest::Test
     def test_processes_injected_source_through_delivery_worker
       with_temp_dir do |dir|
@@ -135,7 +136,6 @@ module Mammoth
       end
     end
 
-
     def test_processes_event_delivery_inline_when_runtime_is_absent
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -183,7 +183,54 @@ module Mammoth
       end
     end
 
+    # rubocop:disable Metrics/MethodLength
+    def test_concurrent_runtime_processes_configured_batches
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(
+          File.join(dir, "mammoth.yml"),
+          minimal_config(sqlite_path: db_path) + <<~YAML
+
+            runtime:
+              adapter: concurrent
+              concurrency: 2
+              batch_size: 2
+          YAML
+        )
+        sink = DeliveryWorkerTest::RecordingSink.new
+        source = [
+          sample_event("event-1", "0/1"),
+          sample_event("event-2", "0/2"),
+          sample_event("event-3", "0/3")
+        ]
+        app = Application.new(Configuration.load(config_path), source: source, sink: sink, sleeper: ->(_seconds) {})
+
+        assert_equal 3, app.start
+        assert_equal 3, DeliveredEnvelopeStore.new(app.sqlite_store).count
+      end
+    end
+    # rubocop:enable Metrics/MethodLength
+
+    def test_shutdown_skips_runtime_without_shutdown_hook
+      runtime = Object.new
+      app = Application.allocate
+      app.instance_variable_set(:@consumer, FakeConsumer.new([sample_event("event-no-shutdown", "0/no-shutdown")]))
+      app.instance_variable_set(:@delivery_worker, DeliveryWorkerTest::RecordingSink.new)
+
+      app.define_singleton_method(:build_runtime) { runtime }
+      def app.runtime_batching?(_runtime) = false
+      def app.process_work(_runtime, _work) = nil
+
+      assert_equal 1, app.start
+      refute_respond_to runtime, :shutdown
+    end
+
     FakeEnvelope = Data.define(:events, :transaction_id)
+    FakeConsumer = Data.define(:items) do
+      def start(&block)
+        items.each(&block)
+      end
+    end
 
     private
 
@@ -199,4 +246,5 @@ module Mammoth
       }
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

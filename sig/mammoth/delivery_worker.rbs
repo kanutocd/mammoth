@@ -12,6 +12,8 @@ module Mammoth
 
     @dead_letter_store: untyped
 
+    @delivered_envelope_store: untyped
+
     @source_name: untyped
 
     @slot_name: untyped
@@ -31,6 +33,8 @@ module Mammoth
     attr_reader checkpoint_store: untyped
 
     attr_reader dead_letter_store: untyped
+
+    attr_reader delivered_envelope_store: untyped
 
     attr_reader retry_schedule: untyped
 
@@ -54,6 +58,7 @@ module Mammoth
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
     def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped) -> void
+                  | (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, delivered_envelope_store: untyped?, ?sleeper: untyped) -> void
 
     # Build a delivery worker from Mammoth configuration and stores.
     #
@@ -78,6 +83,14 @@ module Mammoth
     def deliver_work: (untyped work, serializer: untyped, delivery_method: untyped) -> untyped
 
     def checkpoint: (untyped work, serializer: untyped) -> untyped
+
+    def checkpoint_payload: (untyped payload) -> untyped
+
+    def idempotency_key_for: (payload: untyped, delivery_unit: untyped) -> String
+
+    def delivery_unit_for: (untyped delivery_method) -> Symbol
+
+    def destination_name: () -> untyped
 
     def dead_letter: (untyped event, untyped error, untyped attempts, serializer: untyped) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
 

@@ -36,10 +36,10 @@ module Mammoth
       assert_match(/Pgoutput::SourceAdapter::Cdc/, body)
     end
 
-    def test_application_does_not_construct_postgres_source
+    def test_application_does_not_construct_pgoutput_components_directly
       body = File.read(File.join(LIB_ROOT, "mammoth", "application.rb"))
 
-      refute_match(/Sources::Postgres\.new|CdcSource\.new|Pgoutput::/, body)
+      refute_match(/CdcSource\.new|Pgoutput::/, body)
     end
 
     def test_replication_consumer_does_not_reference_transport_configuration

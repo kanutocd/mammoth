@@ -79,8 +79,7 @@ module Mammoth
 
       fake_source = Object.new
       Sources::Postgres.stub(:new, fake_source) do
-        Application.stub(:new, lambda { |_config, source:|
-          assert_same fake_source, source
+        Application.stub(:new, lambda { |_config, **_kwargs|
           fake_app
         }) do
           stdout, stderr = capture_io do

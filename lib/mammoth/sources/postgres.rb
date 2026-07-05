@@ -12,6 +12,7 @@ module Mammoth
     # This class may mention pgoutput implementation details because it is the
     # concrete PostgreSQL source adapter used by Mammoth. The rest of Mammoth
     # should remain source-agnostic and consume only the work yielded here.
+    # rubocop:disable Metrics/ClassLength
     class Postgres
       # @return [Mammoth::Configuration] loaded Mammoth configuration
       attr_reader :config
@@ -74,6 +75,7 @@ module Mammoth
         process_decoded(decoded, metadata, &block)
       end
 
+      # rubocop:disable Metrics/MethodLength, Metrics/PerceivedComplexity
       def process_decoded(decoded, metadata, &block)
         return if decoded.nil?
 
@@ -97,12 +99,14 @@ module Mammoth
 
           work = enrich_work_position(work, metadata, decoded)
           if transaction_buffer_active?
-            @transaction_events << work
+            transaction_events = @transaction_events
+            transaction_events << work if transaction_events
           else
             block.call(work)
           end
         end
       end
+      # rubocop:enable Metrics/MethodLength, Metrics/PerceivedComplexity
 
       def parse_payload(payload)
         parser = effective_parser
@@ -141,7 +145,6 @@ module Mammoth
         result.is_a?(Array) ? result.compact : [result].compact
       end
 
-
       def begin_message?(decoded)
         message_kind(decoded).include?("begin")
       end
@@ -165,11 +168,11 @@ module Mammoth
 
         block.call(
           TransactionEnvelope.new(
-            events: @transaction_events,
-            transaction_id: transaction_id_for(decoded),
-            commit_lsn: commit_lsn_for(decoded, metadata),
-            commit_time: value_from(decoded, :commit_time, :committed_at, :timestamp),
-            metadata: @transaction_metadata
+            @transaction_events,
+            transaction_id_for(decoded),
+            commit_lsn_for(decoded, metadata),
+            value_from(decoded, :commit_time, :committed_at, :timestamp),
+            @transaction_metadata
           )
         )
       ensure
@@ -196,6 +199,7 @@ module Mammoth
         @transaction_metadata = nil
       end
 
+      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def enrich_work_position(work, metadata, decoded)
         position = value_from(work, :source_position, :commit_lsn) ||
                    value_from(metadata, :source_position, :commit_lsn, :lsn) ||
@@ -212,11 +216,13 @@ module Mammoth
 
         work_hash.merge(source_position_key => position, commit_lsn_key => position)
       end
+      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
       def first_event_value(*keys)
-        Array(@transaction_events).find do |event|
+        event = Array(@transaction_events).find do |event|
           keys.any? { |key| value_from(event, key) }
-        end&.then { |event| value_from(event, *keys) }
+        end
+        value_from(event, *keys) if event
       end
 
       def value_from(object, *keys)
@@ -241,19 +247,27 @@ module Mammoth
       end
 
       def effective_runner
-        runner || (@effective_runner ||= build_runner)
+        runner || @effective_runner || begin
+          @effective_runner = build_runner
+        end
       end
 
       def effective_parser
-        parser || (@effective_parser ||= build_parser)
+        parser || @effective_parser || begin
+          @effective_parser = build_parser
+        end
       end
 
       def effective_decoder
-        decoder || (@effective_decoder ||= build_decoder)
+        decoder || @effective_decoder || begin
+          @effective_decoder = build_decoder
+        end
       end
 
       def effective_adapter
-        adapter || (@effective_adapter ||= build_adapter)
+        adapter || @effective_adapter || begin
+          @effective_adapter = build_adapter
+        end
       end
 
       def build_runner
@@ -293,7 +307,6 @@ module Mammoth
           options[:feedback_interval] = feedback_interval unless feedback_interval.nil?
         end
       end
-
 
       def replication_start_lsn
         configured = config.dig("replication", "start_lsn")
@@ -367,5 +380,6 @@ module Mammoth
       TransactionEnvelope = Data.define(:events, :transaction_id, :commit_lsn, :commit_time, :metadata)
       private_constant :TransactionEnvelope
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end

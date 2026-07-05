@@ -23,6 +23,9 @@ module Mammoth
     def cdc_event_hash?: (untyped event_hash) -> bool
     def transaction_delivery?: () -> bool
     def validate_transaction_envelope: (untyped envelope) -> Array[untyped]
+    def synthetic_transaction_envelope: (untyped event) -> untyped
     def transaction_envelope?: (untyped work) -> bool
+
+    SyntheticTransactionEnvelope: untyped
   end
 end

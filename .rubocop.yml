@@ -9,6 +9,8 @@ AllCops:
     - 'test/tmp/**/*'
     - 'vendor/**/*'
     - 'bin/*'
+    - 'benchmark/**/*'
+    - 'examples/**/*'
 
 
 Style/StringLiterals:

@@ -70,6 +70,23 @@ module Mammoth
       assert_equal [envelope], consumed
     end
 
+    def test_transaction_delivery_wraps_plain_hash_event_without_to_h_conversion
+      event = {
+        "operation" => "insert",
+        "source_position" => "0/plain",
+        "event_id" => "event-plain",
+        "occurred_at" => "2026-01-01T00:00:00Z"
+      }
+      consumer = ReplicationConsumer.new(source: [event], delivery_unit: :transaction)
+      consumed = []
+
+      assert_equal(1, consumer.start { |work| consumed << work })
+      envelope = consumed.fetch(0)
+      assert_equal [event], envelope.events
+      assert_equal "event-plain", envelope.transaction_id
+      assert_equal "0/plain", envelope.commit_lsn
+    end
+
     def test_start_rejects_non_cdc_work
       consumer = ReplicationConsumer.new(source: [:not_cdc])
 

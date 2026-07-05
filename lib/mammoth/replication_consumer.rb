@@ -70,21 +70,23 @@ module Mammoth
       events.each { |event| validate_cdc_event!(event) }
     end
 
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def synthetic_transaction_envelope(event)
       validate_cdc_event!(event)
 
       event_hash = event.respond_to?(:to_h) ? event.to_h : event
       SyntheticTransactionEnvelope.new(
-        events: [event],
-        transaction_id: event_hash["transaction_id"] || event_hash[:transaction_id] ||
-                        event_hash["xid"] || event_hash[:xid] || event_hash["event_id"] || event_hash[:event_id],
-        commit_lsn: event_hash["commit_lsn"] || event_hash[:commit_lsn] ||
-                    event_hash["source_position"] || event_hash[:source_position],
-        commit_time: event_hash["committed_at"] || event_hash[:committed_at] ||
-                     event_hash["occurred_at"] || event_hash[:occurred_at],
-        metadata: event_hash["metadata"] || event_hash[:metadata] || {}
+        [event],
+        event_hash["transaction_id"] || event_hash[:transaction_id] ||
+          event_hash["xid"] || event_hash[:xid] || event_hash["event_id"] || event_hash[:event_id],
+        event_hash["commit_lsn"] || event_hash[:commit_lsn] ||
+          event_hash["source_position"] || event_hash[:source_position],
+        event_hash["committed_at"] || event_hash[:committed_at] ||
+          event_hash["occurred_at"] || event_hash[:occurred_at],
+        event_hash["metadata"] || event_hash[:metadata] || {}
       )
     end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def validate_cdc_event!(event)
       return event if event.respond_to?(:to_h) && cdc_event_hash?(event.to_h)

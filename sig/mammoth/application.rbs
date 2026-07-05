@@ -18,6 +18,8 @@ module Mammoth
 
     @runtime: untyped
 
+    @checkpoint_store: untyped
+
     attr_reader config: untyped
 
     attr_reader sqlite_store: untyped
@@ -42,6 +44,10 @@ module Mammoth
 
     def process_work: (untyped runtime, untyped work) -> untyped
 
+    def process_batch: (untyped runtime, untyped batch) -> untyped
+
+    def runtime_batching?: (untyped runtime) -> bool
+
     def build_runtime: () -> untyped
 
     def build_source: () -> untyped
@@ -56,6 +62,8 @@ module Mammoth
     def runtime_concurrency: () -> untyped
 
     def runtime_timeout: () -> untyped
+
+    def runtime_batch_size: () -> untyped
 
     def runtime_preserve_order?: () -> bool
   end

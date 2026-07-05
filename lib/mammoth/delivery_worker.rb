@@ -78,6 +78,7 @@ module Mammoth
 
     private
 
+    # rubocop:disable Metrics/MethodLength
     def deliver_work(work, serializer:, delivery_method:)
       attempts = 0
       payload = serializer.call(work)
@@ -116,6 +117,7 @@ module Mammoth
         retry
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     def checkpoint(work, serializer:)
       checkpoint_payload(serializer.call(work))

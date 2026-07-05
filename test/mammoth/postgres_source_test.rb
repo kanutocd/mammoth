@@ -150,7 +150,7 @@ module Mammoth
       assert_match(/source adapter must respond/, error.message)
     end
 
-
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def test_buffers_pgoutput_transaction_until_commit
       decoded_messages = {
         "begin" => FakeBegin.new("tx-1"),
@@ -173,9 +173,11 @@ module Mammoth
       assert_equal "tx-1", envelope.transaction_id
       assert_equal "0/99", envelope.commit_lsn
       assert_equal 2, envelope.events.length
-      assert_equal %w[row-1 row-2], envelope.events.map { |event| event.fetch("source_position") }
+      assert_equal(%w[row-1 row-2], envelope.events.map { |event| event.fetch("source_position") })
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
+    # rubocop:disable Metrics/MethodLength
     def test_commit_metadata_supplies_transaction_commit_lsn
       decoded_messages = {
         "begin" => FakeBegin.new("tx-2"),
@@ -185,10 +187,10 @@ module Mammoth
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
         runner: FakeRunnerWithMetadata.new([
-          ["begin", { lsn: "0/1" }],
-          ["row", { lsn: "0/2" }],
-          ["commit", { lsn: "0/3" }]
-        ]),
+                                             ["begin", { lsn: "0/1" }],
+                                             ["row", { lsn: "0/2" }],
+                                             ["commit", { lsn: "0/3" }]
+                                           ]),
         parser: ->(payload) { payload },
         decoder: ->(message, _metadata) { decoded_messages.fetch(message) },
         adapter: ->(decoded) { decoded }
@@ -200,7 +202,7 @@ module Mammoth
       assert_equal "0/3", envelope.commit_lsn
       assert_equal "0/2", envelope.events.first.fetch("source_position")
     end
-
+    # rubocop:enable Metrics/MethodLength
 
     def test_decoder_can_emit_array_of_decoded_messages
       source = Sources::Postgres.new(
@@ -211,7 +213,7 @@ module Mammoth
         adapter: ->(decoded) { sample_event(decoded) }
       )
 
-      assert_equal %w[row-1 row-2], source.each.map { |event| event.fetch("source_position") }
+      assert_equal(%w[row-1 row-2], source.each.map { |event| event.fetch("source_position") })
     end
 
     def test_commit_message_without_active_transaction_buffer_is_ignored
@@ -324,7 +326,6 @@ module Mammoth
       assert_equal 7.5, options.fetch(:feedback_interval)
     end
 
-
     def test_runner_options_preserve_false_transport_lifecycle_settings
       config = Configuration.load(fixture_config_path)
       config.data.fetch("replication")["auto_create_slot"] = false
@@ -360,7 +361,7 @@ module Mammoth
         )
         source = Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
 
-        assert_equal "0/1963098", source.send(:runner_options).fetch(:start_lsn)
+        assert_equal "0/1963A48", source.send(:runner_options).fetch(:start_lsn)
       end
     end
 

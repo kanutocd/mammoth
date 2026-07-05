@@ -67,7 +67,7 @@ module Mammoth
       def required_config: (*String keys) -> untyped
       def require_optional!: (String feature, String gem_name) -> bool
 
-      TransactionEnvelope: singleton(::Data)
+      TransactionEnvelope: untyped
     end
   end
 end

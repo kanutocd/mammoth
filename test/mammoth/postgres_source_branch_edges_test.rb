@@ -59,12 +59,23 @@ module Mammoth
         source = Postgres.new(Configuration.load(fixture_config_path))
 
         enriched = source.send(:enrich_work_position, { operation: "insert" }, { lsn: "0/symbol" }, Object.new)
-        existing = source.send(:enrich_work_position, { operation: "insert", source_position: "0/existing" }, { lsn: "0/new" }, Object.new)
+        existing = source.send(:enrich_work_position, { operation: "insert", source_position: "0/existing" }, { lsn: "0/new" },
+                               Object.new)
 
         assert_equal "0/symbol", enriched.fetch(:source_position)
         assert_equal "0/symbol", enriched.fetch(:commit_lsn)
         assert_equal "0/existing", existing.fetch(:source_position)
         refute_equal "0/new", existing.fetch(:source_position)
+      end
+
+      def test_enrich_work_position_uses_decoded_position_for_string_keyed_work
+        source = Postgres.new(Configuration.load(fixture_config_path))
+        decoded = { "source_position" => "0/decoded" }
+
+        enriched = source.send(:enrich_work_position, { "operation" => "insert" }, nil, decoded)
+
+        assert_equal "0/decoded", enriched.fetch("source_position")
+        assert_equal "0/decoded", enriched.fetch("commit_lsn")
       end
 
       def test_value_from_handles_nil_plain_objects_and_string_keys
@@ -73,6 +84,41 @@ module Mammoth
         assert_nil source.send(:value_from, nil, :missing)
         assert_nil source.send(:value_from, Object.new, :missing)
         assert_equal "value", source.send(:value_from, { "answer" => "value" }, :answer)
+      end
+
+      def test_decode_message_call_interface_without_metadata
+        decoder = ->(message) { "decoded-#{message}" }
+        source = Postgres.new(Configuration.load(fixture_config_path), decoder: decoder)
+
+        assert_equal "decoded-payload", source.send(:decode_message, "payload", { lsn: "0/1" })
+      end
+
+      def test_process_decoded_skips_nil_normalized_work_outside_transaction
+        source = Postgres.new(Configuration.load(fixture_config_path), adapter: ->(_decoded) { nil })
+        emitted = []
+
+        source.send(:process_decoded, "row", nil) { |work| emitted << work }
+
+        assert_empty emitted
+      end
+
+      def test_checkpoint_lsn_is_nil_when_checkpoint_row_is_missing
+        with_temp_dir do |dir|
+          config = Configuration.load(fixture_config_path)
+          config.data.fetch("sqlite")["path"] = File.join(dir, "mammoth.db")
+          store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
+          source = Postgres.new(config, checkpoint_store: CheckpointStore.new(store))
+
+          assert_nil source.send(:checkpoint_lsn)
+        end
+      end
+
+      def test_normalize_lsn_handles_blank_already_formatted_and_non_numeric_values
+        source = Postgres.new(Configuration.load(fixture_config_path))
+
+        assert_nil source.send(:normalize_lsn, "")
+        assert_equal "0/ABC", source.send(:normalize_lsn, "0/ABC")
+        assert_equal "not-a-number", source.send(:normalize_lsn, "not-a-number")
       end
 
       FakeCommit = Data.define(:commit_lsn)

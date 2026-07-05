@@ -9,7 +9,7 @@ module Mammoth
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         store = DeliveredEnvelopeStore.new(sqlite)
 
-        assert_equal false, store.delivered?("source:slot:webhook:tx:0/1")
+        refute store.delivered?("source:slot:webhook:tx:0/1")
 
         store.record!(
           idempotency_key: "source:slot:webhook:tx:0/1",
@@ -21,7 +21,7 @@ module Mammoth
           source_position: "0/1"
         )
 
-        assert_equal true, store.delivered?("source:slot:webhook:tx:0/1")
+        assert store.delivered?("source:slot:webhook:tx:0/1")
         assert_equal 1, store.count
       end
     end

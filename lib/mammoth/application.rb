@@ -30,7 +30,7 @@ module Mammoth
     def start
       runtime = build_runtime
       processed = 0
-      batch = []
+      batch = [nil].compact
 
       consumer.start do |work|
         if runtime_batching?(runtime)

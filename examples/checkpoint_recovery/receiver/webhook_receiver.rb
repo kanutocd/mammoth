@@ -34,11 +34,11 @@ class CheckpointRecoveryServlet < WEBrick::HTTPServlet::AbstractServlet
     response.status = 200
     response["Content-Type"] = "application/json"
     response.body = JSON.generate(ok: true, delivered: delivered)
-  rescue StandardError => error
-    warn "receiver error: #{error.class}: #{error.message}"
+  rescue StandardError => e
+    warn "receiver error: #{e.class}: #{e.message}"
     response.status = 500
     response["Content-Type"] = "application/json"
-    response.body = JSON.generate(ok: false, error: error.message)
+    response.body = JSON.generate(ok: false, error: e.message)
   end
 end
 
