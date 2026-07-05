@@ -118,9 +118,9 @@ production:
 - observability snapshots
 - DLQ replay
 
-The historical numbers in [Benchmarks](docs/BENCHMARKS.md) are retained as a
+The historical numbers in [Benchmarks](https://github.com/kanutocd/mammoth/tree/main/docs/BENCHMARKS.md) are retained as a
 snapshot, not a universal performance claim. Re-run the scripts in
-[`benchmark/`](benchmark/README.md) on your own hardware when choosing
+[`benchmark/`](https://github.com/kanutocd/mammoth/tree/main/benchmark) on your own hardware when choosing
 `runtime.concurrency`, `destinations`, SQLite storage, scrape frequency, and
 DLQ replay expectations.
 

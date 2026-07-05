@@ -9,7 +9,7 @@ The benchmark scripts live in:
 benchmark/
 ```
 
-The detailed source README is [`benchmark/README.md`](../benchmark/README.md).
+The detailed source README is [`benchmark/README.md`](https://github.com/kanutocd/mammoth/blob/main/benchmark/README.md).
 This page mirrors that benchmark map so the docs site and repository benchmark
 entrypoint stay aligned.
 
