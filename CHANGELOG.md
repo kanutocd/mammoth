@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.2.0 Unreleased
+## Unreleased
+
+## 0.2.0
 
 ### Added
 
@@ -16,6 +18,7 @@
 - Added environment-backed webhook headers through `webhook.header_env` for secrets such as bearer tokens.
 - Added optional HMAC-SHA256 webhook request signing through `webhook.signing`.
 - Added E2E coverage for duplicate delivery suppression, transaction webhook payloads, dead-letter persistence, and signed/authenticated webhook requests.
+- Added Helm chart rendering for delivery runtime, webhook auth headers, signing, and secret-backed webhook environment values.
 
 ### Changed
 

@@ -34,6 +34,15 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.postgres.existingSecret.name }}
                   key: {{ .Values.postgres.existingSecret.key }}
+            {{- if .Values.webhook.existingSecret.name }}
+            {{- range $envName, $secretKey := .Values.webhook.existingSecret.keys }}
+            - name: {{ $envName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.webhook.existingSecret.name }}
+                  key: {{ $secretKey }}
+            {{- end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

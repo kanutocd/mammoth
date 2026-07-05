@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.1.0"
+  tag: "0.2.0"
   pullPolicy: IfNotPresent
 
 # Private PRO images can be used by overriding image.repository and setting
@@ -28,10 +28,43 @@ replication:
   temporary_slot: false
   feedback_interval: 7.0
 
+delivery:
+  unit: "transaction"
+  ordering:
+    scope: "transaction"
+
+runtime:
+  adapter: "concurrent"
+  concurrency: 1
+  batch_size: 1
+  preserve_order: true
+  timeout_seconds: null
+
 webhook:
   name: "primary_webhook"
   url: "https://yourservice.com/webhooks/postgres"
   timeout_seconds: 5
+  headers: {}
+  header_env: {}
+  # Example:
+  # header_env:
+  #   Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing: {}
+  # Example:
+  # signing:
+  #   algorithm: hmac_sha256
+  #   secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
+  #   signature_header: X-Mammoth-Signature
+  #   timestamp_header: X-Mammoth-Timestamp
+  existingSecret:
+    name: ""
+    # Map environment variable names used by webhook.header_env and webhook.signing.secret_env
+    # to keys in this Secret.
+    keys: {}
+    # Example:
+    # keys:
+    #   MAMMOTH_WEBHOOK_AUTHORIZATION: authorization
+    #   MAMMOTH_WEBHOOK_SIGNING_SECRET: signing-secret
 
 retry:
   max_attempts: 5

@@ -24,10 +24,34 @@ data:
       temporary_slot: {{ .Values.replication.temporary_slot | default false }}
       feedback_interval: {{ .Values.replication.feedback_interval | default 5.0 }}
 
+    delivery:
+      unit: {{ .Values.delivery.unit | default "transaction" | quote }}
+      ordering:
+        scope: {{ .Values.delivery.ordering.scope | default "transaction" | quote }}
+
+    runtime:
+      adapter: {{ .Values.runtime.adapter | default "concurrent" | quote }}
+      concurrency: {{ .Values.runtime.concurrency | default 1 }}
+      batch_size: {{ .Values.runtime.batch_size | default 1 }}
+      preserve_order: {{ .Values.runtime.preserve_order | default true }}
+      timeout_seconds: {{ .Values.runtime.timeout_seconds | default "null" }}
+
     webhook:
       name: {{ .Values.webhook.name | quote }}
       url: {{ .Values.webhook.url | quote }}
       timeout_seconds: {{ .Values.webhook.timeout_seconds | default 5 }}
+      {{- with .Values.webhook.headers }}
+      headers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webhook.header_env }}
+      header_env:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webhook.signing }}
+      signing:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 
     retry:
       max_attempts: {{ .Values.retry.max_attempts | default 5 }}

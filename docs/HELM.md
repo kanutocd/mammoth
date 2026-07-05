@@ -87,7 +87,7 @@ Default values:
 ```yaml
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.1.0"
+  tag: "0.2.0"
   pullPolicy: IfNotPresent
 ```
 
@@ -148,11 +148,50 @@ webhook:
   url: http://webhook-receiver:9292/webhook
 ```
 
-The chart currently renders core webhook fields: `name`, `url`, and
-`timeout_seconds`. Mammoth itself also supports `webhook.headers`,
-`webhook.header_env`, and `webhook.signing` in YAML configuration; use a custom
-config rendering path if your Helm deployment needs those fields before the
-chart grows first-class values for them.
+The chart renders webhook headers and signing settings:
+
+```yaml
+webhook:
+  headers:
+    X-Mammoth-Source: production_mammoth
+  header_env:
+    Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing:
+    algorithm: hmac_sha256
+    secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
+```
+
+Back env-backed webhook values with a Kubernetes Secret:
+
+```yaml
+webhook:
+  existingSecret:
+    name: webhook-secrets
+    keys:
+      MAMMOTH_WEBHOOK_AUTHORIZATION: authorization
+      MAMMOTH_WEBHOOK_SIGNING_SECRET: signing-secret
+```
+
+## Delivery Runtime
+
+The chart renders Mammoth's transaction delivery and downstream runtime
+settings:
+
+```yaml
+delivery:
+  unit: transaction
+  ordering:
+    scope: transaction
+
+runtime:
+  adapter: concurrent
+  concurrency: 1
+  batch_size: 1
+  preserve_order: true
+```
+
+Runtime concurrency affects downstream webhook delivery only. It does not create
+extra PostgreSQL replication slots or replication connections.
 
 ## Persistence
 
