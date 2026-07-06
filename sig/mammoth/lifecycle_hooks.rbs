@@ -1,0 +1,28 @@
+module Mammoth
+  # Executes optional lifecycle callbacks around local Mammoth operations.
+  #
+  # Hooks are intentionally in-process and explicit. They give extensions and
+  # future control agents stable observation points without changing the data
+  # plane or introducing remote behavior into OSS.
+  class LifecycleHooks
+    @callbacks: untyped
+
+    EVENTS: untyped
+
+    EMPTY_CALLBACKS: untyped
+
+    attr_reader callbacks: untyped
+
+    # @param callbacks [Hash] lifecycle callbacks keyed by event name
+    def initialize: (?untyped callbacks) -> void
+
+    # @param event [Symbol, String] lifecycle event
+    # @param context [Hash] event context
+    # @return [void]
+    def call: (untyped event, ?untyped context) -> nil
+
+    private
+
+    def normalize: (untyped callbacks) -> untyped
+  end
+end

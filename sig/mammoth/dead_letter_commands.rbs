@@ -3,15 +3,19 @@ module Mammoth
   class DeadLetterCommands
     @argv: untyped
 
+    @lifecycle_hooks: untyped
+
     DEAD_LETTER_TRANSACTION_ENVELOPE: untyped
 
     attr_reader argv: untyped
+    attr_reader lifecycle_hooks: untyped
 
     # @param argv [Array<String>] command line arguments
-    def self.call: (untyped argv) -> untyped
+    def self.call: (untyped argv, ?lifecycle_hooks: untyped) -> untyped
 
     # @param argv [Array<String>] command line arguments
-    def initialize: (untyped argv) -> void
+    # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+    def initialize: (untyped argv, ?lifecycle_hooks: untyped) -> void
 
     # Dispatch the nested dead-letter subcommand.
     #
@@ -72,5 +76,7 @@ module Mammoth
     def list_row: (untyped row) -> String
 
     def replay_message: (untyped row, untyped result) -> String
+
+    def replay_context: (?untyped extra) -> untyped
   end
 end

@@ -345,7 +345,7 @@ sqlite:
   path: data/mammoth.db
 
 operational_state:
-  # Mammoth OSS 0.7.0 ships the sqlite operational state adapter.
+  # Mammoth OSS 0.7.x ships the sqlite operational state adapter.
   adapter: sqlite
 
 observability:

@@ -1,0 +1,31 @@
+module Mammoth
+  module Commands
+    # Starts a Mammoth application and prints the processed work count.
+    class StartCommand
+      @config: untyped
+
+      @source: untyped
+
+      @output: untyped
+
+      @lifecycle_hooks: untyped
+
+      attr_reader config: untyped
+
+      attr_reader source: untyped
+
+      attr_reader output: untyped
+
+      attr_reader lifecycle_hooks: untyped
+
+      # @param config [Mammoth::Configuration] loaded configuration
+      # @param source [#each, nil] optional injected source
+      # @param output [#puts] output stream
+      # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+      def initialize: (untyped config, ?source: untyped?, ?output: untyped, ?lifecycle_hooks: untyped) -> void
+
+      # @return [Integer] process-style status code
+      def call: () -> Integer
+    end
+  end
+end

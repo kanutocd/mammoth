@@ -5,7 +5,7 @@ require "json-schema"
 require "yaml"
 
 module Mammoth
-  # Loads and validates Mammoth YAML configuration.
+  # Loads and validates Mammoth configuration.
   #
   # Configuration is intentionally schema-backed so the same contract can power
   # editor IntelliSense, preflight validation, and runtime startup checks.
@@ -22,15 +22,27 @@ module Mammoth
     # @return [Mammoth::Configuration] loaded configuration
     # @raise [Mammoth::ConfigurationError] when the file is missing or invalid
     def self.load(path, schema_path: DEFAULT_SCHEMA_PATH)
-      new(path, schema_path: schema_path).load
+      Providers::FileProvider.new(path).load(schema_path: schema_path)
+    end
+
+    # Build and validate a configuration from an in-memory Hash.
+    #
+    # @param data [Hash] configuration data
+    # @param path [String, nil] optional display path/source
+    # @param schema_path [String] JSON Schema path
+    # @return [Mammoth::Configuration] loaded configuration
+    # @raise [Mammoth::ConfigurationError] when the data is invalid
+    def self.from_hash(data, path: nil, schema_path: DEFAULT_SCHEMA_PATH)
+      Providers::HashProvider.new(data, path: path).load(schema_path: schema_path)
     end
 
     # @param path [String] YAML configuration path
     # @param schema_path [String] JSON Schema path
-    def initialize(path, schema_path: DEFAULT_SCHEMA_PATH)
+    # @param data [Hash, nil] already parsed configuration data
+    def initialize(path, schema_path: DEFAULT_SCHEMA_PATH, data: nil)
       @path = path
       @schema_path = schema_path
-      @data = nil
+      @data = data
     end
 
     # Load and validate the configuration file.
@@ -38,9 +50,7 @@ module Mammoth
     # @return [Mammoth::Configuration] self
     # @raise [Mammoth::ConfigurationError] when validation fails
     def load
-      raise ConfigurationError, "configuration file not found: #{path}" unless File.file?(path)
-
-      @data = YAML.safe_load_file(path, permitted_classes: [], aliases: false)
+      @data ||= load_yaml_file
       raise ConfigurationError, "configuration must be a YAML mapping" unless data.is_a?(Hash)
 
       validate_schema!
@@ -59,6 +69,12 @@ module Mammoth
     end
 
     private
+
+    def load_yaml_file
+      raise ConfigurationError, "configuration file not found: #{path}" unless path && File.file?(path)
+
+      YAML.safe_load_file(path, permitted_classes: [], aliases: false)
+    end
 
     def validate_schema!
       raise ConfigurationError, "schema file not found: #{schema_path}" unless File.file?(schema_path)
@@ -84,6 +100,49 @@ module Mammoth
       return if duplicates.empty?
 
       raise ConfigurationError, "destination names must be unique: #{duplicates.join(", ")}"
+    end
+
+    # Configuration provider contracts shared by CLI and future control agents.
+    module Providers
+      # Loads configuration from a YAML file.
+      class FileProvider
+        attr_reader :path
+
+        # @param path [String] YAML configuration path
+        def initialize(path)
+          @path = path
+        end
+
+        # @param schema_path [String] JSON Schema path
+        # @return [Mammoth::Configuration]
+        def load(schema_path: Configuration::DEFAULT_SCHEMA_PATH)
+          Configuration.new(path, schema_path: schema_path).load
+        end
+      end
+
+      # Loads configuration from an already parsed Hash.
+      class HashProvider
+        attr_reader :data, :path
+
+        # @param data [Hash] configuration data
+        # @param path [String, nil] optional source name for diagnostics/status
+        def initialize(data, path: nil)
+          @data = data
+          @path = path || "<hash>"
+        end
+
+        # @param schema_path [String] JSON Schema path
+        # @return [Mammoth::Configuration]
+        def load(schema_path: Configuration::DEFAULT_SCHEMA_PATH)
+          Configuration.new(path, schema_path: schema_path, data: deep_copy(data)).load
+        end
+
+        private
+
+        def deep_copy(value)
+          Marshal.load(Marshal.dump(value))
+        end
+      end
     end
   end
 end

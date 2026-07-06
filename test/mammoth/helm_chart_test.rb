@@ -6,7 +6,7 @@ require "tempfile"
 
 module Mammoth
   class HelmChartTest < Minitest::Test
-    def test_chart_renders_0_2_runtime_and_webhook_auth_config
+    def test_chart_renders_runtime_and_webhook_auth_config
       stdout, stderr, status = Open3.capture3(*helm_template_command)
 
       assert status.success?, stderr
@@ -50,7 +50,7 @@ module Mammoth
 
     def expected_rendered_config
       [
-        "image: \"ghcr.io/kanutocd/mammoth:0.7.0\"",
+        "image: \"ghcr.io/kanutocd/mammoth:0.7.1\"",
         "unit: \"transaction\"",
         "adapter: \"concurrent\"",
         "Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION",

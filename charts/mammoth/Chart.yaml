@@ -2,5 +2,5 @@ apiVersion: v2
 name: mammoth
 description: A lightweight PostgreSQL CDC-to-webhook fanout relay
 type: application
-version: 0.7.0
-appVersion: "0.7.0"
+version: 0.7.1
+appVersion: "0.7.1"

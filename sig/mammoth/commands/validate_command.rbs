@@ -1,0 +1,21 @@
+module Mammoth
+  module Commands
+    # Validates a Mammoth configuration through a provider.
+    class ValidateCommand
+      @provider: untyped
+
+      @output: untyped
+
+      attr_reader provider: untyped
+
+      attr_reader output: untyped
+
+      # @param provider [#load] configuration provider
+      # @param output [#puts] output stream
+      def initialize: (untyped provider, ?output: untyped) -> void
+
+      # @return [Integer] process-style status code
+      def call: () -> Integer
+    end
+  end
+end

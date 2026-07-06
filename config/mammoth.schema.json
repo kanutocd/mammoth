@@ -264,7 +264,7 @@
             "enum": [
               "webhook"
             ],
-            "description": "Destination adapter type. Mammoth OSS 0.7.0 supports webhook destinations."
+            "description": "Destination adapter type. Mammoth OSS 0.7.x supports webhook destinations."
           },
           "enabled": {
             "type": "boolean",
@@ -435,7 +435,7 @@
           "enum": [
             "sqlite"
           ],
-          "description": "Operational state adapter. Mammoth OSS 0.7.0 ships the sqlite adapter."
+          "description": "Operational state adapter. Mammoth OSS 0.7.x ships the sqlite adapter."
         }
       },
       "description": "Operational state adapter selection. SQLite remains the default OSS adapter."

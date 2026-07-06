@@ -17,16 +17,18 @@ module Mammoth
       :metadata
     )
 
-    attr_reader :argv
+    attr_reader :argv, :lifecycle_hooks
 
     # @param argv [Array<String>] command line arguments
-    def self.call(argv)
-      new(argv).call
+    def self.call(argv, lifecycle_hooks: LifecycleHooks.new)
+      new(argv, lifecycle_hooks: lifecycle_hooks).call
     end
 
     # @param argv [Array<String>] command line arguments
-    def initialize(argv)
+    # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+    def initialize(argv, lifecycle_hooks: LifecycleHooks.new)
       @argv = argv
+      @lifecycle_hooks = lifecycle_hooks.is_a?(LifecycleHooks) ? lifecycle_hooks : LifecycleHooks.new(lifecycle_hooks)
     end
 
     # Dispatch the nested dead-letter subcommand.
@@ -79,11 +81,13 @@ module Mammoth
       rows = replay_rows
       raise ConfigurationError, "no dead letters found to replay" if rows.empty?
 
+      lifecycle_hooks.call(:before_replay, replay_context(rows: rows))
       rows.each do |row|
         result = replay_row(row)
         dead_letter_store.resolve(row.fetch("id")) if replay_resolved?(result)
         puts replay_message(row, result)
       end
+      lifecycle_hooks.call(:after_replay, replay_context(rows: rows))
       0
     end
 
@@ -306,6 +310,14 @@ module Mammoth
 
     def replay_message(row, result)
       "Dead letter #{row.fetch("id")}: #{result.fetch(:status)}"
+    end
+
+    def replay_context(extra = {})
+      {
+        config: load_config,
+        dead_letter_store: dead_letter_store,
+        delivery_worker: worker
+      }.merge(extra)
     end
   end
   # rubocop:enable Metrics/ClassLength

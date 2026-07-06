@@ -85,18 +85,12 @@ module Mammoth
     end
 
     def validate
-      load_config
-      puts "Configuration OK: #{config_path}"
-      0
+      require_config_path!
+      Commands::ValidateCommand.new(config_provider).call
     end
 
     def bootstrap
-      config = load_config
-      store = SQLiteStore.connect(config.dig("sqlite", "path")).bootstrap!
-      puts "SQLite database initialized"
-      puts "Path: #{store.path}"
-      puts "Tables: #{store.tables.join(", ")}"
-      0
+      Commands::BootstrapCommand.new(load_config).call
     end
 
     def status
@@ -106,31 +100,22 @@ module Mammoth
     end
 
     def start
-      config = load_config
-      processed = Application.new(config).start
-      puts "Processed events: #{processed}"
-      0
+      Commands::StartCommand.new(load_config).call
     end
 
     def deliver_sample
       config = load_config
       event_path = argv.fetch(2, nil)
       raise ConfigurationError, "event JSON path required\n#{USAGE}" unless event_path
-      raise ConfigurationError, "event JSON file not found: #{event_path}" unless File.file?(event_path)
 
-      event = JSON.parse(File.read(event_path))
-      processed = Application.new(config, source: [event]).start
-      puts "Processed sample events: #{processed}"
-      0
-    rescue JSON::ParserError => e
-      raise ConfigurationError, "invalid event JSON in #{event_path}: #{e.message}"
+      Commands::DeliverSampleCommand.new(config, event_path: event_path).call
     end
 
     # Dispatch the nested dead-letter command group.
     #
     # @return [Integer] process status code
     def dead_letters
-      DeadLetterCommands.call(argv)
+      Commands::DeadLettersCommand.new(argv).call
     end
 
     def observability
@@ -142,9 +127,17 @@ module Mammoth
     end
 
     def load_config
-      raise ConfigurationError, "configuration path required\n#{USAGE}" unless config_path
+      require_config_path!
 
-      Configuration.load(config_path)
+      config_provider.load
+    end
+
+    def require_config_path!
+      raise ConfigurationError, "configuration path required\n#{USAGE}" unless config_path
+    end
+
+    def config_provider
+      Configuration::Providers::FileProvider.new(config_path)
     end
   end
 end

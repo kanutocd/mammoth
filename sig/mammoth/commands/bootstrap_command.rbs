@@ -1,0 +1,21 @@
+module Mammoth
+  module Commands
+    # Initializes the configured operational SQLite database.
+    class BootstrapCommand
+      @config: untyped
+
+      @output: untyped
+
+      attr_reader config: untyped
+
+      attr_reader output: untyped
+
+      # @param config [Mammoth::Configuration] loaded configuration
+      # @param output [#puts] output stream
+      def initialize: (untyped config, ?output: untyped) -> void
+
+      # @return [Integer] process-style status code
+      def call: () -> Integer
+    end
+  end
+end

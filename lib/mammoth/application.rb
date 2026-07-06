@@ -10,14 +10,16 @@ module Mammoth
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
   class Application
-    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store
+    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
     # @param sink [#deliver, nil] optional destination sink
     # @param sleeper [#call] retry sleep strategy
-    def initialize(config, source: nil, sink: nil, sleeper: Kernel.method(:sleep))
+    # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+    def initialize(config, source: nil, sink: nil, sleeper: Kernel.method(:sleep), lifecycle_hooks: LifecycleHooks.new)
       @config = config
+      @lifecycle_hooks = build_lifecycle_hooks(lifecycle_hooks)
       @state_adapter = build_state_adapter
       @checkpoint_store = state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
@@ -34,6 +36,36 @@ module Mammoth
     # @return [Integer] number of processed work units
     def start
       runtime = build_runtime
+      processed = nil
+
+      lifecycle_hooks.call(:before_start, application_context(runtime: runtime))
+      processed = process_consumer(runtime)
+      lifecycle_hooks.call(:after_start, application_context(runtime: runtime, processed: processed))
+      processed
+    ensure
+      lifecycle_hooks.call(:before_shutdown, application_context(runtime: runtime, processed: processed))
+      runtime.shutdown if runtime.respond_to?(:shutdown)
+      lifecycle_hooks.call(:after_shutdown, application_context(runtime: runtime, processed: processed))
+    end
+
+    private
+
+    def build_lifecycle_hooks(hooks)
+      return hooks if hooks.is_a?(LifecycleHooks)
+
+      LifecycleHooks.new(hooks)
+    end
+
+    def application_context(extra = {})
+      {
+        config: config,
+        state_adapter: state_adapter,
+        checkpoint_store: checkpoint_store,
+        delivery_worker: delivery_worker
+      }.merge(extra)
+    end
+
+    def process_consumer(runtime)
       processed = 0
       batch = [nil].compact
 
@@ -50,13 +82,14 @@ module Mammoth
         end
       end
 
-      processed += process_batch(runtime, batch) if runtime_batching?(runtime) && batch.any?
-      processed
-    ensure
-      runtime.shutdown if runtime.respond_to?(:shutdown)
+      processed + flush_batch(runtime, batch)
     end
 
-    private
+    def flush_batch(runtime, batch)
+      return 0 unless runtime_batching?(runtime) && batch.any?
+
+      process_batch(runtime, batch)
+    end
 
     def process_work(runtime, work)
       runtime.process_many([work])

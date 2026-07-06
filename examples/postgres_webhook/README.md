@@ -1,6 +1,6 @@
 # Mammoth Sample Webhook Delivery Demo
 
-This demo exercises the current Mammoth v0.1.0 delivery path:
+This demo exercises the current Mammoth delivery path:
 
 ```text
 sample CDC-shaped PostgreSQL event

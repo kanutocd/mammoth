@@ -3,6 +3,9 @@
 Mammoth benchmarks are small, repeatable scripts for validating showcase
 features and helping operators tune configuration knobs.
 
+The benchmarks are intentionally local. They do not require PostgreSQL unless a
+future benchmark says so explicitly.
+
 The benchmark scripts live in:
 
 ```text
@@ -35,11 +38,13 @@ Run all benchmarks and write publishable artifacts:
 bundle exec ruby benchmark/snapshot.rb
 ```
 
-The runner writes `snapshot.md`, `snapshot.json`, and per-trial stdout/stderr
-logs under:
+The runner writes:
 
 ```text
-benchmark/results/<timestamp>/
+benchmark/results/<timestamp>/snapshot.md
+benchmark/results/<timestamp>/snapshot.json
+benchmark/results/<timestamp>/*-trial-*.out
+benchmark/results/<timestamp>/*-trial-*.err
 ```
 
 Use smoke mode for quick validation:
@@ -79,6 +84,18 @@ commit SHA. Do not commit `benchmark/results/`; it is ignored by git.
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
+Measures Mammoth's downstream runtime boundary:
+
+```text
+TransactionEnvelope
+      ↓
+Mammoth::ConcurrentDeliveryRuntime
+      ↓
+Mammoth::DeliveryProcessor
+      ↓
+synthetic delivery worker
+```
+
 Useful for tuning:
 
 - `runtime.concurrency`
@@ -104,6 +121,8 @@ per-destination dead-letter behavior.
 ```bash
 bundle exec ruby benchmark/webhook_delivery.rb
 ```
+
+Measures real local HTTP delivery through `Mammoth::WebhookSink`.
 
 Useful for tuning:
 
@@ -131,6 +150,8 @@ bundle exec ruby benchmark/webhook_delivery.rb
 bundle exec ruby benchmark/webhook_fanout.rb
 ```
 
+Measures 0.7.0 multi-destination webhook fanout using real local HTTP receivers.
+
 Useful for tuning:
 
 - number of `destinations`
@@ -156,6 +177,9 @@ bundle exec ruby benchmark/webhook_fanout.rb
 bundle exec ruby benchmark/sqlite_operational_state.rb
 ```
 
+Measures local SQLite costs for delivered ledgers, duplicate checks,
+checkpoints, and dead-letter writes.
+
 Useful for tuning:
 
 - SQLite volume class and filesystem
@@ -178,6 +202,9 @@ bundle exec ruby benchmark/sqlite_operational_state.rb
 bundle exec ruby benchmark/observability_snapshot.rb
 ```
 
+Measures readiness and Prometheus metrics snapshot cost over a seeded SQLite
+store.
+
 Useful for tuning:
 
 - metrics scrape frequency
@@ -199,6 +226,9 @@ bundle exec ruby benchmark/observability_snapshot.rb
 ```bash
 bundle exec ruby benchmark/dlq_replay.rb
 ```
+
+Measures replay mechanics without network IO: pending-row reads, JSON parsing,
+targeted fanout replay, delivered ledger writes, and row resolution.
 
 Useful for tuning:
 

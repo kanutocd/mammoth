@@ -31,13 +31,13 @@ module Mammoth
 
     def version: () -> 0
 
-    def validate: () -> 0
+    def validate: () -> Integer
 
-    def bootstrap: () -> 0
+    def bootstrap: () -> Integer
 
     def status: () -> Integer
 
-    def start: () -> 0
+    def start: () -> Integer
 
     def deliver_sample: () -> untyped
 
@@ -46,5 +46,9 @@ module Mammoth
     def observability: () -> 0
 
     def load_config: () -> untyped
+
+    def require_config_path!: () -> untyped
+
+    def config_provider: () -> untyped
   end
 end

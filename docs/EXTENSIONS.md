@@ -1,6 +1,6 @@
 # Extensions
 
-Mammoth OSS 0.7.0 introduces explicit extension contracts for future adapters.
+Mammoth OSS 0.7.x introduces explicit extension contracts for future adapters.
 The contracts are intentionally small and local. Extensions register adapters;
 they do not take over Mammoth's delivery semantics.
 
@@ -18,6 +18,9 @@ Extensions may provide:
 - operational state adapters
 - destination adapters
 - delivery runtime adapters
+- local lifecycle hook callbacks
+- configuration providers
+- local command orchestration around existing command objects
 
 Registration is explicit:
 
@@ -28,6 +31,45 @@ Mammoth::OperationalState::Registry.register("sqlite", Mammoth::OperationalState
 ```
 
 Unknown adapter names raise `Mammoth::ConfigurationError`.
+
+Lifecycle hooks are local callbacks around operator-visible actions:
+
+```ruby
+hooks = Mammoth::LifecycleHooks.new(
+  before_start: ->(context) { audit(context) },
+  after_replay: ->(context) { report(context) }
+)
+
+Mammoth::Application.new(config, lifecycle_hooks: hooks).start
+```
+
+Supported hook events are:
+
+- `before_start`
+- `after_start`
+- `before_shutdown`
+- `after_shutdown`
+- `before_replay`
+- `after_replay`
+
+Configuration providers let callers load config from files or already parsed
+hashes while keeping the same schema validation:
+
+```ruby
+file_config = Mammoth::Configuration::Providers::FileProvider.new("config/mammoth.yml").load
+hash_config = Mammoth::Configuration.from_hash(data, path: "control-plane")
+```
+
+Local command objects sit behind the CLI and are safe integration points for
+future agents:
+
+```ruby
+Mammoth::Commands::ValidateCommand.new(provider).call
+Mammoth::Commands::BootstrapCommand.new(config).call
+Mammoth::Commands::StatusCommand.new(config).call
+Mammoth::Commands::StartCommand.new(config, lifecycle_hooks: hooks).call
+Mammoth::Commands::DeadLettersCommand.new(argv, lifecycle_hooks: hooks).call
+```
 
 These APIs are the foundation for Mammoth Pro, but they are useful in OSS too:
 they make the data-plane seams inspectable and testable without introducing a

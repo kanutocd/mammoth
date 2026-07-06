@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.7.0 Unreleased
+## 0.7.1 Unreleased
+
+### Added
+
+- Added local lifecycle hooks for start, shutdown, and dead-letter replay extension points.
+- Added file and hash configuration providers for CLI, tests, and future control-plane integration.
+- Added reusable command objects for validate, bootstrap, start, sample delivery, and dead-letter commands.
+
+### Changed
+
+- Bumped Mammoth version to `0.7.1`.
+
+## 0.7.0
 
 ### Added
 

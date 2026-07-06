@@ -58,6 +58,7 @@ Mammoth 0.7.x focuses on:
 - dead-letter inspection and filtered replay commands
 - explicit extension registries for state, destination, and runtime adapters
 - node identity and local capability reporting
+- lifecycle hooks, configuration providers, and reusable local command objects
 - Docker image distribution
 - Helm-based Kubernetes deployment
 

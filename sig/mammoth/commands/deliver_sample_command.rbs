@@ -1,0 +1,31 @@
+module Mammoth
+  module Commands
+    # Delivers one JSON event file through the configured local application.
+    class DeliverSampleCommand
+      @config: untyped
+
+      @event_path: untyped
+
+      @output: untyped
+
+      @lifecycle_hooks: untyped
+
+      attr_reader config: untyped
+
+      attr_reader event_path: untyped
+
+      attr_reader output: untyped
+
+      attr_reader lifecycle_hooks: untyped
+
+      # @param config [Mammoth::Configuration] loaded configuration
+      # @param event_path [String] event JSON path
+      # @param output [#puts] output stream
+      # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+      def initialize: (untyped config, event_path: untyped, ?output: untyped, ?lifecycle_hooks: untyped) -> void
+
+      # @return [Integer] process-style status code
+      def call: () -> Integer
+    end
+  end
+end

@@ -1,7 +1,8 @@
 # Mammoth is a self-hosted PostgreSQL event relay.
 #
-# Mammoth v0.1.0 focuses on a deliberately small, boring product slice:
-# PostgreSQL change events are normalized, persisted through local operational
-# state, and delivered to webhook destinations.
+# Mammoth 0.7.x is a single-node PostgreSQL CDC relay with webhook fanout,
+# replayable operational SQLite state, health/metrics endpoints, and explicit
+# extension contracts for state, destination, runtime, lifecycle, configuration,
+# and local command integrations.
 module Mammoth
 end

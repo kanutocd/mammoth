@@ -39,6 +39,24 @@ module Mammoth
       end
     end
 
+    def test_lifecycle_hooks_wrap_start_and_shutdown
+      with_temp_dir do |dir|
+        db_path = File.join(dir, "mammoth.db")
+        config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
+        events = []
+        app = Application.new(
+          Configuration.load(config_path),
+          source: [sample_event("event-1", "0/1")],
+          sink: DeliveryWorkerTest::RecordingSink.new,
+          sleeper: ->(_seconds) {},
+          lifecycle_hooks: recording_lifecycle_hooks(events)
+        )
+
+        assert_equal 1, app.start
+        assert_equal [[:before_start, nil], [:after_start, 1], [:before_shutdown, 1], [:after_shutdown, 1]], events
+      end
+    end
+
     # rubocop:disable Metrics/MethodLength
     def test_processes_transaction_envelopes_through_concurrent_runtime
       with_temp_dir do |dir|
@@ -281,6 +299,7 @@ module Mammoth
       app = Application.allocate
       app.instance_variable_set(:@consumer, FakeConsumer.new([sample_event("event-no-shutdown", "0/no-shutdown")]))
       app.instance_variable_set(:@delivery_worker, DeliveryWorkerTest::RecordingSink.new)
+      app.instance_variable_set(:@lifecycle_hooks, LifecycleHooks.new)
 
       app.define_singleton_method(:build_runtime) { runtime }
       def app.runtime_batching?(_runtime) = false
@@ -298,6 +317,19 @@ module Mammoth
     end
 
     private
+
+    def recording_lifecycle_hooks(events)
+      LifecycleHooks.new(
+        before_start: ->(context) { record_lifecycle_event(events, context) },
+        after_start: ->(context) { record_lifecycle_event(events, context) },
+        before_shutdown: ->(context) { record_lifecycle_event(events, context) },
+        after_shutdown: ->(context) { record_lifecycle_event(events, context) }
+      )
+    end
+
+    def record_lifecycle_event(events, context)
+      events << [context.fetch(:event), context.fetch(:processed, nil)]
+    end
 
     def sample_event(event_id, position)
       {

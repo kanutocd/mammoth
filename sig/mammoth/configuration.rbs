@@ -26,9 +26,19 @@ module Mammoth
     # @raise [Mammoth::ConfigurationError] when the file is missing or invalid
     def self.load: (untyped path, ?schema_path: untyped) -> untyped
 
+    # Build and validate a configuration from an in-memory Hash.
+    #
+    # @param data [Hash] configuration data
+    # @param path [String, nil] optional display path/source
+    # @param schema_path [String] JSON Schema path
+    # @return [Mammoth::Configuration] loaded configuration
+    # @raise [Mammoth::ConfigurationError] when the data is invalid
+    def self.from_hash: (untyped data, ?path: untyped?, ?schema_path: untyped) -> untyped
+
     # @param path [String] YAML configuration path
     # @param schema_path [String] JSON Schema path
-    def initialize: (untyped path, ?schema_path: untyped) -> void
+    # @param data [Hash, nil] already parsed configuration data
+    def initialize: (untyped path, ?schema_path: untyped, ?data: untyped?) -> void
 
     # Load and validate the configuration file.
     #
@@ -44,10 +54,49 @@ module Mammoth
 
     private
 
+    def load_yaml_file: () -> untyped
+
     def validate_schema!: () -> untyped
 
     def schema_error_message: (untyped errors) -> untyped
 
     def validate_destination_names!: () -> untyped
+
+    module Providers
+      class FileProvider
+        @path: untyped
+
+        attr_reader path: untyped
+
+        # @param path [String] YAML configuration path
+        def initialize: (untyped path) -> void
+
+        # @param schema_path [String] JSON Schema path
+        # @return [Mammoth::Configuration]
+        def load: (?schema_path: untyped) -> untyped
+      end
+
+      class HashProvider
+        @data: untyped
+
+        @path: untyped
+
+        attr_reader data: untyped
+
+        attr_reader path: untyped
+
+        # @param data [Hash] configuration data
+        # @param path [String, nil] optional source name for diagnostics/status
+        def initialize: (untyped data, ?path: untyped?) -> void
+
+        # @param schema_path [String] JSON Schema path
+        # @return [Mammoth::Configuration]
+        def load: (?schema_path: untyped) -> untyped
+
+        private
+
+        def deep_copy: (untyped value) -> untyped
+      end
+    end
   end
 end

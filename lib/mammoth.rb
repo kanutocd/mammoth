@@ -4,10 +4,16 @@ require_relative "mammoth/version"
 require_relative "mammoth/errors"
 require_relative "mammoth/registry"
 require_relative "mammoth/configuration"
+require_relative "mammoth/lifecycle_hooks"
 require_relative "mammoth/node_identity"
 require_relative "mammoth/capabilities"
 require_relative "mammoth/status"
+require_relative "mammoth/commands/validate_command"
+require_relative "mammoth/commands/bootstrap_command"
 require_relative "mammoth/commands/status_command"
+require_relative "mammoth/commands/start_command"
+require_relative "mammoth/commands/deliver_sample_command"
+require_relative "mammoth/commands/dead_letters_command"
 require_relative "mammoth/observability_snapshot"
 require_relative "mammoth/observability_server"
 require_relative "mammoth/sqlite_store"
@@ -41,9 +47,10 @@ require_relative "mammoth/cli"
 
 # Mammoth is a self-hosted PostgreSQL event relay.
 #
-# Mammoth v0.1.0 focuses on a deliberately small, boring product slice:
-# PostgreSQL change events are normalized, persisted through local operational
-# state, and delivered to webhook destinations.
+# Mammoth 0.7.x is a single-node PostgreSQL CDC relay with webhook fanout,
+# replayable operational SQLite state, health/metrics endpoints, and explicit
+# extension contracts for state, destination, runtime, lifecycle, configuration,
+# and local command integrations.
 module Mammoth
   OperationalState::Registry.register("sqlite", OperationalState::SQLiteAdapter)
   Destinations::Registry.register("webhook", Destinations::WebhookAdapter)

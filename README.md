@@ -59,6 +59,7 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 - health and metrics endpoints
 - explicit extension registries for state, destination, and runtime adapters
 - node identity and local capability reporting
+- lifecycle hooks, configuration providers, and reusable local command objects
 
 ## Boundary
 
@@ -75,6 +76,9 @@ Mammoth OSS exposes small adapter registries for future extensions:
 - operational state adapters
 - destination adapters
 - runtime adapters
+- lifecycle hooks
+- configuration providers
+- local command objects
 
 See [`docs/EXTENSIONS.md`](docs/EXTENSIONS.md).
 
