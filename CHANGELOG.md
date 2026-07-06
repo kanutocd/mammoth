@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.7.2
+
+### Changed
+
+- Elevated webrick to be a runtime dependency as the default observability http server
+
 ## 0.7.1
 
 ### Added

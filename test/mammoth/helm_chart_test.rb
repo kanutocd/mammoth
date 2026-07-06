@@ -50,7 +50,7 @@ module Mammoth
 
     def expected_rendered_config
       [
-        "image: \"ghcr.io/kanutocd/mammoth:0.7.1\"",
+        "image: \"ghcr.io/kanutocd/mammoth:0.7.2\"",
         "unit: \"transaction\"",
         "adapter: \"concurrent\"",
         "Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION",

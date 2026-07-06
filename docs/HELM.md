@@ -87,7 +87,7 @@ Default values:
 ```yaml
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "0.7.1"
+  tag: "0.7.2"
   pullPolicy: IfNotPresent
 ```
 
@@ -96,7 +96,7 @@ Override image settings:
 ```bash
 helm upgrade --install mammoth ./charts/mammoth \
   --set image.repository=ghcr.io/kanutocd/mammoth \
-  --set image.tag=0.7.1
+  --set image.tag=0.7.2
 ```
 
 ## Kind Local Development
