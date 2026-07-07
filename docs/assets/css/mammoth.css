@@ -1,0 +1,36 @@
+:root {
+  --mammoth-rich-black: #0F0F0F;
+  --mammoth-postgres-blue: #336791;
+  --mammoth-stream-blue: #5BA0E6;
+  --mammoth-slate: #64748B;
+  --mammoth-light-gray: #E8EBEF;
+  --mammoth-white: #FFFFFF;
+
+  --mammoth-font-heading: Geist, Inter, system-ui, sans-serif;
+  --mammoth-font-body: Inter, Geist, system-ui, sans-serif;
+  --mammoth-font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+}
+
+.mammoth-hero {
+  border: 1px solid var(--mammoth-light-gray);
+  border-radius: 18px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.mammoth-hero img {
+  max-width: 520px;
+  height: auto;
+}
+
+.mammoth-tagline {
+  color: var(--mammoth-postgres-blue);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.mammoth-callout {
+  border-left: 4px solid var(--mammoth-postgres-blue);
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+}

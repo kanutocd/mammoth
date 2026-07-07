@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="Mammoth data plane overview">
+  <title>Mammoth Data Plane Overview</title>
+  <style>
+    text { font-family: Inter, Arial, sans-serif; fill: #0F0F0F; font-weight: 700; }
+    .box { fill: #FFFFFF; stroke: #E8EBEF; stroke-width: 2; rx: 16; }
+    .label { font-size: 28px; }
+    .small { font-size: 15px; font-weight: 400; fill: #64748B; }
+    .arrow { stroke: #336791; stroke-width: 6; fill: none; marker-end: url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3z" fill="#336791"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="360" fill="#F8FAFC"/>
+  <rect class="box" x="60" y="120" width="230" height="100" rx="16"/>
+  <text class="label" x="175" y="170" text-anchor="middle">PostgreSQL</text>
+  <text class="small" x="175" y="195" text-anchor="middle">logical replication</text>
+  <path class="arrow" d="M300 170H455"/>
+  <rect class="box" x="465" y="90" width="270" height="160" rx="16"/>
+  <text class="label" x="600" y="155" text-anchor="middle">Mammoth</text>
+  <text class="small" x="600" y="182" text-anchor="middle">CDC Data Plane</text>
+  <text class="small" x="600" y="205" text-anchor="middle">replay • checkpoint • ledger</text>
+  <path class="arrow" d="M745 170H895"/>
+  <rect class="box" x="905" y="55" width="220" height="70" rx="16"/>
+  <text class="label" x="1015" y="98" text-anchor="middle">Webhook</text>
+  <rect class="box" x="905" y="145" width="220" height="70" rx="16"/>
+  <text class="label" x="1015" y="188" text-anchor="middle">Kafka</text>
+  <rect class="box" x="905" y="235" width="220" height="70" rx="16"/>
+  <text class="label" x="1015" y="278" text-anchor="middle">Extensions</text>
+</svg>

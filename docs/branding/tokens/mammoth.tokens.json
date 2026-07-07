@@ -1,0 +1,17 @@
+{
+  "brand": "Mammoth",
+  "version": "design-integration-v1",
+  "colors": {
+    "rich_black": "#0F0F0F",
+    "postgres_blue": "#336791",
+    "stream_blue": "#5BA0E6",
+    "slate": "#64748B",
+    "light_gray": "#E8EBEF",
+    "white": "#FFFFFF"
+  },
+  "typography": {
+    "heading": "Geist, Inter, system-ui, sans-serif",
+    "body": "Inter, Geist, system-ui, sans-serif",
+    "mono": "JetBrains Mono, IBM Plex Mono, monospace"
+  }
+}
