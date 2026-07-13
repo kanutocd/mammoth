@@ -17,15 +17,29 @@ jobs:
       name: release
       url: https://rubygems.org/gems/mammoth
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install native extension headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "4.0"
+          ruby-version: "4.0.5"
           bundler-cache: true
-      - name: Run tests
+      - name: Check tag matches gem version
+        run: |
+          version="$(ruby -Ilib -rmammoth/version -e 'puts Mammoth::VERSION')"
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$tag" != "$version" ]; then
+            echo "Tag v$tag does not match gem version $version"
+            exit 1
+          fi
+      - name: Run quality gates
         run: bundle exec rake
+      - name: Run E2E tests
+        run: bundle exec rake test:e2e
       - name: Release gem to RubyGems.org
         uses: rubygems/release-gem@v1

@@ -9,7 +9,6 @@
 /tmp/
 
 *.gem
-Gemfile.lock
 
 /.history/
 .envrc

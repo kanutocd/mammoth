@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo/mammoth-horizontal.png" alt="Mammoth" width="520">
+  <img src="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/assets/logo/mammoth-horizontal.svg" alt="Mammoth" width="520">
 </p>
 
 # Mammoth
