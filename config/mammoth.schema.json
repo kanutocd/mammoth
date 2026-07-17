@@ -513,7 +513,7 @@
         "batch_size": {
           "type": "integer",
           "minimum": 1,
-          "description": "Number of work units submitted to the concurrent runtime together. Values greater than 1 allow ordering-insensitive deliveries to overlap more visibly."
+          "description": "Number of work units accumulated by the runtime layer before submission to the selected adapter. Values greater than 1 allow ordering-insensitive deliveries to overlap more visibly."
         },
         "preserve_order": {
           "type": "boolean",

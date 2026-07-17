@@ -71,41 +71,18 @@ module Mammoth
 
     def process_consumer(runtime)
       processed = 0
-      batch = [nil].compact
 
       consumer.start do |work|
-        if runtime_batching?(runtime)
-          batch << work
-          next unless batch.size >= runtime_batch_size
-
-          processed += process_batch(runtime, batch)
-          batch = []
-        else
-          process_work(runtime, work)
-          processed += 1
-        end
+        process_work(runtime, work)
+        processed += 1
       end
 
-      processed + flush_batch(runtime, batch)
-    end
-
-    def flush_batch(runtime, batch)
-      return 0 unless runtime_batching?(runtime) && batch.any?
-
-      process_batch(runtime, batch)
+      runtime.flush
+      processed
     end
 
     def process_work(runtime, work)
-      runtime.process_many([work])
-    end
-
-    def process_batch(runtime, batch)
-      runtime.process_many(batch)
-      batch.size
-    end
-
-    def runtime_batching?(runtime)
-      runtime && runtime_batch_size > 1
+      runtime.process(work)
     end
 
     def build_runtime
@@ -115,6 +92,7 @@ module Mammoth
         concurrency: runtime_concurrency,
         timeout: runtime_timeout,
         preserve_order: runtime_preserve_order?,
+        batch_size: runtime_batch_size,
         observer: observer
       )
     end

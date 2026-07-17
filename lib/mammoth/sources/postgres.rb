@@ -64,7 +64,9 @@ module Mammoth
           raise ReplicationError, "pgoutput source adapter must respond to #each_normalized"
         end
 
-        normalizer.each_normalized(decoded_stream, &block)
+        normalizer.each_normalized(decoded_stream) do |work|
+          block.call(validate_core_work!(work))
+        end
         nil
       rescue StandardError => e
         raise e if e.is_a?(ReplicationError)
@@ -104,6 +106,13 @@ module Mammoth
         return decoded unless normalizer.respond_to?(:stream_event)
 
         normalizer.stream_event(decoded, source_position: source_position(metadata))
+      end
+
+      def validate_core_work!(work)
+        return work if work.is_a?(CDC::Core::ChangeEvent)
+        return work if work.is_a?(CDC::Core::TransactionEnvelope)
+
+        raise ReplicationError, "pgoutput source adapter yielded non-core work: #{work.class}"
       end
 
       def parse_payload(payload)

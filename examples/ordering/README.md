@@ -109,6 +109,6 @@ runtime:
   preserve_order: false
 ```
 
-The batch size lets Mammoth submit transactions A, B, and C to the concurrent
-runtime together. Because A is intentionally slower than B and C, unordered
-delivery can visibly complete B/C before A.
+The runtime execution wrapper accumulates transactions A, B, and C, then
+submits them to the concurrent adapter together. Because A is intentionally
+slower than B and C, unordered delivery can visibly complete B/C before A.

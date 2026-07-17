@@ -18,8 +18,12 @@
   counters.
 - Replaced duck-typed CDC lookalikes with exact `CDC::Core::ChangeEvent` and
   `CDC::Core::TransactionEnvelope` objects.
+- Enforced the PostgreSQL source output contract by rejecting non-core work
+  yielded by injected source adapters.
 - Added an explicit persisted-payload deserialization boundary for sample JSON
   and dead-letter replay.
+- Moved configured batch accumulation and final partial-batch submission out of
+  `Mammoth::Application` and into the delivery runtime layer.
 
 ### Quality
 
@@ -29,6 +33,8 @@
 - Strengthened architecture boundary coverage with executable pgoutput adapter
   output checks, downstream dependency guards, and an exact core-output RBS
   contract for the PostgreSQL source.
+- Added runtime batching ownership coverage so application orchestration cannot
+  reintroduce buffering or batch partitioning.
 - Updated RBS signatures, YARD API documentation, examples, and benchmark
   descriptions for the corrected processor/observer boundary.
 

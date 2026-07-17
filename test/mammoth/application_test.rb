@@ -351,8 +351,8 @@ module Mammoth
       app.instance_variable_set(:@lifecycle_hooks, LifecycleHooks.new)
 
       app.define_singleton_method(:build_runtime) { runtime }
-      def app.runtime_batching?(_runtime) = false
       def app.process_work(_runtime, _work) = nil
+      def runtime.flush = []
 
       assert_equal 1, app.start
       refute_respond_to runtime, :shutdown

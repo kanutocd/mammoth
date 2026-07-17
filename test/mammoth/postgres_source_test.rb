@@ -233,7 +233,7 @@ module Mammoth
       assert_equal(%w[row-1 row-2], source.each.map(&:commit_lsn))
     end
 
-    def test_adapter_without_stream_event_receives_decoded_values
+    def test_adapter_without_stream_event_can_normalize_decoded_values
       adapter = BareStreamingAdapter.new
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
@@ -243,7 +243,24 @@ module Mammoth
         adapter: adapter
       )
 
-      assert_equal ["row"], source.each.to_a
+      event = source.each.first
+
+      assert_instance_of CDC::Core::ChangeEvent, event
+      assert_equal "row", event.commit_lsn
+    end
+
+    def test_rejects_non_core_adapter_output
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunner.new(["row"]),
+        parser: ->(payload) { payload },
+        decoder: ->(message) { message },
+        adapter: NonCoreStreamingAdapter.new
+      )
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/source adapter yielded non-core work: String/, error.message)
     end
 
     def test_database_url_includes_password_when_present
@@ -459,6 +476,19 @@ module Mammoth
     end
 
     class BareStreamingAdapter
+      def each_normalized(events)
+        events.each do |event|
+          yield CDC::Core::ChangeEvent.new(
+            operation: :insert,
+            schema: "public",
+            table: "orders",
+            commit_lsn: event
+          )
+        end
+      end
+    end
+
+    class NonCoreStreamingAdapter
       def each_normalized(events, &block)
         events.each(&block)
       end

@@ -23,6 +23,13 @@ runtime.process_many(work_items)
 runtime.shutdown
 ```
 
+The runtime registry wraps the selected adapter runtime in
+`Mammoth::Runtimes::BatchingRuntime`. That execution boundary accepts individual
+core work through `process`, owns `runtime.batch_size` accumulation, and submits
+full or final partial batches through the adapter's `process_many` method.
+`Mammoth::Application` coordinates `flush` and `shutdown` lifecycle calls but
+does not buffer or partition work itself.
+
 The processor passed to a runtime is `Mammoth::DeliveryProcessor`. It implements
 `CDC::Core::Processor` and returns a `CDC::Core::ProcessorResult` for every work
 item. `DeliveryWorker` still owns retry, checkpoint, delivered-ledger, and DLQ

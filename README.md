@@ -74,7 +74,9 @@ Mammoth begins at CDC-core work items and ends at webhook fanout delivery.
 Mammoth does not own pgoutput protocol parsing, value decoding, source
 normalization, or core dispatch vocabulary. Those belong to upstream CDC
 Ecosystem components. Mammoth selects and composes a delivery runtime while
-delegating its scheduling mechanics to the selected adapter.
+delegating its scheduling mechanics to the runtime layer. The runtime registry
+wraps the selected adapter with configured batch accumulation; `Application`
+only streams core work and coordinates lifecycle flush and shutdown calls.
 
 For the live PostgreSQL stream, `pgoutput-source-adapter` incrementally owns
 `Begin`/`Commit` buffering and emits exact `CDC::Core::ChangeEvent` or

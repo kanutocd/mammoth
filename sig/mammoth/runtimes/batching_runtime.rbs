@@ -1,0 +1,16 @@
+module Mammoth
+  module Runtimes
+    # Adds configured batch submission to a selected delivery runtime.
+    class BatchingRuntime
+      attr_reader runtime: untyped
+      attr_reader batch_size: Integer
+      attr_reader buffer: Array[untyped]
+
+      def initialize: (runtime: untyped, batch_size: Integer) -> void
+      def process: (untyped work) -> Array[untyped]
+      def process_many: (Array[untyped] items) -> Array[untyped]
+      def flush: () -> Array[untyped]
+      def shutdown: () -> nil
+    end
+  end
+end

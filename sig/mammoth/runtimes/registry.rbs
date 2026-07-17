@@ -4,7 +4,7 @@ module Mammoth
     module Registry
       def self.register: (untyped name, untyped adapter) -> untyped
       def self.fetch: (untyped name) -> untyped
-      def self.build: (untyped name, **untyped options) -> untyped
+      def self.build: (untyped name, ?batch_size: Integer, **untyped options) -> Mammoth::Runtimes::BatchingRuntime
       def self.names: () -> untyped
       def self.registry: () -> untyped
     end

@@ -260,7 +260,8 @@ PostgreSQL replication slots or replication connections.
 
 `concurrency` controls downstream delivery parallelism. `preserve_order` keeps
 configured delivery ordering when supported by the runtime. `batch_size`
-controls how many work units are submitted to the concurrent runtime together.
+controls how many work units the runtime execution wrapper accumulates before
+submitting them to the selected adapter together.
 `timeout_seconds` is optional; leave it blank to rely on destination-specific
 timeouts.
 

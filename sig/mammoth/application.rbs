@@ -2,7 +2,7 @@ module Mammoth
   # Top-level Mammoth application runtime.
   #
   # Application wires Mammoth's delivery-side runtime pieces: configuration,
-  # SQLite operational memory, replication consumer, delivery worker, checkpoint
+  # operational-state adapter, replication consumer, delivery worker, checkpoint
   # store, dead letter store, and webhook sink. Upstream PostgreSQL transport
   # composition stays outside this class so the application runtime consumes an
   # injected CDC work source rather than owning upstream CDC source-adapter
@@ -56,13 +56,7 @@ module Mammoth
 
     def process_consumer: (untyped runtime) -> untyped
 
-    def flush_batch: (untyped runtime, untyped batch) -> untyped
-
     def process_work: (untyped runtime, untyped work) -> untyped
-
-    def process_batch: (untyped runtime, untyped batch) -> untyped
-
-    def runtime_batching?: (untyped runtime) -> bool
 
     def build_runtime: () -> untyped
 

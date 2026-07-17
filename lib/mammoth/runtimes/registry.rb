@@ -27,8 +27,9 @@ module Mammoth
         # @param name [String, Symbol] adapter name
         # @param options [Hash] adapter-specific build options
         # @return [Object] runtime adapter
-        def build(name, **options)
-          fetch(name).build(**options)
+        def build(name, batch_size: 1, **options)
+          runtime = fetch(name).build(**options)
+          BatchingRuntime.new(runtime:, batch_size:)
         end
 
         # @return [Array<String>] registered runtime adapter names

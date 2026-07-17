@@ -84,6 +84,15 @@ module Mammoth
       refute_match(/Pgoutput/, signature)
     end
 
+    def test_postgres_source_rejects_non_core_adapter_output
+      source = postgres_source([Pgoutput::Decoder::Events::Insert.new(42, 7, "public", "orders", { "id" => 1 })])
+      source.instance_variable_set(:@adapter, NonCoreBoundaryAdapter.new)
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/yielded non-core work: String/, error.message)
+    end
+
     def test_pgoutput_types_do_not_leak_into_downstream_signatures
       offenders = signature_files.filter_map do |path|
         next if path == POSTGRES_SOURCE_SIGNATURE
@@ -117,6 +126,14 @@ module Mammoth
       refute_match(/CdcSource\.new|Pgoutput::/, body)
     end
 
+    def test_application_delegates_batching_to_runtime_layer
+      body = File.read(File.join(LIB_ROOT, "mammoth", "application.rb"))
+
+      assert_match(/runtime\.process\(work\)/, body)
+      assert_match(/runtime\.flush/, body)
+      refute_match(/flush_batch|process_batch|batch\s*<<|each_slice/, body)
+    end
+
     def test_replication_consumer_does_not_reference_transport_configuration
       body = File.read(File.join(LIB_ROOT, "mammoth", "replication_consumer.rb"))
 
@@ -144,6 +161,12 @@ module Mammoth
         messages.each.with_index do |message, index|
           yield message, { lsn: "0/#{index + 1}" }
         end
+      end
+    end
+
+    class NonCoreBoundaryAdapter
+      def each_normalized(events)
+        events.each { |_event| yield "not-core" }
       end
     end
 
