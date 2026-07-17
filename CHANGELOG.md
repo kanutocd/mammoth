@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Inject the configured operational-state delivered-envelope store into every
+  delivery worker instead of deriving a SQLite ledger from the checkpoint store.
+
 ## 0.8.0
 
 ### Changed

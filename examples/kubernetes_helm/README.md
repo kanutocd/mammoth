@@ -22,8 +22,9 @@ helm install mammoth charts/mammoth \
 
 ## Persistence
 
-The chart mounts a PVC for Mammoth's SQLite database. SQLite is Mammoth's
-operational memory for checkpoints, dead letters, and replay metadata.
+The chart mounts a PVC for Mammoth's SQLite database. SQLite is the built-in
+operational-state adapter's storage for checkpoints, dead letters, and the
+delivered-envelope ledger.
 
 ## Replication slot constraint
 

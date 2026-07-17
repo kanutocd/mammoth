@@ -49,11 +49,12 @@ Mammoth OSS includes:
 - SQLite operational memory bootstrap
 - checkpoint persistence
 - dead letter persistence
+- delivered-envelope ledger persistence
 - webhook delivery sink
 - webhook fanout to multiple destinations
 - fanout route filters by schema, table, and operation
 - per-destination enable/disable and retry policy controls
-- delivery worker with retry, checkpoint, and DLQ handling
+- delivery worker with retry, delivered-ledger, checkpoint, and DLQ handling
 - dead-letter inspection and filtered replay commands
 - CDC-core event serialization boundary
 - CDC Ecosystem source-adapter integration boundary

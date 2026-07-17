@@ -45,14 +45,14 @@ module MammothBenchmarks
     def run_once(destination_count)
       with_receivers(destination_count) do |urls, counters|
         Helpers.with_temp_sqlite do |db_path|
-          sqlite = Mammoth::SQLiteStore.connect(db_path).bootstrap!
-          worker = build_fanout_worker(sqlite, urls)
+          state_adapter = Mammoth::OperationalState::SQLiteAdapter.new(Mammoth::SQLiteStore.connect(db_path))
+          worker = build_fanout_worker(state_adapter, urls)
           envelopes = Helpers.build_envelopes(transactions, events_per_transaction: events_per_transaction)
           started_at = Helpers.monotonic_time
           envelopes.each { |envelope| worker.deliver_transaction(envelope) }
           elapsed = Helpers.monotonic_time - started_at
 
-          build_result(destination_count, elapsed, counters, sqlite)
+          build_result(destination_count, elapsed, counters, state_adapter)
         end
       end
     end
@@ -66,16 +66,13 @@ module MammothBenchmarks
       receivers&.each(&:shutdown)
     end
 
-    def build_fanout_worker(sqlite, urls)
-      checkpoint_store = Mammoth::CheckpointStore.new(sqlite)
-      dead_letter_store = Mammoth::DeadLetterStore.new(sqlite)
-      delivered_store = Mammoth::DeliveredEnvelopeStore.new(sqlite)
+    def build_fanout_worker(state_adapter, urls)
       workers = urls.each_with_index.map do |url, index|
         Mammoth::DeliveryWorker.new(
           sink: Mammoth::WebhookSink.new(name: "webhook_#{index + 1}", url: url, timeout_seconds: 5),
-          checkpoint_store: checkpoint_store,
-          dead_letter_store: dead_letter_store,
-          delivered_envelope_store: delivered_store,
+          checkpoint_store: state_adapter.checkpoint_store,
+          dead_letter_store: state_adapter.dead_letter_store,
+          delivered_envelope_store: state_adapter.delivered_envelope_store,
           source_name: "benchmark_mammoth",
           slot_name: "benchmark_slot",
           publication_name: "benchmark_publication",
@@ -87,7 +84,7 @@ module MammothBenchmarks
       Mammoth::FanoutDeliveryWorker.new(workers)
     end
 
-    def build_result(destination_count, elapsed, counters, sqlite)
+    def build_result(destination_count, elapsed, counters, state_adapter)
       snapshots = counters.map(&:snapshot)
       request_count = snapshots.sum { |counter| counter.fetch(:requests) }
       byte_count = snapshots.sum { |counter| counter.fetch(:bytes) }
@@ -96,8 +93,8 @@ module MammothBenchmarks
         transactions: transactions,
         events: transactions * events_per_transaction,
         webhook_requests: request_count,
-        delivered_envelopes: Mammoth::DeliveredEnvelopeStore.new(sqlite).count,
-        dead_letters: Mammoth::DeadLetterStore.new(sqlite).count,
+        delivered_envelopes: state_adapter.delivered_envelope_store.count,
+        dead_letters: state_adapter.dead_letter_store.count,
         receiver_latency_ms: latency_ms,
         elapsed_seconds: elapsed.round(6),
         transactions_per_second: Helpers.rate(transactions, elapsed),

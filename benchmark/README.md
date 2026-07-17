@@ -20,6 +20,10 @@ future benchmark says so explicitly.
 Set `MAMMOTH_BENCH_JSON=1` on any benchmark to emit machine-readable JSON after
 the table.
 
+Benchmarks that construct a real `DeliveryWorker` obtain its checkpoint,
+dead-letter, and delivered-envelope stores from one configured
+`OperationalState::SQLiteAdapter`.
+
 ## Snapshot Runner
 
 Run all benchmarks and write publishable artifacts:

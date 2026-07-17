@@ -80,6 +80,7 @@ module Mammoth
         sink: sink,
         checkpoint_store: CheckpointStore.new(sqlite),
         dead_letter_store: DeadLetterStore.new(sqlite),
+        delivered_envelope_store: DeliveredEnvelopeStore.new(sqlite),
         source_name: "local_mammoth",
         slot_name: "mammoth_prod",
         publication_name: "mammoth_publication",

@@ -146,6 +146,31 @@ module Mammoth
 
         assert_instance_of OperationalState::SQLiteAdapter, app.state_adapter
         assert_same app.state_adapter.checkpoint_store, app.checkpoint_store
+        assert_same app.state_adapter.delivered_envelope_store, app.delivery_worker.delivered_envelope_store
+      end
+    end
+
+    def test_build_delivery_worker_uses_adapter_stores_without_sqlite_internals
+      with_temp_dir do |dir|
+        config = Configuration.load(
+          write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: File.join(dir, "unused.db")))
+        )
+        checkpoint_store = Object.new
+        dead_letter_store = Object.new
+        delivered_envelope_store = Object.new
+        state_adapter = StubStateAdapter.new(dead_letter_store, delivered_envelope_store)
+        app = Application.allocate
+        app.instance_variable_set(:@config, config)
+        app.instance_variable_set(:@checkpoint_store, checkpoint_store)
+        app.instance_variable_set(:@state_adapter, state_adapter)
+
+        worker = app.send(:build_delivery_worker, sink: DeliveryWorkerTest::RecordingSink.new,
+                                                  sleeper: ->(_seconds) {})
+
+        refute_respond_to checkpoint_store, :sqlite_store
+        assert_same checkpoint_store, worker.checkpoint_store
+        assert_same dead_letter_store, worker.dead_letter_store
+        assert_same delivered_envelope_store, worker.delivered_envelope_store
       end
     end
 
@@ -178,6 +203,7 @@ module Mammoth
 
         assert_instance_of FanoutDeliveryWorker, app.delivery_worker
         assert_equal %w[primary_webhook audit_webhook], app.delivery_worker.delivery_workers.map(&:sink).map(&:name)
+        assert_workers_use_state_ledger(app)
       end
     end
 
@@ -310,6 +336,7 @@ module Mammoth
     end
 
     FakeEnvelope = Data.define(:events, :transaction_id)
+    StubStateAdapter = Data.define(:dead_letter_store, :delivered_envelope_store)
     FakeConsumer = Data.define(:items) do
       def start(&block)
         items.each(&block)
@@ -325,6 +352,12 @@ module Mammoth
         before_shutdown: ->(context) { record_lifecycle_event(events, context) },
         after_shutdown: ->(context) { record_lifecycle_event(events, context) }
       )
+    end
+
+    def assert_workers_use_state_ledger(app)
+      assert app.delivery_worker.delivery_workers.all? do |worker|
+        worker.delivered_envelope_store.equal?(app.state_adapter.delivered_envelope_store)
+      end
     end
 
     def record_lifecycle_event(events, context)

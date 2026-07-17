@@ -17,7 +17,7 @@ module Mammoth
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
-    # @param delivered_envelope_store [Mammoth::DeliveredEnvelopeStore, nil] downstream delivery ledger
+    # @param delivered_envelope_store [Mammoth::DeliveredEnvelopeStore] downstream delivery ledger
     # @param source_name [String] logical source name
     # @param slot_name [String] replication slot name
     # @param publication_name [String] publication name
@@ -26,13 +26,13 @@ module Mammoth
     # @param sleeper [#call] sleep strategy, injectable for tests
     # @param route_filter [Mammoth::RouteFilter, nil] optional destination route matcher
     # @param enabled [Boolean] whether this destination accepts new deliveries
-    def initialize(sink:, checkpoint_store:, dead_letter_store:, source_name:, slot_name:, publication_name:,
-                   max_attempts:, retry_schedule:, delivered_envelope_store: nil, sleeper: Kernel.method(:sleep),
+    def initialize(sink:, checkpoint_store:, dead_letter_store:, delivered_envelope_store:, source_name:, slot_name:,
+                   publication_name:, max_attempts:, retry_schedule:, sleeper: Kernel.method(:sleep),
                    route_filter: nil, enabled: true)
       @sink = sink
       @checkpoint_store = checkpoint_store
       @dead_letter_store = dead_letter_store
-      @delivered_envelope_store = delivered_envelope_store || DeliveredEnvelopeStore.new(checkpoint_store.sqlite_store)
+      @delivered_envelope_store = delivered_envelope_store
       @source_name = source_name
       @slot_name = slot_name
       @publication_name = publication_name
@@ -49,14 +49,16 @@ module Mammoth
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
+    # @param delivered_envelope_store [Mammoth::DeliveredEnvelopeStore] downstream delivery ledger
     # @param sleeper [#call] sleep strategy
     # @return [Mammoth::DeliveryWorker]
-    def self.from_config(config, sink:, checkpoint_store:, dead_letter_store:, sleeper: Kernel.method(:sleep),
-                         delivery_policy: {})
+    def self.from_config(config, sink:, checkpoint_store:, dead_letter_store:, delivered_envelope_store:,
+                         sleeper: Kernel.method(:sleep), delivery_policy: {})
       new(
         sink: sink,
         checkpoint_store: checkpoint_store,
         dead_letter_store: dead_letter_store,
+        delivered_envelope_store: delivered_envelope_store,
         source_name: config.dig("mammoth", "name"),
         slot_name: config.dig("replication", "slot"),
         publication_name: Array(config.dig("replication", "publications")).join(","),

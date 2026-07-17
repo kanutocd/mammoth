@@ -77,6 +77,7 @@ module Mammoth
 
     def build_worker(sqlite, sink:, delivered_envelope_store: nil, max_attempts: 2, retry_schedule: [0],
                      sleeper: ->(_seconds) {})
+      delivered_envelope_store ||= DeliveredEnvelopeStore.new(sqlite)
       DeliveryWorker.new(
         sink: sink,
         checkpoint_store: CheckpointStore.new(sqlite),

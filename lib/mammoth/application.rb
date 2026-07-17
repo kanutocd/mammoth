@@ -124,6 +124,7 @@ module Mammoth
         sink: sink,
         checkpoint_store: checkpoint_store,
         dead_letter_store: state_adapter.dead_letter_store,
+        delivered_envelope_store: state_adapter.delivered_envelope_store,
         sleeper: sleeper,
         delivery_policy: delivery_policy
       )

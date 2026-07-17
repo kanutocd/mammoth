@@ -36,10 +36,10 @@ module MammothBenchmarks
     private
 
     def run_once(db_path)
-      sqlite = Mammoth::SQLiteStore.connect(db_path).bootstrap!
-      dead_letter_store = Mammoth::DeadLetterStore.new(sqlite)
+      state_adapter = Mammoth::OperationalState::SQLiteAdapter.new(Mammoth::SQLiteStore.connect(db_path))
+      dead_letter_store = state_adapter.dead_letter_store
       seed_dead_letters(dead_letter_store)
-      worker = build_worker(sqlite)
+      worker = build_worker(state_adapter)
       rows = dead_letter_store.pending(limit: dead_letters)
 
       started_at = Helpers.monotonic_time
@@ -57,7 +57,7 @@ module MammothBenchmarks
         replayed_per_second: Helpers.rate(dead_letters, elapsed),
         pending: dead_letter_store.count(status: "pending"),
         resolved: dead_letter_store.count(status: "resolved"),
-        delivered_envelopes: Mammoth::DeliveredEnvelopeStore.new(sqlite).count,
+        delivered_envelopes: state_adapter.delivered_envelope_store.count,
         sqlite_bytes: File.size(db_path)
       }
     end
@@ -88,16 +88,13 @@ module MammothBenchmarks
       delivery_unit == "event" ? Mammoth::EventSerializer : Mammoth::TransactionEnvelopeSerializer
     end
 
-    def build_worker(sqlite)
-      checkpoint_store = Mammoth::CheckpointStore.new(sqlite)
-      dead_letter_store = Mammoth::DeadLetterStore.new(sqlite)
-      delivered_store = Mammoth::DeliveredEnvelopeStore.new(sqlite)
+    def build_worker(state_adapter)
       workers = destinations.times.map do |index|
         Mammoth::DeliveryWorker.new(
           sink: RecordingSink.new("webhook_#{index + 1}"),
-          checkpoint_store: checkpoint_store,
-          dead_letter_store: dead_letter_store,
-          delivered_envelope_store: delivered_store,
+          checkpoint_store: state_adapter.checkpoint_store,
+          dead_letter_store: state_adapter.dead_letter_store,
+          delivered_envelope_store: state_adapter.delivered_envelope_store,
           source_name: "benchmark_mammoth",
           slot_name: "benchmark_slot",
           publication_name: "benchmark_publication",

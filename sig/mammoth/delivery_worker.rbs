@@ -65,8 +65,7 @@ module Mammoth
     # @param max_attempts [Integer] maximum delivery attempts
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
-    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
-                  | (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, delivered_envelope_store: untyped?, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
+    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, delivered_envelope_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
 
     # Build a delivery worker from Mammoth configuration and stores.
     #
@@ -76,7 +75,7 @@ module Mammoth
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
     # @param sleeper [#call] sleep strategy
     # @return [Mammoth::DeliveryWorker]
-    def self.from_config: (untyped config, sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, ?sleeper: untyped, ?delivery_policy: untyped) -> untyped
+    def self.from_config: (untyped config, sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, delivered_envelope_store: untyped, ?sleeper: untyped, ?delivery_policy: untyped) -> untyped
 
     # Deliver an event with retry, checkpoint, and DLQ handling.
     #

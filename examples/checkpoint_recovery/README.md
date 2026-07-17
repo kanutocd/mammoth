@@ -93,9 +93,10 @@ delivered=ABC
 Mammoth stores operational state in SQLite and uses a permanent PostgreSQL
 logical replication slot in this example.
 
-The important property is not just that Mammoth restarts. The important property
-is that already delivered and checkpointed transactions are not replayed after
-restart, while later transactions continue to be delivered.
+The important property is not just that Mammoth restarts. The configured
+operational-state adapter persists both checkpoints and the delivered-envelope
+ledger, so already delivered transactions are not replayed after restart while
+later transactions continue to be delivered.
 
 ## Reset
 

@@ -14,16 +14,16 @@ unit tests Docker-free.
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
 | [`failing_webhook_retry`](./failing_webhook_retry) | Retry exhaustion and dead-letter persistence when a webhook fails. | No |
-| [`operational_state`](./operational_state) | SQLite bootstrap/status workflow for checkpoints and dead letters. | No |
+| [`operational_state`](./operational_state) | SQLite bootstrap/status workflow for checkpoints, delivered envelopes, and dead letters. | No |
 | [`kubernetes_helm`](./kubernetes_helm) | Helm deployment walkthrough using the public chart. | Deployment only |
 
 ## Boundary
 
-The sample examples use `mammoth deliver-sample` so delivery, checkpointing, and
-DLQ behavior can be exercised without requiring Docker or PostgreSQL in the unit
-suite. The live replication examples are the place where PostgreSQL, logical
-replication, TransactionEnvelope delivery, and the CDC Ecosystem source adapter
-are intentionally exercised together.
+The sample examples use `mammoth deliver-sample` so delivery-ledger,
+checkpointing, and DLQ behavior can be exercised without requiring Docker or
+PostgreSQL in the unit suite. The live replication examples are the place where
+PostgreSQL, logical replication, TransactionEnvelope delivery, and the CDC
+Ecosystem source adapter are intentionally exercised together.
 
 In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.

@@ -25,6 +25,10 @@ Adapter authors must preserve Mammoth's data-plane semantics. A state adapter
 stores checkpoints, dead letters, and delivered-envelope ledgers; it must not
 invent checkpoint positions or bypass replay rules.
 
+`Application` injects all three stores into its delivery components.
+`DeliveryWorker` never derives one store from another or assumes that a store
+exposes adapter-specific persistence internals.
+
 Built-in registration:
 
 ```ruby

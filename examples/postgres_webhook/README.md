@@ -9,7 +9,7 @@ Mammoth delivery runtime
       ↓
 Webhook receiver
       ↓
-SQLite checkpoint
+SQLite checkpoint + delivered-envelope ledger
 ```
 
 This is not a live logical-replication demo. It intentionally uses
@@ -31,4 +31,5 @@ received demo-order-1 insert orders
 ```
 
 Mammoth stores operational state in the `.sqlite3/mammoth.db` path inside the
-`mammoth_data` volume.
+`mammoth_data` volume. The configured operational-state adapter owns both the
+checkpoint store and delivered-envelope ledger used by the delivery worker.
