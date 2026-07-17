@@ -19,6 +19,8 @@ module Mammoth
         assert_equal 1, adapter.checkpoint_store.count
         assert_equal 1, adapter.dead_letter_store.count
         assert_equal 0, adapter.delivered_envelope_store.count
+        assert_same adapter, adapter.bootstrap!
+        assert adapter.ready?
         assert_equal "sqlite", adapter.summary.fetch(:adapter)
       end
     end
@@ -42,10 +44,34 @@ module Mammoth
       assert_match(/dead_letter_store/, assert_raises(NotImplementedError) { adapter.dead_letter_store }.message)
       assert_match(/delivered_envelope_store/,
                    assert_raises(NotImplementedError) { adapter.delivered_envelope_store }.message)
+      assert_match(/bootstrap!/, assert_raises(NotImplementedError) { adapter.bootstrap! }.message)
+      assert_match(/ready?/, assert_raises(NotImplementedError) { adapter.ready? }.message)
     end
 
     def test_operational_state_registry_names_include_sqlite
       assert_includes OperationalState::Registry.names, "sqlite"
+    end
+
+    def test_registry_builds_configured_adapter
+      with_temp_dir do |dir|
+        config = Configuration.load(
+          write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: File.join(dir, "mammoth.db")))
+        )
+
+        assert_instance_of OperationalState::SQLiteAdapter, OperationalState::Registry.build_configured(config)
+      end
+    end
+
+    def test_sqlite_adapter_reports_unready_for_backend_errors
+      adapter = OperationalState::SQLiteAdapter.new(BrokenSQLiteStore.new)
+
+      refute adapter.ready?
+    end
+
+    class BrokenSQLiteStore
+      def bootstrap!
+        raise StoreError, "broken sqlite"
+      end
     end
 
     private

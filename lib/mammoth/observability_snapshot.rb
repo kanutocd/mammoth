@@ -9,16 +9,16 @@ module Mammoth
   # ObservabilitySnapshot is intentionally read-only. It does not start the
   # relay, mutate checkpoints, replay dead letters, or inspect PostgreSQL. The
   # health and metrics endpoints use this object to expose Mammoth process and
-  # SQLite operational-state status in a predictable format.
+  # operational-state adapter status in a predictable format.
   class ObservabilitySnapshot
-    attr_reader :config, :sqlite_store, :clock
+    attr_reader :config, :state_adapter, :clock
 
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param clock [#call] time source returning a Time-like object
-    def initialize(config, sqlite_store: nil, clock: -> { Time.now.utc })
+    def initialize(config, state_adapter: nil, clock: -> { Time.now.utc })
       @config = config
-      @sqlite_store = sqlite_store
+      @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
       @clock = clock
     end
 
@@ -39,49 +39,54 @@ module Mammoth
     #
     # @return [Hash] readiness payload
     def readiness
-      store = operational_store
-      store.bootstrap!
+      return unready_payload unless state_adapter.ready?
 
       {
         status: "ready",
         service: "mammoth",
         name: mammoth_name,
-        sqlite: "ok",
-        tables: store.tables,
+        operational_state: "ok",
+        adapter: state_summary.fetch(:adapter),
+        summary: state_summary,
         checked_at: checked_at
       }
-    rescue Mammoth::Error, SQLite3::Exception => e
-      {
-        status: "unready",
-        service: "mammoth",
-        name: mammoth_name,
-        sqlite: "error",
-        error_class: e.class.name,
-        error_message: e.message,
-        checked_at: checked_at
-      }
+    rescue Mammoth::Error => e
+      adapter_error_payload(e)
     end
 
     # Build a Prometheus text exposition document.
     #
     # @return [String] Prometheus metrics text
     def prometheus
-      store = operational_store.bootstrap!
-      checkpoint_store = CheckpointStore.new(store)
-      dead_letter_store = DeadLetterStore.new(store)
-      delivered_store = DeliveredEnvelopeStore.new(store)
+      return down_metrics unless state_adapter.ready?
 
       lines = metric_headers + aggregate_metric_lines(
-        checkpoint_store: checkpoint_store,
-        dead_letter_store: dead_letter_store,
-        delivered_store: delivered_store
-      ) + destination_metric_lines(dead_letter_store:, delivered_store:)
+        checkpoint_store: state_adapter.checkpoint_store,
+        dead_letter_store: state_adapter.dead_letter_store,
+        delivered_store: state_adapter.delivered_envelope_store
+      ) + destination_metric_lines(
+        dead_letter_store: state_adapter.dead_letter_store,
+        delivered_store: state_adapter.delivered_envelope_store
+      )
       "#{lines.join("\n")}\n"
-    rescue Mammoth::Error, SQLite3::Exception
-      "#{(metric_headers + [metric_line("mammoth_up", 0)]).join("\n")}\n"
+    rescue Mammoth::Error
+      down_metrics
     end
 
     private
+
+    def adapter_error_payload(error)
+      {
+        status: "unready",
+        service: "mammoth",
+        name: mammoth_name,
+        operational_state: "error",
+        adapter: configured_adapter_name,
+        error_class: error.class.name,
+        error_message: error.message,
+        checked_at: checked_at
+      }
+    end
 
     def aggregate_metric_lines(checkpoint_store:, dead_letter_store:, delivered_store:)
       [
@@ -112,8 +117,27 @@ module Mammoth
       end
     end
 
-    def operational_store
-      sqlite_store || SQLiteStore.connect(config.dig("sqlite", "path"))
+    def unready_payload
+      {
+        status: "unready",
+        service: "mammoth",
+        name: mammoth_name,
+        operational_state: "error",
+        adapter: configured_adapter_name,
+        checked_at: checked_at
+      }
+    end
+
+    def down_metrics
+      "#{(metric_headers + [metric_line("mammoth_up", 0)]).join("\n")}\n"
+    end
+
+    def state_summary
+      @state_summary ||= state_adapter.summary
+    end
+
+    def configured_adapter_name
+      config.dig("operational_state", "adapter") || "sqlite"
     end
 
     def mammoth_name

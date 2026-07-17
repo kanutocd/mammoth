@@ -6,12 +6,14 @@ require "test_helper"
 
 module Mammoth
   class ObservabilityServerTest < Minitest::Test
-    # rubocop:disable Metrics/AbcSize
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def test_exposes_health_readiness_and_metrics_endpoints
       with_temp_dir do |dir|
         store = SQLiteStore.connect(File.join(dir, "mammoth.db"))
         config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: store.path)))
-        server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, sqlite_store: store, logger: quiet_logger)
+        adapter = OperationalState::SQLiteAdapter.new(store)
+        server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, state_adapter: adapter,
+                                                 logger: quiet_logger)
         thread = Thread.new { server.start }
         port = server.server.config.fetch(:Port)
 
@@ -30,7 +32,7 @@ module Mammoth
         thread&.join
       end
     end
-    # rubocop:enable Metrics/AbcSize
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def test_uses_observability_config_defaults
       with_temp_dir do |dir|
@@ -49,7 +51,7 @@ module Mammoth
 
     def test_readyz_returns_503_when_store_fails
       config = Configuration.load(fixture_config_path)
-      server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, sqlite_store: BrokenStore.new,
+      server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, state_adapter: UnreadyAdapter.new,
                                                logger: quiet_logger)
       thread = Thread.new { server.start }
       port = server.server.config.fetch(:Port)
@@ -63,10 +65,8 @@ module Mammoth
       thread&.join
     end
 
-    class BrokenStore
-      def bootstrap!
-        raise StoreError, "broken sqlite"
-      end
+    class UnreadyAdapter < OperationalState::Adapter
+      def ready? = false
     end
 
     private

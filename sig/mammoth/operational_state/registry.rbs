@@ -5,6 +5,7 @@ module Mammoth
       def self.register: (untyped name, untyped adapter) -> untyped
       def self.fetch: (untyped name) -> untyped
       def self.build: (untyped name, untyped config) -> untyped
+      def self.build_configured: (untyped config) -> untyped
       def self.names: () -> untyped
       def self.registry: () -> untyped
     end

@@ -53,7 +53,8 @@ module Mammoth
         end
 
         assert_empty stderr
-        assert_match(/SQLite database initialized/, stdout)
+        assert_match(/Operational state initialized/, stdout)
+        assert_match(/Adapter: sqlite/, stdout)
         assert File.file?(db_path)
       end
     end

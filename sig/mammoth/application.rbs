@@ -39,7 +39,7 @@ module Mammoth
     # @param sink [#deliver, nil] optional destination sink
     # @param sleeper [#call] retry sleep strategy
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-    def initialize: (untyped config, ?source: untyped?, ?sink: untyped?, ?sleeper: untyped, ?lifecycle_hooks: untyped) -> void
+    def initialize: (untyped config, ?source: untyped?, ?sink: untyped?, ?state_adapter: untyped?, ?sleeper: untyped, ?lifecycle_hooks: untyped) -> void
 
     # Start the application runtime and deliver consumed events.
     #
@@ -72,8 +72,6 @@ module Mammoth
     def destination_delivery_policy: (untyped destination) -> untyped
 
     def build_state_adapter: () -> untyped
-
-    def operational_state_adapter: () -> untyped
 
     def delivery_unit: () -> Symbol
 

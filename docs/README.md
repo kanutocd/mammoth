@@ -43,7 +43,7 @@ envelopes inside its PostgreSQL composition layer.
 
 ## Current release scope
 
-Mammoth 0.7.x focuses on:
+Mammoth 0.8.x focuses on:
 
 - PostgreSQL logical replication ingestion
 - normalized CDC event and transaction delivery to webhooks
@@ -64,9 +64,9 @@ Mammoth 0.7.x focuses on:
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.7.x
+## Non-goals for 0.8.x
 
-Mammoth 0.7.x does not provide:
+Mammoth 0.8.x does not provide:
 
 - a web dashboard
 - multiple active consumers for the same PostgreSQL replication slot

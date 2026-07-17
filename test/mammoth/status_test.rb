@@ -48,5 +48,27 @@ module Mammoth
         assert_match(/Destinations: primary_webhook, audit_webhook/, stdout)
       end
     end
+
+    def test_prints_state_adapter_summary_without_sqlite_store_access
+      config = Configuration.load(fixture_config_path)
+      adapter = SummaryAdapter.new
+
+      stdout, stderr = capture_io { Status.call(config, state_adapter: adapter) }
+
+      assert_empty stderr
+      assert_match(/Operational state ready: true/, stdout)
+      assert_match(/Adapter: memory/, stdout)
+      assert_match(/Checkpoints: 2/, stdout)
+      assert_match(/Delivered envelopes: 4/i, stdout)
+      refute_respond_to adapter, :sqlite_store
+    end
+
+    class SummaryAdapter < OperationalState::Adapter
+      def ready? = true
+
+      def summary
+        { adapter: "memory", checkpoints: 2, dead_letters: 3, delivered_envelopes: 4 }
+      end
+    end
   end
 end

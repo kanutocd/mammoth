@@ -4,20 +4,20 @@ module Mammoth
   class ObservabilitySnapshot
     @config: untyped
 
-    @sqlite_store: untyped
+    @state_adapter: untyped
 
     @clock: untyped
 
     attr_reader config: untyped
 
-    attr_reader sqlite_store: untyped
+    attr_reader state_adapter: untyped
 
     attr_reader clock: untyped
 
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param clock [#call] time source returning a Time-like object
-    def initialize: (untyped config, ?sqlite_store: untyped?, ?clock: untyped?) -> void
+    def initialize: (untyped config, ?state_adapter: untyped?, ?clock: untyped?) -> void
 
     # Build a liveness response.
     #
@@ -40,7 +40,15 @@ module Mammoth
 
     def destination_metric_lines: (dead_letter_store: untyped, delivered_store: untyped) -> untyped
 
-    def operational_store: () -> untyped
+    def unready_payload: () -> untyped
+
+    def adapter_error_payload: (untyped error) -> untyped
+
+    def down_metrics: () -> String
+
+    def state_summary: () -> untyped
+
+    def configured_adapter_name: () -> untyped
 
     def mammoth_name: () -> untyped
 

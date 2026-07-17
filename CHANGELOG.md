@@ -4,6 +4,14 @@
 
 ### Changed
 
+- Refactored observability, status, bootstrap, and dead-letter command
+  composition to consume `OperationalState::Adapter` instead of opening SQLite
+  or constructing concrete stores.
+- Added adapter-owned `bootstrap!`, `ready?`, and configured registry
+  composition for backend-neutral operational tooling.
+
+### Changed
+
 - Inject the configured operational-state delivered-envelope store into every
   delivery worker instead of deriving a SQLite ledger from the checkpoint store.
 

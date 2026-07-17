@@ -9,7 +9,7 @@
 # It is intentionally not a PostgreSQL logical-replication benchmark. Use this
 # to measure downstream concurrent delivery behavior under controlled sink
 # latency. It does not benchmark source-adapter transaction normalization or
-# 0.7.0 multi-destination webhook fanout.
+# multi-destination webhook fanout.
 
 require "json"
 require "securerandom"

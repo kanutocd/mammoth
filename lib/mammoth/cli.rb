@@ -94,9 +94,7 @@ module Mammoth
     end
 
     def status
-      config = load_config
-      store = SQLiteStore.connect(config.dig("sqlite", "path"))
-      Commands::StatusCommand.new(config, sqlite_store: store).call
+      Commands::StatusCommand.new(load_config).call
     end
 
     def start

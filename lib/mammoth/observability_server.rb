@@ -8,25 +8,25 @@ module Mammoth
   #
   # The server is intentionally independent from the replication loop. Operators
   # may run it as a sidecar-like process or in a separate process that points at
-  # the same SQLite operational database.
+  # the same configured operational-state backend.
   class ObservabilityServer
     # Default bind host for the observability server.
     DEFAULT_HOST = "0.0.0.0"
     # Default TCP port for the observability server.
     DEFAULT_PORT = 9393
 
-    attr_reader :config, :host, :port, :sqlite_store, :logger, :server
+    attr_reader :config, :host, :port, :state_adapter, :logger, :server
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param host [String, nil] bind host override
     # @param port [Integer, nil] bind port override
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param logger [WEBrick::Log, nil] optional WEBrick logger
-    def initialize(config, host: nil, port: nil, sqlite_store: nil, logger: nil)
+    def initialize(config, host: nil, port: nil, state_adapter: nil, logger: nil)
       @config = config
       @host = host || config.dig("observability", "host") || DEFAULT_HOST
       @port = port || config.dig("observability", "port") || DEFAULT_PORT
-      @sqlite_store = sqlite_store
+      @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
       @logger = logger || WEBrick::Log.new($stderr, WEBrick::Log::WARN)
       @server = build_server
       mount_endpoints
@@ -81,7 +81,7 @@ module Mammoth
     end
 
     def snapshot
-      ObservabilitySnapshot.new(config, sqlite_store: sqlite_store)
+      ObservabilitySnapshot.new(config, state_adapter: state_adapter)
     end
   end
 end

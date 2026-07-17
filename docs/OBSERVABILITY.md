@@ -43,8 +43,8 @@ Example response:
 
 ### `GET /readyz`
 
-Readiness endpoint. It verifies Mammoth can open and inspect the configured
-SQLite operational store.
+Readiness endpoint. It calls `ready?` on the configured operational-state
+adapter and reports the adapter's generic summary when ready.
 
 Ready response status code:
 
@@ -52,11 +52,35 @@ Ready response status code:
 200
 ```
 
+Example ready response:
+
+```json
+{
+  "status": "ready",
+  "service": "mammoth",
+  "name": "local_mammoth",
+  "operational_state": "ok",
+  "adapter": "sqlite",
+  "summary": {
+    "adapter": "sqlite",
+    "checkpoints": 1,
+    "dead_letters": 0,
+    "delivered_envelopes": 3,
+    "path": "data/mammoth.db",
+    "tables": ["schema_migrations", "checkpoints", "dead_letters", "delivered_envelopes"]
+  },
+  "checked_at": "2026-07-17T00:00:00Z"
+}
+```
+
 Unready response status code:
 
 ```text
 503
 ```
+
+Unready responses use `"operational_state": "error"` and identify the selected
+adapter without exposing backend-specific field names.
 
 Readiness is intentionally local. It does not create a PostgreSQL replication
 connection and does not deliver events.
@@ -81,9 +105,10 @@ mammoth_delivered_envelopes_total{mammoth_name="local_mammoth",destination="audi
 
 ## Operational model
 
-The observability server reads Mammoth's local SQLite operational database. It
-is safe to run as a separate process that points at the same SQLite path used by
-the relay.
+The observability server resolves the configured operational-state adapter. It
+does not open SQLite or construct concrete stores itself. With the built-in
+`sqlite` adapter, it is safe to run as a separate process that points at the
+same SQLite path used by the relay.
 
 The endpoints expose local relay state only:
 
@@ -91,7 +116,7 @@ The endpoints expose local relay state only:
 - dead-letter row counts
 - delivered-envelope ledger row count
 - destination-labeled dead-letter and delivered-envelope counts
-- SQLite readiness
+- configured operational-state adapter readiness
 
 The endpoints do not inspect PostgreSQL replication slots, send feedback, replay
 dead letters, or mutate delivery state.

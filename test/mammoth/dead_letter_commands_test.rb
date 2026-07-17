@@ -7,6 +7,40 @@ require "webrick"
 module Mammoth
   # rubocop:disable Metrics/ClassLength
   class DeadLetterCommandsTest < Minitest::Test
+    def test_dead_letters_list_uses_injected_state_adapter
+      store = AdapterDeadLetterStore.new
+      adapter = AdapterStub.new(store)
+      command = Commands::DeadLettersCommand.new(
+        ["dead-letters", "list", fixture_config_path],
+        state_adapter: adapter
+      )
+
+      stdout, stderr = capture_io { assert_equal 0, command.call }
+
+      assert_empty stderr
+      assert_match(/adapter-event/, stdout)
+      assert_same store, adapter.dead_letter_store
+      refute_respond_to adapter, :sqlite_store
+    end
+
+    def test_dead_letter_replay_worker_receives_the_same_state_adapter
+      adapter = Object.new
+      worker = Object.new
+      application = Data.define(:delivery_worker).new(worker)
+      command = DeadLetterCommands.new(
+        ["dead-letters", "replay", fixture_config_path],
+        state_adapter: adapter
+      )
+      builder = lambda do |_config, state_adapter:, **_options|
+        assert_same adapter, state_adapter
+        application
+      end
+
+      Application.stub(:new, builder) do
+        assert_same worker, command.send(:worker)
+      end
+    end
+
     def test_dead_letters_list_command_prints_pending_rows
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
@@ -533,6 +567,23 @@ module Mammoth
     ensure
       server&.shutdown
       thread&.join
+    end
+
+    AdapterStub = Data.define(:dead_letter_store)
+
+    class AdapterDeadLetterStore
+      def rows(**_filters)
+        [
+          {
+            "id" => 1,
+            "status" => "pending",
+            "destination_name" => "memory",
+            "retry_count" => 0,
+            "failed_at" => "2026-07-17T00:00:00Z",
+            "event_id" => "adapter-event"
+          }
+        ]
+      end
     end
 
     def with_two_test_servers

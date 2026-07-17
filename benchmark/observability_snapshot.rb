@@ -36,9 +36,10 @@ module MammothBenchmarks
     private
 
     def run_once(db_path)
-      sqlite = Mammoth::SQLiteStore.connect(db_path).bootstrap!
-      seed_state(sqlite)
-      snapshot = Mammoth::ObservabilitySnapshot.new(config(db_path), sqlite_store: sqlite)
+      adapter = Mammoth::OperationalState::SQLiteAdapter.new(Mammoth::SQLiteStore.connect(db_path))
+      adapter.bootstrap!
+      seed_state(adapter)
+      snapshot = Mammoth::ObservabilitySnapshot.new(config(db_path), state_adapter: adapter)
 
       readiness_elapsed = measure { snapshots.times { snapshot.readiness } }
       metrics_elapsed = measure { snapshots.times { snapshot.prometheus } }
@@ -55,18 +56,15 @@ module MammothBenchmarks
       }
     end
 
-    def seed_state(sqlite)
-      delivered_store = Mammoth::DeliveredEnvelopeStore.new(sqlite)
-      dead_letter_store = Mammoth::DeadLetterStore.new(sqlite)
-      checkpoint_store = Mammoth::CheckpointStore.new(sqlite)
-      checkpoint_store.write(
+    def seed_state(adapter)
+      adapter.checkpoint_store.write(
         source_name: "benchmark_mammoth",
         slot_name: "benchmark_slot",
         publication_name: "benchmark_publication",
         last_lsn: "0"
       )
-      delivered.times { |index| write_delivered(delivered_store, index) }
-      dead_letters.times { |index| write_dead_letter(dead_letter_store, index) }
+      delivered.times { |index| write_delivered(adapter.delivered_envelope_store, index) }
+      dead_letters.times { |index| write_dead_letter(adapter.dead_letter_store, index) }
     end
 
     def write_delivered(store, index)
@@ -92,6 +90,10 @@ module MammothBenchmarks
 
     def config(db_path)
       Struct.new(:path) do
+        def data
+          { "webhook" => { "name" => "benchmark_webhook" } }
+        end
+
         def dig(*keys)
           {
             %w[mammoth name] => "benchmark_mammoth",

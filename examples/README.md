@@ -8,7 +8,7 @@ unit tests Docker-free.
 
 | Example | Purpose | Runs live PostgreSQL replication? |
 | --- | --- | --- |
-| [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered to a webhook with SQLite checkpoints. | No |
+| [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered with SQLite checkpoints and duplicate-suppression ledger. | No |
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
@@ -31,4 +31,8 @@ buffering and yields CDC-core events or transaction envelopes to Mammoth.
 
 ## Checkpoint Recovery
 
-`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using a persistent SQLite checkpoint store and permanent PostgreSQL replication slot. It validates that delivered transactions are not replayed after Mammoth restarts and that later transactions continue to flow.
+`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using the
+built-in SQLite operational-state adapter and a permanent PostgreSQL replication
+slot. It validates that persisted checkpoints and delivered-envelope ledger
+entries suppress replay after Mammoth restarts while later transactions continue
+to flow.

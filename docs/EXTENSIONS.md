@@ -1,6 +1,6 @@
 # Extensions
 
-Mammoth OSS 0.7.x introduces explicit extension contracts for future adapters.
+Mammoth OSS 0.8.x exposes explicit extension contracts for adapters.
 The contracts are intentionally small and local. Extensions register adapters;
 they do not take over Mammoth's delivery semantics.
 
@@ -64,11 +64,17 @@ Local command objects sit behind the CLI and are safe integration points for
 future agents:
 
 ```ruby
+state_adapter = Mammoth::OperationalState::Registry.build_configured(config)
+
 Mammoth::Commands::ValidateCommand.new(provider).call
-Mammoth::Commands::BootstrapCommand.new(config).call
-Mammoth::Commands::StatusCommand.new(config).call
+Mammoth::Commands::BootstrapCommand.new(config, state_adapter: state_adapter).call
+Mammoth::Commands::StatusCommand.new(config, state_adapter: state_adapter).call
 Mammoth::Commands::StartCommand.new(config, lifecycle_hooks: hooks).call
-Mammoth::Commands::DeadLettersCommand.new(argv, lifecycle_hooks: hooks).call
+Mammoth::Commands::DeadLettersCommand.new(
+  argv,
+  state_adapter: state_adapter,
+  lifecycle_hooks: hooks
+).call
 ```
 
 These APIs are the foundation for Mammoth Pro, but they are useful in OSS too:

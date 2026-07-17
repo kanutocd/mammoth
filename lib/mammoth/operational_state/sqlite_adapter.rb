@@ -6,10 +6,10 @@ module Mammoth
     class SQLiteAdapter < Adapter
       attr_reader :sqlite_store
 
-      # @param sqlite_store [Mammoth::SQLiteStore] bootstrapped SQLite store
+      # @param sqlite_store [Mammoth::SQLiteStore] SQLite operational store
       def initialize(sqlite_store)
         super()
-        @sqlite_store = sqlite_store.bootstrap!
+        @sqlite_store = sqlite_store
       end
 
       # Build a SQLite state adapter from Mammoth configuration.
@@ -33,6 +33,22 @@ module Mammoth
       # @return [Mammoth::DeliveredEnvelopeStore]
       def delivered_envelope_store
         @delivered_envelope_store ||= DeliveredEnvelopeStore.new(sqlite_store)
+      end
+
+      # Initialize the SQLite schema.
+      #
+      # @return [Mammoth::OperationalState::SQLiteAdapter] self
+      def bootstrap!
+        sqlite_store.bootstrap!
+        self
+      end
+
+      # @return [Boolean] whether SQLite operational state is available
+      def ready?
+        bootstrap!
+        true
+      rescue Mammoth::Error, SQLite3::Exception
+        false
       end
 
       # @return [Hash] JSON-friendly SQLite state summary

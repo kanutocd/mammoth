@@ -5,17 +5,19 @@ module Mammoth
 
     @lifecycle_hooks: untyped
 
+    @state_adapter: untyped
+
     DEAD_LETTER_TRANSACTION_ENVELOPE: untyped
 
     attr_reader argv: untyped
     attr_reader lifecycle_hooks: untyped
 
     # @param argv [Array<String>] command line arguments
-    def self.call: (untyped argv, ?lifecycle_hooks: untyped) -> untyped
+    def self.call: (untyped argv, ?state_adapter: untyped?, ?lifecycle_hooks: untyped) -> untyped
 
     # @param argv [Array<String>] command line arguments
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-    def initialize: (untyped argv, ?lifecycle_hooks: untyped) -> void
+    def initialize: (untyped argv, ?state_adapter: untyped?, ?lifecycle_hooks: untyped) -> void
 
     # Dispatch the nested dead-letter subcommand.
     #
@@ -37,6 +39,8 @@ module Mammoth
     def load_config: () -> untyped
 
     def dead_letter_store: () -> untyped
+
+    def state_adapter: () -> untyped
 
     def worker: () -> untyped
 

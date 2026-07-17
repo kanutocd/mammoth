@@ -110,7 +110,7 @@ MAMMOTH_BENCH_PRESERVE_ORDER=false \
 bundle exec ruby benchmark/concurrent_delivery.rb
 ```
 
-This benchmark uses one synthetic destination. It does not measure 0.7.0
+This benchmark uses one synthetic destination. It does not measure
 multi-destination webhook fanout, per-destination retry behavior, or
 per-destination dead-letter behavior.
 
@@ -148,7 +148,7 @@ bundle exec ruby benchmark/webhook_delivery.rb
 bundle exec ruby benchmark/webhook_fanout.rb
 ```
 
-Measures 0.7.0 multi-destination webhook fanout using real local HTTP receivers.
+Measures multi-destination webhook fanout using real local HTTP receivers.
 
 Useful for tuning:
 
@@ -178,6 +178,10 @@ bundle exec ruby benchmark/sqlite_operational_state.rb
 Measures local SQLite costs for delivered ledgers, duplicate checks,
 checkpoints, and dead-letter writes.
 
+This is intentionally a concrete store microbenchmark: it creates no
+`DeliveryWorker` or operator command and measures the built-in SQLite store
+implementations directly.
+
 Useful for tuning:
 
 - SQLite volume class and filesystem
@@ -200,8 +204,8 @@ bundle exec ruby benchmark/sqlite_operational_state.rb
 bundle exec ruby benchmark/observability_snapshot.rb
 ```
 
-Measures readiness and Prometheus metrics snapshot cost over a seeded SQLite
-store.
+Measures readiness and Prometheus metrics snapshot cost through a seeded
+`OperationalState::SQLiteAdapter`.
 
 Useful for tuning:
 

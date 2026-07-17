@@ -3,23 +3,23 @@
 module Mammoth
   # Builds and prints a boring operational status snapshot.
   class Status
-    attr_reader :config, :sqlite_store, :output
+    attr_reader :config, :state_adapter, :output
 
-    # Print status for a configuration and optional SQLite store.
+    # Print status for a configuration and optional operational-state adapter.
     #
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @return [void]
-    def self.call(config, sqlite_store: nil, output: $stdout)
-      new(config, sqlite_store: sqlite_store, output: output).call
+    def self.call(config, state_adapter: nil, output: $stdout)
+      new(config, state_adapter: state_adapter, output: output).call
     end
 
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param output [#puts] output stream
-    def initialize(config, sqlite_store: nil, output: $stdout)
+    def initialize(config, state_adapter: nil, output: $stdout)
       @config = config
-      @sqlite_store = sqlite_store
+      @state_adapter = state_adapter
       @output = output
     end
 
@@ -28,13 +28,13 @@ module Mammoth
     # @return [void]
     def call
       status_lines.each { |line| output.puts(line) }
-      print_store_state if sqlite_store
+      print_store_state if state_adapter
     end
 
     private
 
     def status_lines
-      identity_lines + replication_lines + runtime_lines + destination_lines + ["SQLite: #{sqlite_path}"]
+      identity_lines + replication_lines + runtime_lines + destination_lines
     end
 
     def identity_lines
@@ -70,10 +70,6 @@ module Mammoth
       ]
     end
 
-    def sqlite_path
-      config.dig("sqlite", "path")
-    end
-
     def destination_names
       destinations = config.data["destinations"]
       return destinations.map { |destination| destination.fetch("name") } if destinations
@@ -90,10 +86,18 @@ module Mammoth
     end
 
     def print_store_state
-      store = sqlite_store.bootstrap!
-      output.puts "Tables: #{store.tables.join(", ")}"
-      output.puts "Checkpoints: #{CheckpointStore.new(store).count}"
-      output.puts "Dead Letters: #{DeadLetterStore.new(store).count}"
+      output.puts "Operational state ready: #{state_adapter.ready?}"
+      state_adapter.summary.each do |key, value|
+        output.puts "#{status_label(key)}: #{format_status_value(value)}"
+      end
+    end
+
+    def status_label(key)
+      key.to_s.split("_").map(&:capitalize).join(" ")
+    end
+
+    def format_status_value(value)
+      value.is_a?(Array) ? value.join(", ") : value
     end
   end
 end

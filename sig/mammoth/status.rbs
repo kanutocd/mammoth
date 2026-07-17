@@ -3,26 +3,26 @@ module Mammoth
   class Status
     @config: untyped
 
-    @sqlite_store: untyped
+    @state_adapter: untyped
 
     @output: untyped
 
     attr_reader config: untyped
 
-    attr_reader sqlite_store: untyped
+    attr_reader state_adapter: untyped
 
     attr_reader output: untyped
 
-    # Print status for a configuration and optional SQLite store.
+    # Print status for a configuration and optional operational-state adapter.
     #
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @return [void]
-    def self.call: (untyped config, ?sqlite_store: untyped?, ?output: untyped) -> untyped
+    def self.call: (untyped config, ?state_adapter: untyped?, ?output: untyped) -> untyped
 
     # @param config [Mammoth::Configuration] loaded configuration
-    # @param sqlite_store [Mammoth::SQLiteStore, nil] operational store
-    def initialize: (untyped config, ?sqlite_store: untyped?, ?output: untyped) -> void
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
+    def initialize: (untyped config, ?state_adapter: untyped?, ?output: untyped) -> void
 
     # Print the status snapshot.
     #
@@ -41,8 +41,6 @@ module Mammoth
 
     def destination_lines: () -> untyped
 
-    def sqlite_path: () -> untyped
-
     def destination_names: () -> untyped
 
     def node_identity: () -> untyped
@@ -50,5 +48,9 @@ module Mammoth
     def capabilities: () -> untyped
 
     def print_store_state: () -> untyped
+
+    def status_label: (untyped key) -> String
+
+    def format_status_value: (untyped value) -> untyped
   end
 end

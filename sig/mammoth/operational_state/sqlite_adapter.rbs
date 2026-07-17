@@ -11,6 +11,8 @@ module Mammoth
       def checkpoint_store: () -> untyped
       def dead_letter_store: () -> untyped
       def delivered_envelope_store: () -> untyped
+      def bootstrap!: () -> SQLiteAdapter
+      def ready?: () -> bool
       def summary: () -> untyped
     end
   end

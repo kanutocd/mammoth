@@ -268,7 +268,7 @@ SQLite is Mammoth's operational memory for:
 
 * checkpoints
 * dead letters
-* replay metadata
+* delivered-envelope ledger entries used for duplicate suppression and replay
 
 Default storage:
 

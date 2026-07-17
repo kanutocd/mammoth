@@ -173,7 +173,7 @@ Mammoth bootstrap
     ↓
 SQLite operational database
     ↓
-checkpoints + dead_letters schema
+checkpoints + dead_letters + delivered_envelopes schema
 ```
 
 Use this when you want to inspect Mammoth's local operational memory without running PostgreSQL or a webhook receiver.
@@ -239,4 +239,8 @@ The example expects you to provide real deployment dependencies such as PostgreS
 
 ## Checkpoint Recovery
 
-`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using a persistent SQLite checkpoint store and permanent PostgreSQL replication slot. It validates that delivered transactions are not replayed after Mammoth restarts and that later transactions continue to flow.
+`examples/checkpoint_recovery` demonstrates Mammoth restart recovery using the
+built-in SQLite operational-state adapter and a permanent PostgreSQL replication
+slot. It validates that persisted checkpoints and delivered-envelope ledger
+entries suppress replay after Mammoth restarts while later transactions continue
+to flow.

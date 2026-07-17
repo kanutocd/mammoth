@@ -4,8 +4,8 @@ module Mammoth
   # Top-level Mammoth application runtime.
   #
   # Application wires Mammoth's delivery-side runtime pieces: configuration,
-  # SQLite operational memory, replication consumer, delivery worker, checkpoint
-  # store, dead letter store, and webhook sink. Upstream PostgreSQL transport
+  # operational-state adapter, replication consumer, delivery worker, checkpoint
+  # store, dead-letter store, and webhook sink. Upstream PostgreSQL transport
   # composition stays outside this class so the application runtime consumes an
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
@@ -15,13 +15,15 @@ module Mammoth
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
     # @param sink [#deliver, nil] optional destination sink
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param sleeper [#call] retry sleep strategy
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-    def initialize(config, source: nil, sink: nil, sleeper: Kernel.method(:sleep), lifecycle_hooks: LifecycleHooks.new)
+    def initialize(config, source: nil, sink: nil, state_adapter: nil, sleeper: Kernel.method(:sleep),
+                   lifecycle_hooks: LifecycleHooks.new)
       @config = config
       @lifecycle_hooks = build_lifecycle_hooks(lifecycle_hooks)
-      @state_adapter = build_state_adapter
-      @checkpoint_store = state_adapter.checkpoint_store
+      @state_adapter = state_adapter || build_state_adapter
+      @checkpoint_store = @state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
       @delivery_worker = sink ? build_delivery_worker(sink: sink, sleeper: sleeper) : build_configured_delivery_worker(sleeper:)
     end
@@ -165,11 +167,7 @@ module Mammoth
     end
 
     def build_state_adapter
-      OperationalState::Registry.build(operational_state_adapter, config)
-    end
-
-    def operational_state_adapter
-      config.dig("operational_state", "adapter") || "sqlite"
+      OperationalState::Registry.build_configured(config)
     end
 
     def delivery_unit

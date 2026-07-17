@@ -31,6 +31,14 @@ module Mammoth
           fetch(name).from_config(config)
         end
 
+        # Build the operational-state adapter selected by configuration.
+        #
+        # @param config [Mammoth::Configuration] loaded configuration
+        # @return [Mammoth::OperationalState::Adapter] adapter instance
+        def build_configured(config)
+          build(config.dig("operational_state", "adapter") || "sqlite", config)
+        end
+
         # @return [Array<String>] registered operational state adapter names
         def names
           registry.names

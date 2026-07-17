@@ -153,6 +153,10 @@ Mammoth stores operational memory in SQLite:
 - `dead_letters`
 - `delivered_envelopes`
 
+SQLite is the built-in default behind `operational_state.adapter`. Bootstrap,
+status, observability, and dead-letter commands consume the adapter contract
+rather than opening SQLite directly.
+
 ## Performance
 
 Mammoth includes local benchmarks for the product surfaces operators tune in

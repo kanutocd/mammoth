@@ -22,8 +22,24 @@ module Mammoth
         assert_equal 0, Commands::BootstrapCommand.new(config, output: output).call
 
         assert File.file?(db_path)
-        assert_match(/SQLite database initialized/, output.string)
+        assert_match(/Operational state initialized/, output.string)
+        assert_match(/Adapter: sqlite/, output.string)
       end
+    end
+
+    def test_bootstrap_command_uses_generic_state_adapter_summary
+      adapter = BootstrapAdapter.new
+      output = StringIO.new
+
+      assert_equal 0, Commands::BootstrapCommand.new(
+        Configuration.load(fixture_config_path),
+        state_adapter: adapter,
+        output: output
+      ).call
+
+      assert adapter.bootstrapped
+      assert_match(/Adapter: memory/, output.string)
+      refute_match(/Path:|Tables:/, output.string)
     end
 
     def test_start_command_uses_lifecycle_hooks
@@ -69,6 +85,17 @@ module Mammoth
       command = DeadLetterCommands.new(["dead-letters"], lifecycle_hooks: {})
 
       assert_instance_of LifecycleHooks, command.lifecycle_hooks
+    end
+
+    class BootstrapAdapter < OperationalState::Adapter
+      attr_reader :bootstrapped
+
+      def bootstrap!
+        @bootstrapped = true
+        self
+      end
+
+      def summary = { adapter: "memory" }
     end
 
     private

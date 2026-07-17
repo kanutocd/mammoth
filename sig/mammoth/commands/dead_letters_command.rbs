@@ -4,15 +4,19 @@ module Mammoth
     class DeadLettersCommand
       @argv: untyped
 
+      @state_adapter: untyped
+
       @lifecycle_hooks: untyped
 
       attr_reader argv: untyped
+
+      attr_reader state_adapter: untyped
 
       attr_reader lifecycle_hooks: untyped
 
       # @param argv [Array<String>] dead-letters CLI-style arguments
       # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-      def initialize: (untyped argv, ?lifecycle_hooks: untyped) -> void
+      def initialize: (untyped argv, ?state_adapter: untyped?, ?lifecycle_hooks: untyped) -> void
 
       # @return [Integer] process-style status code
       def call: () -> Integer

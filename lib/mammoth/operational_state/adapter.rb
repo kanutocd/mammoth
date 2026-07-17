@@ -23,6 +23,22 @@ module Mammoth
         raise NotImplementedError, "#{self.class} must implement #delivered_envelope_store"
       end
 
+      # Initialize the adapter's durable state.
+      #
+      # @return [Mammoth::OperationalState::Adapter] self
+      def bootstrap!
+        raise NotImplementedError, "#{self.class} must implement #bootstrap!"
+      end
+
+      # Report whether the adapter can serve operational state.
+      #
+      # Implementations must translate backend-specific failures into false.
+      #
+      # @return [Boolean]
+      def ready?
+        raise NotImplementedError, "#{self.class} must implement #ready?"
+      end
+
       # @return [Hash] JSON-friendly state summary
       def summary
         {

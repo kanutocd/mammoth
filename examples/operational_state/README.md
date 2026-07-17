@@ -26,6 +26,10 @@ Mammoth creates the SQLite database at:
 examples/operational_state/.sqlite3/mammoth.db
 ```
 
+Both commands resolve `operational_state.adapter` and operate through that
+adapter contract. SQLite paths and tables are reported by the built-in adapter's
+summary rather than assumed by the commands.
+
 ## Why this matters
 
 Reliable delivery requires durable operational memory. The built-in state

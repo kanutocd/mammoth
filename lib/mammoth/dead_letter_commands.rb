@@ -20,14 +20,16 @@ module Mammoth
     attr_reader :argv, :lifecycle_hooks
 
     # @param argv [Array<String>] command line arguments
-    def self.call(argv, lifecycle_hooks: LifecycleHooks.new)
-      new(argv, lifecycle_hooks: lifecycle_hooks).call
+    def self.call(argv, state_adapter: nil, lifecycle_hooks: LifecycleHooks.new)
+      new(argv, state_adapter: state_adapter, lifecycle_hooks: lifecycle_hooks).call
     end
 
     # @param argv [Array<String>] command line arguments
+    # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-    def initialize(argv, lifecycle_hooks: LifecycleHooks.new)
+    def initialize(argv, state_adapter: nil, lifecycle_hooks: LifecycleHooks.new)
       @argv = argv
+      @state_adapter = state_adapter
       @lifecycle_hooks = lifecycle_hooks.is_a?(LifecycleHooks) ? lifecycle_hooks : LifecycleHooks.new(lifecycle_hooks)
     end
 
@@ -98,11 +100,15 @@ module Mammoth
     end
 
     def dead_letter_store
-      @dead_letter_store ||= DeadLetterStore.new(SQLiteStore.connect(load_config.dig("sqlite", "path")).bootstrap!)
+      @dead_letter_store ||= state_adapter.dead_letter_store
+    end
+
+    def state_adapter
+      @state_adapter ||= OperationalState::Registry.build_configured(load_config)
     end
 
     def worker
-      @worker ||= Application.new(load_config).delivery_worker
+      @worker ||= Application.new(load_config, state_adapter: state_adapter).delivery_worker
     end
 
     def dead_letter_id
@@ -315,6 +321,7 @@ module Mammoth
     def replay_context(extra = {})
       {
         config: load_config,
+        state_adapter: state_adapter,
         dead_letter_store: dead_letter_store,
         delivery_worker: worker
       }.merge(extra)

@@ -4,6 +4,7 @@ require "json"
 require "test_helper"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class ObservabilitySnapshotTest < Minitest::Test
     def test_health_payload_is_stable
       with_temp_dir do |dir|
@@ -27,28 +28,40 @@ module Mammoth
       end
     end
 
-    def test_readiness_reports_ready_when_sqlite_bootstraps
+    def test_readiness_reports_ready_when_state_adapter_is_ready
       with_temp_dir do |dir|
         store = SQLiteStore.connect(File.join(dir, "mammoth.db"))
         config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: store.path)))
-        payload = ObservabilitySnapshot.new(config, sqlite_store: store).readiness
+        adapter = OperationalState::SQLiteAdapter.new(store)
+        payload = ObservabilitySnapshot.new(config, state_adapter: adapter).readiness
 
         assert_equal "ready", payload.fetch(:status)
-        assert_equal "ok", payload.fetch(:sqlite)
-        assert_includes payload.fetch(:tables), "checkpoints"
-        assert_includes payload.fetch(:tables), "dead_letters"
-        assert_includes payload.fetch(:tables), "delivered_envelopes"
+        assert_equal "ok", payload.fetch(:operational_state)
+        assert_equal "sqlite", payload.fetch(:adapter)
+        assert_includes payload.fetch(:summary).fetch(:tables), "checkpoints"
+        assert_includes payload.fetch(:summary).fetch(:tables), "dead_letters"
+        assert_includes payload.fetch(:summary).fetch(:tables), "delivered_envelopes"
       end
     end
 
-    def test_readiness_reports_unready_when_sqlite_fails
+    def test_readiness_reports_unready_when_state_adapter_fails
       config = Configuration.load(fixture_config_path)
-      store = BrokenStore.new
-      payload = ObservabilitySnapshot.new(config, sqlite_store: store).readiness
+      payload = ObservabilitySnapshot.new(config, state_adapter: UnreadyAdapter.new).readiness
 
       assert_equal "unready", payload.fetch(:status)
-      assert_equal "error", payload.fetch(:sqlite)
-      assert_match(/broken/, payload.fetch(:error_message))
+      assert_equal "error", payload.fetch(:operational_state)
+      assert_equal "sqlite", payload.fetch(:adapter)
+    end
+
+    def test_readiness_reports_adapter_errors
+      payload = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        state_adapter: ErrorAdapter.new
+      ).readiness
+
+      assert_equal "unready", payload.fetch(:status)
+      assert_equal "Mammoth::StoreError", payload.fetch(:error_class)
+      assert_match(/broken adapter/, payload.fetch(:error_message))
     end
 
     # rubocop:disable Metrics/MethodLength
@@ -56,13 +69,14 @@ module Mammoth
       with_temp_dir do |dir|
         store = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: store.path)))
-        CheckpointStore.new(store).write(
+        adapter = OperationalState::SQLiteAdapter.new(store)
+        adapter.checkpoint_store.write(
           source_name: "local_mammoth",
           slot_name: "mammoth_prod",
           publication_name: "mammoth_publication",
           last_lsn: "0/1"
         )
-        DeliveredEnvelopeStore.new(store).record!(
+        adapter.delivered_envelope_store.record!(
           idempotency_key: "key-1",
           source_name: "local_mammoth",
           slot_name: "mammoth_prod",
@@ -72,7 +86,7 @@ module Mammoth
           source_position: "0/1"
         )
 
-        metrics = ObservabilitySnapshot.new(config, sqlite_store: store).prometheus
+        metrics = ObservabilitySnapshot.new(config, state_adapter: adapter).prometheus
 
         assert_includes metrics, %(mammoth_up{mammoth_name="local_mammoth"} 1)
         assert_includes metrics, %(mammoth_checkpoints_total{mammoth_name="local_mammoth"} 1)
@@ -86,9 +100,10 @@ module Mammoth
       with_temp_dir do |dir|
         store = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), fanout_config(store.path)))
-        seed_destination_metrics(store)
+        adapter = OperationalState::SQLiteAdapter.new(store)
+        seed_destination_metrics(adapter)
 
-        metrics = ObservabilitySnapshot.new(config, sqlite_store: store).prometheus
+        metrics = ObservabilitySnapshot.new(config, state_adapter: adapter).prometheus
 
         assert_includes metrics, %(mammoth_delivered_envelopes_total{mammoth_name="local_mammoth"} 1)
         assert_includes metrics,
@@ -101,15 +116,31 @@ module Mammoth
     end
 
     def test_prometheus_reports_down_when_store_fails
-      metrics = ObservabilitySnapshot.new(Configuration.load(fixture_config_path), sqlite_store: BrokenStore.new).prometheus
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        state_adapter: UnreadyAdapter.new
+      ).prometheus
 
       assert_includes metrics, %(mammoth_up{mammoth_name="local_mammoth"} 0)
       refute_includes metrics, "mammoth_checkpoints_total{"
     end
 
-    class BrokenStore
-      def bootstrap!
-        raise StoreError, "broken sqlite"
+    def test_prometheus_reports_down_when_adapter_raises
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        state_adapter: ErrorAdapter.new
+      ).prometheus
+
+      assert_includes metrics, %(mammoth_up{mammoth_name="local_mammoth"} 0)
+    end
+
+    class UnreadyAdapter < OperationalState::Adapter
+      def ready? = false
+    end
+
+    class ErrorAdapter < OperationalState::Adapter
+      def ready?
+        raise StoreError, "broken adapter"
       end
     end
 
@@ -130,8 +161,8 @@ module Mammoth
       YAML
     end
 
-    def seed_destination_metrics(store)
-      DeliveredEnvelopeStore.new(store).record!(
+    def seed_destination_metrics(adapter)
+      adapter.delivered_envelope_store.record!(
         idempotency_key: "key-1",
         source_name: "local_mammoth",
         slot_name: "mammoth_prod",
@@ -140,7 +171,7 @@ module Mammoth
         transaction_id: "1",
         source_position: "0/1"
       )
-      DeadLetterStore.new(store).write(event: sample_event, destination_name: "primary_webhook")
+      adapter.dead_letter_store.write(event: sample_event, destination_name: "primary_webhook")
     end
 
     def sample_event
@@ -155,4 +186,5 @@ module Mammoth
       }
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

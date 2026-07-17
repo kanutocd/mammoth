@@ -34,23 +34,24 @@ Use this before deploying or starting Mammoth.
 
 ## `mammoth bootstrap CONFIG`
 
-Initializes the SQLite operational database.
+Initializes the configured operational-state adapter.
 
 ```bash
 mammoth bootstrap config/mammoth.yml
 ```
 
-This creates tables such as:
+With the built-in `sqlite` adapter, this creates tables such as:
 
 ```text
 schema_migrations
 checkpoints
 dead_letters
+delivered_envelopes
 ```
 
 ## `mammoth status CONFIG`
 
-Reads Mammoth operational state from SQLite.
+Reads Mammoth operational state through the configured adapter.
 
 ```bash
 mammoth status config/mammoth.yml
@@ -92,7 +93,8 @@ This command is useful for demos, smoke tests, and delivery-path validation. It 
 
 ## `mammoth dead-letters`
 
-Inspect and replay failed deliveries stored in SQLite.
+Inspect and replay failed deliveries through the configured operational-state
+adapter.
 
 ```bash
 mammoth dead-letters list config/mammoth.yml
@@ -122,5 +124,5 @@ Endpoints:
 - `GET /readyz`
 - `GET /metrics`
 
-The server reads Mammoth's SQLite operational state and does not start a
-PostgreSQL replication stream.
+The server reads Mammoth's configured operational-state adapter and does not
+start a PostgreSQL replication stream.

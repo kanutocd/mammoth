@@ -5,14 +5,14 @@ module Mammoth
   module Commands
     # Reusable local command object for status inspection.
     class StatusCommand
-      attr_reader :config, :sqlite_store, :output
+      attr_reader :config, :state_adapter, :output
 
       # @param config [Mammoth::Configuration] loaded configuration
-      # @param sqlite_store [Mammoth::SQLiteStore, nil] optional operational store
+      # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
       # @param output [#puts] output stream
-      def initialize(config, sqlite_store: nil, output: $stdout)
+      def initialize(config, state_adapter: nil, output: $stdout)
         @config = config
-        @sqlite_store = sqlite_store
+        @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
         @output = output
       end
 
@@ -20,7 +20,7 @@ module Mammoth
       #
       # @return [Integer] process-style status code
       def call
-        Status.call(config, sqlite_store: sqlite_store, output: output)
+        Status.call(config, state_adapter: state_adapter, output: output)
         0
       end
     end

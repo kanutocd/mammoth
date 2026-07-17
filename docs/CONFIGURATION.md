@@ -207,7 +207,7 @@ destinations:
         - 10
 ```
 
-Mammoth OSS 0.7.x supports webhook destinations. Each enabled destination keeps
+Mammoth OSS 0.8.x supports webhook destinations. Each enabled destination keeps
 independent delivered-ledger, retry, and dead-letter state. Dead-letter replay
 targets the destination that originally failed.
 
@@ -286,7 +286,8 @@ sqlite:
   path: data/mammoth.db
 ```
 
-SQLite stores operational memory: schema migrations, checkpoints, and dead letters.
+SQLite stores operational memory: schema migrations, checkpoints, dead letters,
+and the delivered-envelope ledger.
 
 ### `operational_state`
 
