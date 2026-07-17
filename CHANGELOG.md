@@ -26,6 +26,9 @@
 - Added processor contract, observer, runtime notification, dispatch counter,
   and Prometheus exposition coverage.
 - Added exact core-type and persisted-payload round-trip coverage.
+- Strengthened architecture boundary coverage with executable pgoutput adapter
+  output checks, downstream dependency guards, and an exact core-output RBS
+  contract for the PostgreSQL source.
 - Updated RBS signatures, YARD API documentation, examples, and benchmark
   descriptions for the corrected processor/observer boundary.
 
