@@ -39,11 +39,12 @@ API documentation:
 https://kanutocd.github.io/mammoth/Mammoth.html
 
 
-## OSS MVP
+## v1.0 Release Scope
 
-Mammoth OSS includes:
+Mammoth 1.0 includes:
 
-- CLI foundation
+- operator CLI for validation, bootstrap, status, delivery, observability, and
+  dead-letter workflows
 - YAML configuration loading
 - JSON Schema-backed configuration validation
 - SQLite operational memory bootstrap
@@ -70,6 +71,43 @@ Mammoth OSS includes:
 - explicit extension registries for state, destination, and runtime adapters
 - node identity and local capability reporting
 - lifecycle hooks, configuration providers, and reusable local command objects
+
+## Feature Examples
+
+The runnable examples are organized around production behaviors and failure
+modes, not isolated API snippets.
+
+| Example | v1 capability demonstrated |
+| --- | --- |
+| [`live_postgres_webhook`](examples/live_postgres_webhook) | End-to-end PostgreSQL logical replication into webhook delivery. |
+| [`transaction_webhook`](examples/transaction_webhook) | TransactionEnvelope preservation through the concurrent runtime. |
+| [`webhook_fanout`](examples/webhook_fanout) | Routed multi-destination fanout, environment-backed headers, signing, and independent retry policies. |
+| [`ordering`](examples/ordering) | Ordered and throughput-oriented transaction scheduling. |
+| [`checkpoint_recovery`](examples/checkpoint_recovery) | Durable restart recovery, replay suppression, checkpointing, and acknowledgement. |
+| [`slot_invalidation_recovery`](examples/slot_invalidation_recovery) | Fail-closed slot invalidation and explicit operator reconciliation. |
+| [`composite_replica_identity`](examples/composite_replica_identity) | Composite, non-`id` replica identity across `INSERT`, `UPDATE`, and `DELETE`. |
+| [`postgres_observability`](examples/postgres_observability) | Slot readiness and Prometheus metrics correlated with PostgreSQL catalogs. |
+| [`schema_evolution`](examples/schema_evolution) | Consumer-first additive schema evolution without implying DDL delivery. |
+| [`destination_idempotency`](examples/destination_idempotency) | Atomic destination-side duplicate suppression across isolated relay ledgers. |
+| [`failing_webhook_retry`](examples/failing_webhook_retry) | Retry exhaustion and durable dead-letter persistence. |
+| [`operational_state`](examples/operational_state) | Inspectable checkpoints, delivered ledgers, and dead letters. |
+| [`kubernetes_helm`](examples/kubernetes_helm) | Single-consumer Kubernetes deployment using the public Helm chart. |
+
+See [`examples/README.md`](examples/README.md) for the complete index, boundary
+notes, and commands.
+
+## v1 Compatibility
+
+Mammoth 1.x treats its validated configuration, serialized webhook envelopes,
+documented CLI command behavior, and forward operational-state migrations as
+supported contracts. Compatible minor releases may add optional configuration
+or payload fields, but do not remove or reinterpret existing fields.
+
+Human-readable CLI formatting and PostgreSQL-derived row columns are not frozen:
+scripts should rely on documented exit behavior, while receivers must tolerate
+additive fields and coordinate source schema changes. See
+[`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the complete promise and
+major-version boundaries.
 
 ## Boundary
 

@@ -40,12 +40,13 @@ boundary that reconstructs exact core objects before delivery.
 - [Observability](file.OBSERVABILITY.html)
 - [Extensions](file.EXTENSIONS.html)
 - [Examples](file.EXAMPLES.html)
+- [Compatibility](file.COMPATIBILITY.html)
 - [Helm](file.HELM.html)
 - [Troubleshooting](file.TROUBLESHOOTING.html)
 
-## Current release scope
+## v1 Release Scope
 
-Mammoth 0.8.x focuses on:
+Mammoth 1.x supports:
 
 - PostgreSQL logical replication ingestion
 - normalized CDC event and transaction delivery to webhooks
@@ -72,11 +73,19 @@ Mammoth 0.8.x focuses on:
 - Docker image distribution
 - Helm-based Kubernetes deployment
 
-## Non-goals for 0.8.x
+The supported compatibility boundaries for configuration, webhook payloads,
+CLI behavior, and operational-state migrations are documented in
+[Compatibility](file.COMPATIBILITY.html).
 
-Mammoth 0.8.x does not provide:
+## v1 Non-goals
+
+Mammoth 1.x does not provide:
 
 - a web dashboard
 - multiple active consumers for the same PostgreSQL replication slot
+- DDL or sequence replication
+- destination-side semantic conflict resolution
+- a global exactly-once guarantee across independent operational-state stores
 
-Those are future operational layers.
+These are explicit product boundaries rather than indicators of pre-production
+status.

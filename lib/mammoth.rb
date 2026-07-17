@@ -58,7 +58,7 @@ require_relative "mammoth/cli"
 
 # Mammoth is a self-hosted PostgreSQL event relay.
 #
-# Mammoth 0.8.x is a single-node PostgreSQL CDC relay with webhook fanout,
+# Mammoth 1.x is a single-node PostgreSQL CDC relay with webhook fanout,
 # replayable operational SQLite state, health/metrics endpoints, and explicit
 # extension contracts for state, destination, runtime, lifecycle, configuration,
 # and local command integrations.

@@ -1,8 +1,8 @@
 # Mammoth Examples
 
-Mammoth examples are intentionally split by operator story. The OSS MVP focuses
-on reliable webhook delivery and local SQLite operational memory while keeping
-unit tests Docker-free.
+Mammoth examples are intentionally split by operator story. The v1 examples
+exercise reliable webhook delivery, PostgreSQL continuity safeguards, and local
+SQLite operational memory while keeping unit tests Docker-free.
 
 ## Available examples
 

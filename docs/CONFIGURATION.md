@@ -230,7 +230,7 @@ destinations:
         - 10
 ```
 
-Mammoth OSS 0.8.x supports webhook destinations. Each enabled destination keeps
+Mammoth 1.x supports webhook destinations. Each enabled destination keeps
 independent delivered-ledger, retry, and dead-letter state. Dead-letter replay
 targets the destination that originally failed.
 

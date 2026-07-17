@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0 - 2026-07-17
+
 ### Added
 
 - Added PostgreSQL slot readiness diagnostics and Prometheus gauges for

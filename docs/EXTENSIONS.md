@@ -1,6 +1,6 @@
 # Extensions
 
-Mammoth OSS 0.8.x exposes explicit extension contracts for adapters.
+Mammoth 1.x exposes explicit extension contracts for adapters.
 The contracts are intentionally small and local. Extensions register adapters;
 they do not take over Mammoth's delivery semantics.
 
