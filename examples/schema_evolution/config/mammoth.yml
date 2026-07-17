@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../../config/mammoth.schema.json
+
+mammoth:
+  name: schema_evolution
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_schema_evolution
+  publications:
+    - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 2.0
+
+webhook:
+  name: schema_compatible_receiver
+  url: http://webhook_receiver:9292/webhook
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 3
+  schedule_seconds:
+    - 1
+    - 2
+    - 5
+
+sqlite:
+  path: .sqlite3/mammoth.db
+
+logging:
+  level: info

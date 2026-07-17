@@ -20,6 +20,8 @@
   invalidation and the explicit operator reconciliation required to resume.
 - Added a PostgreSQL observability example correlating Mammoth readiness and
   Prometheus slot gauges with native replication and publication catalogs.
+- Added a live additive schema-evolution example demonstrating consumer-first
+  compatibility, relation-metadata refresh, and the non-delivery of DDL.
 
 ### Fixed
 

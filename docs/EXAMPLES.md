@@ -109,6 +109,37 @@ curl -s http://localhost:9394/metrics
 The relay and observability server share operational-state storage, but
 process-local dispatch counters are not transferred between them.
 
+## `examples/schema_evolution`
+
+Purpose:
+
+```text
+compatible receiver
+    ↓
+v1 row → additive DDL → v2 row
+    ↓
+Mammoth payloads without and with the new field
+```
+
+Use this to exercise the safe order for an additive schema rollout: deploy a
+consumer that accepts both shapes, apply the migration, and then write the new
+column. The example verifies that pgoutput refreshes relation metadata for
+later row events while emitting no event for the DDL statement itself.
+
+Run it with:
+
+```bash
+cd examples/schema_evolution
+docker compose up -d --build
+docker compose run --rm producer_v1
+docker compose run --rm migrate
+docker compose run --rm producer_v2
+docker compose logs webhook_receiver
+```
+
+The receiver rejects a v1 event containing `currency` and a v2 event that does
+not contain `currency: "USD"`.
+
 ## `examples/transaction_webhook`
 
 Purpose:
@@ -313,11 +344,12 @@ eligible selected replica-identity index, or `REPLICA IDENTITY FULL`; Mammoth
 validates this before streaming.
 
 The live examples intentionally do not model DDL delivery, sequence
-synchronization, or PostgreSQL subscriber conflict repair. Mammoth relays row
-changes to HTTP destinations: coordinate schema changes with those consumers,
-synchronize sequences externally when building a writable database copy, and
-use destination idempotency plus explicit dead-letter replay for delivery
-conflicts.
+synchronization, or PostgreSQL subscriber conflict repair. The schema evolution
+example models a coordinated migration while explicitly showing that no DDL
+event is delivered. Mammoth relays row changes to HTTP destinations: coordinate
+schema changes with those consumers, synchronize sequences externally when
+building a writable database copy, and use destination idempotency plus
+explicit dead-letter replay for delivery conflicts.
 
 ## Checkpoint Recovery
 
