@@ -86,7 +86,9 @@ For the live PostgreSQL stream, `pgoutput-source-adapter` incrementally owns
 `Begin`/`Commit` buffering and emits exact `CDC::Core::ChangeEvent` or
 `CDC::Core::TransactionEnvelope` work items. Mammoth only composes the
 transport, parser, decoder, and source adapter and forwards the resulting core
-work to delivery.
+work to delivery. Mammoth's publication preflight supplies ordered,
+catalog-derived replica-identity columns to the adapter, which owns composite
+and non-`id` key extraction.
 
 At the downstream boundary, `Mammoth::DeliveryProcessor` implements
 `CDC::Core::Processor` and returns `CDC::Core::ProcessorResult`. Inline and

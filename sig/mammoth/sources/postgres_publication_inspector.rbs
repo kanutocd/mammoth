@@ -1,20 +1,24 @@
 module Mammoth
   module Sources
     class PostgresPublicationTable
+      attr_reader relation_id: Integer
       attr_reader schema_name: String
       attr_reader table_name: String
       attr_reader publishes_updates: bool
       attr_reader publishes_deletes: bool
       attr_reader replica_identity: String
+      attr_reader replica_identity_columns: Array[String]
       attr_reader primary_key_usable: bool
       attr_reader replica_identity_index_usable: bool
 
       def initialize: (
+        relation_id: Integer,
         schema_name: String,
         table_name: String,
         publishes_updates: bool,
         publishes_deletes: bool,
         replica_identity: String,
+        replica_identity_columns: Array[String],
         primary_key_usable: bool,
         replica_identity_index_usable: bool
       ) -> void
@@ -39,6 +43,7 @@ module Mammoth
 
       def open_connection: () -> untyped
       def build_table: (untyped row) -> PostgresPublicationTable
+      def parse_columns: (untyped value) -> Array[String]
       def postgres_boolean: (untyped value) -> bool
       def pg_error_class: () -> singleton(::PG::Error)
     end

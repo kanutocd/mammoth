@@ -27,13 +27,15 @@ module Mammoth
         def closed? = @closed
       end
 
-      def test_inspects_and_normalizes_publication_table_identity
+      def test_inspects_and_normalizes_publication_table_identity # rubocop:disable Metrics/MethodLength
         connection = FakeConnection.new(rows: [{
+                                          "relation_id" => "16384",
                                           "schema_name" => "public",
                                           "table_name" => "orders",
                                           "publishes_updates" => "t",
                                           "publishes_deletes" => false,
                                           "replica_identity" => "d",
+                                          "replica_identity_columns" => '["tenant_id","order_uuid"]',
                                           "primary_key_usable" => true,
                                           "replica_identity_index_usable" => "f"
                                         }])
@@ -42,6 +44,8 @@ module Mammoth
 
         table = tables.fetch(0)
         assert_equal "public.orders", table.qualified_name
+        assert_equal 16_384, table.relation_id
+        assert_equal %w[tenant_id order_uuid], table.replica_identity_columns
         assert_equal ["UPDATE"], table.identity_actions
         assert_predicate table, :identity_required?
         assert_predicate table, :identity_usable?
@@ -57,6 +61,9 @@ module Mammoth
         assert_match(/bool_or\(publication\.pubdelete\)/, query)
         assert_match(/primary_index\.indisprimary/, query)
         assert_match(/identity_index\.indisreplident/, query)
+        assert_match(/relation\.oid AS relation_id/, query)
+        assert_match(/jsonb_agg\(attribute\.attname ORDER BY key\.ordinality\)/, query)
+        assert_match(/jsonb_agg\(attribute\.attname ORDER BY attribute\.attnum\)/, query)
         assert_match(/indisvalid/, query)
         assert_match(/jsonb_array_elements_text/, query)
       end
@@ -150,11 +157,13 @@ module Mammoth
 
       def table(**overrides)
         PostgresPublicationTable.new(
+          relation_id: 16_384,
           schema_name: "public",
           table_name: "orders",
           publishes_updates: true,
           publishes_deletes: true,
           replica_identity: "d",
+          replica_identity_columns: ["id"],
           primary_key_usable: false,
           replica_identity_index_usable: false,
           **overrides

@@ -611,6 +611,46 @@ module Mammoth
       assert_match(/replica identity preflight failed: catalog unavailable/, error.message)
     end
 
+    def test_builds_default_adapter_with_catalog_replica_identity_mappings # rubocop:disable Metrics/MethodLength
+      tables = [
+        publication_table(
+          relation_id: 77,
+          table_name: "memberships",
+          primary_key_usable: true,
+          replica_identity_columns: %w[tenant_id member_uuid]
+        )
+      ]
+      inspector = Struct.new(:tables, :calls) do
+        def inspect(_publication_names)
+          self.calls += 1
+          tables
+        end
+      end.new(tables, 0)
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        publication_inspector: inspector
+      )
+      event = Pgoutput::Decoder::Events::Insert.new(
+        42,
+        77,
+        "public",
+        "memberships",
+        { "tenant_id" => 9, "member_uuid" => "member-1", "name" => "Ken" }
+      )
+
+      change = source.send(:build_adapter).normalize(event)
+
+      assert_equal({ "tenant_id" => 9, "member_uuid" => "member-1" }, change.primary_key)
+      assert_equal(
+        {
+          77 => %w[tenant_id member_uuid],
+          %w[public memberships] => %w[tenant_id member_uuid]
+        },
+        source.send(:replica_identity_relations)
+      )
+      assert_equal 1, inspector.calls
+    end
+
     def test_slot_health_normalizes_pgoutput_catalog_metrics
       runner = PreflightRunner.new(
         healthy_slot_status(
@@ -1007,11 +1047,13 @@ module Mammoth
 
     def publication_table(**overrides)
       Sources::PostgresPublicationTable.new(
+        relation_id: 7,
         schema_name: "public",
         table_name: "orders",
         publishes_updates: true,
         publishes_deletes: true,
         replica_identity: "d",
+        replica_identity_columns: [],
         primary_key_usable: false,
         replica_identity_index_usable: false,
         **overrides

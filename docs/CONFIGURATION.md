@@ -154,7 +154,9 @@ Before streaming, Mammoth inspects the configured slot through pgoutput-client
 and rejects missing, active, lost, invalidated, incompatible, or
 checkpoint-unreachable slots.
 It also rejects published `UPDATE`/`DELETE` tables without a usable primary
-key, selected replica-identity index, or `REPLICA IDENTITY FULL`.
+key, selected replica-identity index, or `REPLICA IDENTITY FULL`. The inspected
+column order is passed to `pgoutput-source-adapter` for complete composite and
+non-`id` key normalization.
 
 ### `webhook`
 

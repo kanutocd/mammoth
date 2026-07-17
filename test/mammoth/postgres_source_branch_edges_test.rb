@@ -53,7 +53,9 @@ module Mammoth
       end
 
       def test_default_pgoutput_component_builders_are_memoized
-        source = Postgres.new(Configuration.load(fixture_config_path))
+        inspector = Object.new
+        def inspector.inspect(_publication_names) = []
+        source = Postgres.new(Configuration.load(fixture_config_path), publication_inspector: inspector)
 
         assert_same source.send(:effective_parser), source.send(:effective_parser)
         assert_same source.send(:effective_decoder), source.send(:effective_decoder)

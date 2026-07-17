@@ -14,6 +14,7 @@ module Mammoth
       @effective_decoder: untyped
       @effective_adapter: untyped
       @effective_publication_inspector: untyped
+      @publication_tables: Array[PostgresPublicationTable]?
       attr_reader config: Mammoth::Configuration
       attr_reader runner: untyped
       attr_reader parser: untyped
@@ -57,6 +58,8 @@ module Mammoth
       def replication_start_lsn: () -> untyped
       def preflight_slot!: () -> nil
       def preflight_replica_identity!: () -> nil
+      def publication_tables: () -> Array[PostgresPublicationTable]
+      def replica_identity_relations: () -> Hash[(Integer | [String, String]), Array[String]]
       def inspected_slot_status: () -> untyped
       def validate_temporary_slot_resume!: (untyped resume_lsn) -> untyped
       def validate_slot_identity!: (untyped status) -> untyped

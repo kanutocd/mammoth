@@ -12,6 +12,8 @@
 - Added startup validation for every configured publication table that publishes
   `UPDATE` or `DELETE`, accepting a usable primary key, selected replica-identity
   index, or `REPLICA IDENTITY FULL` and reporting all invalid tables together.
+- Added catalog-derived, ordered replica-identity mappings for relation OIDs and
+  schema-qualified tables.
 
 ### Fixed
 
@@ -28,11 +30,16 @@
   `runner.ack`.
 - Event-mode delivery resolves an envelope's transport position for each exact
   child event without mutating or rebuilding CDC-core work.
+- Wired publication identity mappings into
+  `Pgoutput::SourceAdapter::ReplicaIdentityResolver` so composite and non-`id`
+  keys are normalized without partial identity data.
 
 ### Quality
 
 - Upgraded pgoutput-client to 0.4.0 and covered slot identity, health,
   retained-WAL reporting, continuity boundaries, and safe first-time creation.
+- Upgraded pgoutput-source-adapter to 0.3.0 and covered catalog-to-resolver
+  composition for composite replica identities.
 - Added end-to-end source/coordinator coverage proving that a transaction with
   decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
 - Strengthened boundary coverage for source-owned position resolution and

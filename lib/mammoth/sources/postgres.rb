@@ -293,7 +293,8 @@ module Mammoth
       def build_adapter
         require_optional!("pgoutput/source_adapter", "pgoutput-source-adapter")
 
-        Pgoutput::SourceAdapter::Cdc.new
+        resolver = Pgoutput::SourceAdapter::ReplicaIdentityResolver.new(replica_identity_relations)
+        Pgoutput::SourceAdapter::Cdc.new(primary_key_resolver: resolver)
       end
 
       def build_publication_inspector
@@ -343,7 +344,7 @@ module Mammoth
       end
 
       def preflight_replica_identity!
-        invalid_tables = effective_publication_inspector.inspect(required_publications).reject(&:identity_usable?)
+        invalid_tables = publication_tables.reject(&:identity_usable?)
         return if invalid_tables.empty?
 
         details = invalid_tables.map do |table|
@@ -358,6 +359,22 @@ module Mammoth
         raise e if e.is_a?(ReplicationError)
 
         raise ReplicationError, "PostgreSQL replica identity preflight failed: #{e.message}"
+      end
+
+      def publication_tables
+        @publication_tables ||= effective_publication_inspector.inspect(required_publications).freeze
+      end
+
+      def replica_identity_relations
+        relations = {} # : Hash[Integer | [String, String], Array[String]]
+        publication_tables.each do |table|
+          next if table.replica_identity_columns.empty?
+
+          columns = table.replica_identity_columns
+          relations[table.relation_id] = columns
+          relations[[table.schema_name, table.table_name]] = columns
+        end
+        relations
       end
 
       def inspected_slot_status
