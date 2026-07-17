@@ -1,5 +1,7 @@
 module Mammoth
   module ObservabilityMetrics
+    include PostgresObservabilityMetrics
+
     DISPATCH_METRIC_NAMES: Hash[String, String]
 
     def dispatch_metrics: () -> DispatchMetrics

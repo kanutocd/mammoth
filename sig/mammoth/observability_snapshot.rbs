@@ -10,6 +10,7 @@ module Mammoth
 
     @clock: untyped
     @dispatch_metrics: DispatchMetrics
+    @slot_health_provider: untyped
 
     attr_reader config: untyped
 
@@ -17,11 +18,12 @@ module Mammoth
 
     attr_reader clock: untyped
     attr_reader dispatch_metrics: DispatchMetrics
+    attr_reader slot_health_provider: untyped
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param clock [#call] time source returning a Time-like object
-    def initialize: (untyped config, ?state_adapter: untyped?, ?clock: untyped?, ?dispatch_metrics: DispatchMetrics) -> void
+    def initialize: (untyped config, ?state_adapter: untyped?, ?clock: untyped?, ?dispatch_metrics: DispatchMetrics, ?slot_health_provider: untyped?) -> void
 
     # Build a liveness response.
     #
@@ -47,8 +49,12 @@ module Mammoth
     def unready_payload: () -> untyped
 
     def adapter_error_payload: (untyped error) -> untyped
+    def postgres_unready_payload: (untyped health) -> untyped
+    def postgres_error_payload: (untyped error) -> untyped
 
     def down_metrics: () -> String
+    def postgres_slot_metric_lines: () -> Array[String]
+    def postgres_slot_health: () -> untyped
 
     def state_summary: () -> untyped
 

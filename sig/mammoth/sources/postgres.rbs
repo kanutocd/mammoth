@@ -24,6 +24,7 @@ module Mammoth
       def each: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) work) -> untyped } -> (Enumerator[(CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope), nil] | nil)
       def acknowledge: (untyped lsn) -> untyped
       def progress_position_for: (untyped work) -> untyped
+      def slot_health: () -> PostgresSlotHealth
 
       private
 
@@ -56,6 +57,7 @@ module Mammoth
       def validate_slot_health!: (untyped status) -> untyped
       def validate_slot_reachability!: (untyped status, untyped resume_lsn) -> untyped
       def parse_transport_lsn: (untyped value, String label) -> Integer
+      def metric_lsn: (untyped value) -> Integer?
       def safe_auto_create_slot?: () -> bool
       def missing_slot_message: (untyped resume_lsn) -> String
       def checkpoint_lsn: () -> untyped

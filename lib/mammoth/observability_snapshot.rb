@@ -3,27 +3,30 @@
 require "time"
 
 module Mammoth
-  # Builds health, readiness, and metrics snapshots from Mammoth's local
-  # operational state.
+  # Builds health, readiness, and metrics snapshots from Mammoth's operational
+  # state and optional PostgreSQL slot-health provider.
   #
   # ObservabilitySnapshot is intentionally read-only. It does not start the
-  # relay, mutate checkpoints, replay dead letters, or inspect PostgreSQL. The
-  # health and metrics endpoints use this object to expose Mammoth process and
-  # operational-state adapter status in a predictable format.
-  class ObservabilitySnapshot
+  # relay, mutate checkpoints, replay dead letters, or change PostgreSQL slot
+  # state. An injected provider may perform read-only slot inspection. The
+  # endpoints expose process, operational-state, and source status predictably.
+  class ObservabilitySnapshot # rubocop:disable Metrics/ClassLength
     include ObservabilityMetrics
 
-    attr_reader :config, :state_adapter, :clock, :dispatch_metrics
+    attr_reader :config, :state_adapter, :clock, :dispatch_metrics, :slot_health_provider
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param clock [#call] time source returning a Time-like object
     # @param dispatch_metrics [Mammoth::DispatchMetrics] dispatch counter registry
-    def initialize(config, state_adapter: nil, clock: -> { Time.now.utc }, dispatch_metrics: DispatchMetrics::INSTANCE)
+    # @param slot_health_provider [#slot_health, nil] PostgreSQL slot health dependency
+    def initialize(config, state_adapter: nil, clock: -> { Time.now.utc }, dispatch_metrics: DispatchMetrics::INSTANCE,
+                   slot_health_provider: nil)
       @config = config
       @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
       @clock = clock
       @dispatch_metrics = dispatch_metrics
+      @slot_health_provider = slot_health_provider
     end
 
     # Build a liveness response.
@@ -45,7 +48,7 @@ module Mammoth
     def readiness
       return unready_payload unless state_adapter.ready?
 
-      {
+      payload = {
         status: "ready",
         service: "mammoth",
         name: mammoth_name,
@@ -54,6 +57,14 @@ module Mammoth
         summary: state_summary,
         checked_at: checked_at
       }
+      return payload unless slot_health_provider
+
+      health = postgres_slot_health
+      return postgres_unready_payload(health) unless health.ready?
+
+      payload.merge(postgres_slot: health.summary)
+    rescue ReplicationError => e
+      postgres_error_payload(e)
     rescue Mammoth::Error => e
       adapter_error_payload(e)
     end
@@ -71,7 +82,7 @@ module Mammoth
       ) + destination_metric_lines(
         dead_letter_store: state_adapter.dead_letter_store,
         delivered_store: state_adapter.delivered_envelope_store
-      ) + dispatch_metric_lines
+      ) + dispatch_metric_lines + postgres_slot_metric_lines
       "#{lines.join("\n")}\n"
     rescue Mammoth::Error
       down_metrics
@@ -88,6 +99,36 @@ module Mammoth
         adapter: configured_adapter_name,
         error_class: error.class.name,
         error_message: error.message,
+        checked_at: checked_at
+      }
+    end
+
+    def postgres_unready_payload(health)
+      {
+        status: "unready",
+        service: "mammoth",
+        name: mammoth_name,
+        operational_state: "ok",
+        adapter: state_summary.fetch(:adapter),
+        summary: state_summary,
+        postgres_slot: health.summary,
+        checked_at: checked_at
+      }
+    end
+
+    def postgres_error_payload(error)
+      {
+        status: "unready",
+        service: "mammoth",
+        name: mammoth_name,
+        operational_state: "ok",
+        adapter: configured_adapter_name,
+        postgres_slot: {
+          ready: false,
+          reason: "inspection failed",
+          error_class: error.class.name,
+          error_message: error.message
+        },
         checked_at: checked_at
       }
     end
@@ -134,6 +175,18 @@ module Mammoth
 
     def down_metrics
       "#{(metric_headers + [metric_line("mammoth_up", 0)] + dispatch_metric_lines).join("\n")}\n"
+    end
+
+    def postgres_slot_metric_lines
+      return [] unless slot_health_provider
+
+      postgres_metric_lines(postgres_slot_health)
+    rescue ReplicationError
+      postgres_inspection_error_metric_lines
+    end
+
+    def postgres_slot_health
+      slot_health_provider.slot_health
     end
 
     def state_summary

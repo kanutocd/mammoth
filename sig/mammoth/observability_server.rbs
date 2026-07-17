@@ -8,6 +8,7 @@ module Mammoth
     @port: untyped
 
     @state_adapter: untyped
+    @slot_health_provider: untyped
 
     @logger: untyped
 
@@ -24,6 +25,7 @@ module Mammoth
     attr_reader port: untyped
 
     attr_reader state_adapter: untyped
+    attr_reader slot_health_provider: untyped
 
     attr_reader logger: untyped
 
@@ -34,7 +36,7 @@ module Mammoth
     # @param port [Integer, nil] bind port override
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param logger [WEBrick::Log, nil] optional WEBrick logger
-    def initialize: (untyped config, ?host: untyped?, ?port: untyped?, ?state_adapter: untyped?, ?logger: untyped?) -> void
+    def initialize: (untyped config, ?host: untyped?, ?port: untyped?, ?state_adapter: untyped?, ?slot_health_provider: untyped?, ?logger: untyped?) -> void
 
     # Start the blocking HTTP server.
     #

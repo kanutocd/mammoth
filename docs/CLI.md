@@ -129,5 +129,6 @@ Endpoints:
 - `GET /readyz`
 - `GET /metrics`
 
-The server reads Mammoth's configured operational-state adapter and does not
-start a PostgreSQL replication stream.
+The server reads Mammoth's configured operational-state adapter and inspects
+the configured PostgreSQL slot for readiness and retained-WAL metrics. It does
+not start a replication stream or mutate slot lifecycle.

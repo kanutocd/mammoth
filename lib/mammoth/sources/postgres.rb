@@ -96,6 +96,38 @@ module Mammoth
         @yielded_progress_position
       end
 
+      # Inspect the configured slot for readiness and operator metrics.
+      #
+      # pgoutput-client owns catalog access. This method converts its snapshot
+      # into Mammoth's PostgreSQL-specific health policy without leaking
+      # transport-library types into the observability layer.
+      #
+      # @return [PostgresSlotHealth]
+      def slot_health
+        status = inspected_slot_status
+        return PostgresSlotHealth.missing(required_config("replication", "slot")) unless status
+
+        PostgresSlotHealth.new(
+          slot_name: value_from(status, :slot_name),
+          present: true,
+          active: value_from(status, :active) == true,
+          retained_wal_bytes: value_from(status, :retained_wal_bytes),
+          wal_status: value_from(status, :wal_status),
+          safe_wal_size: value_from(status, :safe_wal_size),
+          inactive_since: value_from(status, :inactive_since),
+          invalidation_reason: value_from(status, :invalidation_reason),
+          restart_lsn: value_from(status, :restart_lsn),
+          restart_lsn_bytes: metric_lsn(value_from(status, :restart_lsn)),
+          confirmed_flush_lsn: value_from(status, :confirmed_flush_lsn),
+          confirmed_flush_lsn_bytes: metric_lsn(value_from(status, :confirmed_flush_lsn)),
+          conflicting: value_from(status, :conflicting) == true
+        )
+      rescue StandardError => e
+        raise e if e.is_a?(ReplicationError)
+
+        raise ReplicationError, "PostgreSQL slot health inspection failed: #{e.message}"
+      end
+
       private
 
       def decoded_stream
@@ -297,7 +329,7 @@ module Mammoth
       def inspected_slot_status
         client = effective_runner
         unless client.respond_to?(:slot_status)
-          raise ReplicationError, "pgoutput-client 0.3+ with #slot_status is required for PostgreSQL slot preflight"
+          raise ReplicationError, "pgoutput-client 0.4+ with #slot_status is required for PostgreSQL slot inspection"
         end
 
         client.slot_status
@@ -362,6 +394,12 @@ module Mammoth
         Pgoutput::Client::LSN.parse(value)
       rescue StandardError => e
         raise ReplicationError, "invalid PostgreSQL #{label} LSN #{value.inspect}: #{e.message}"
+      end
+
+      def metric_lsn(value)
+        return nil if blank?(value)
+
+        parse_transport_lsn(value, "slot metric")
       end
 
       def safe_auto_create_slot?

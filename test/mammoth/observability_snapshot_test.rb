@@ -64,6 +64,41 @@ module Mammoth
       assert_match(/broken adapter/, payload.fetch(:error_message))
     end
 
+    def test_readiness_includes_healthy_active_postgres_slot
+      payload = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(postgres_slot_health)
+      ).readiness
+
+      assert_equal "ready", payload.fetch(:status)
+      assert payload.dig(:postgres_slot, :ready)
+      assert_equal 8192, payload.dig(:postgres_slot, :retained_wal_bytes)
+      assert_equal "reserved", payload.dig(:postgres_slot, :wal_status)
+    end
+
+    def test_readiness_fails_closed_for_inactive_postgres_slot
+      health = postgres_slot_health(active: false, inactive_since: "2026-07-17T01:02:03Z")
+      payload = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(health)
+      ).readiness
+
+      assert_equal "unready", payload.fetch(:status)
+      assert_equal "ok", payload.fetch(:operational_state)
+      assert_equal "slot is inactive", payload.dig(:postgres_slot, :reason)
+    end
+
+    def test_readiness_reports_postgres_inspection_errors
+      payload = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(ReplicationError.new("postgres unavailable"))
+      ).readiness
+
+      assert_equal "unready", payload.fetch(:status)
+      assert_equal "inspection failed", payload.dig(:postgres_slot, :reason)
+      assert_match(/postgres unavailable/, payload.dig(:postgres_slot, :error_message))
+    end
+
     # rubocop:disable Metrics/MethodLength
     def test_prometheus_reports_operational_counts
       with_temp_dir do |dir|
@@ -140,6 +175,78 @@ module Mammoth
       refute_includes metrics, "custom.dispatch.metric"
     end
 
+    def test_prometheus_reports_postgres_slot_health_and_retained_wal
+      health = postgres_slot_health(inactive_since: "2026-07-17T01:02:03Z")
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(health)
+      ).prometheus
+
+      labels = %(mammoth_name="local_mammoth",slot_name="mammoth_prod")
+      assert_includes metrics, %(mammoth_postgres_slot_inspection_up{#{labels}} 1)
+      assert_includes metrics, %(mammoth_postgres_slot_ready{#{labels}} 1)
+      assert_includes metrics, %(mammoth_postgres_slot_active{#{labels}} 1)
+      assert_includes metrics, %(mammoth_postgres_slot_retained_wal_bytes{#{labels}} 8192)
+      assert_includes metrics, %(mammoth_postgres_slot_safe_wal_size_bytes{#{labels}} 4096)
+      assert_includes metrics, %(mammoth_postgres_slot_restart_lsn_bytes{#{labels}} 16)
+      assert_includes metrics, %(mammoth_postgres_slot_confirmed_flush_lsn_bytes{#{labels}} 32)
+      assert_includes metrics, %(wal_status="reserved")
+      assert_includes metrics, %(mammoth_postgres_slot_inactive_since_timestamp_seconds{#{labels}} 1784250123)
+    end
+
+    def test_prometheus_reports_missing_slot_and_inspection_failure
+      config = Configuration.load(fixture_config_path)
+      missing_metrics = ObservabilitySnapshot.new(
+        config,
+        slot_health_provider: SlotHealthProvider.new(Sources::PostgresSlotHealth.missing("mammoth_prod"))
+      ).prometheus
+      error_metrics = ObservabilitySnapshot.new(
+        config,
+        slot_health_provider: SlotHealthProvider.new(ReplicationError.new("postgres unavailable"))
+      ).prometheus
+
+      assert_includes missing_metrics,
+                      %(mammoth_postgres_slot_present{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 0)
+      refute_includes missing_metrics, "mammoth_postgres_slot_active{"
+      assert_includes error_metrics,
+                      %(mammoth_postgres_slot_inspection_up{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 0)
+      assert_includes error_metrics, %(mammoth_up{mammoth_name="local_mammoth"} 1)
+    end
+
+    def test_prometheus_reports_unhealthy_slot_and_tolerates_unknown_optional_values # rubocop:disable Metrics/MethodLength
+      health = postgres_slot_health(
+        active: false,
+        retained_wal_bytes: nil,
+        wal_status: nil,
+        safe_wal_size: nil,
+        inactive_since: Time.utc(2026, 7, 17, 1, 2, 3),
+        invalidation_reason: "wal_removed",
+        restart_lsn_bytes: nil,
+        confirmed_flush_lsn_bytes: nil
+      )
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(health)
+      ).prometheus
+
+      assert_includes metrics, %(mammoth_postgres_slot_ready{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 0)
+      assert_includes metrics, %(mammoth_postgres_slot_active{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 0)
+      assert_includes metrics, %(wal_status="unknown")
+      assert_includes metrics,
+                      %(mammoth_postgres_slot_invalidated{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 1)
+      refute_includes metrics, "mammoth_postgres_slot_retained_wal_bytes{"
+      assert_includes metrics, "mammoth_postgres_slot_inactive_since_timestamp_seconds"
+    end
+
+    def test_prometheus_omits_invalid_inactive_since_timestamp
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        slot_health_provider: SlotHealthProvider.new(postgres_slot_health(inactive_since: "not-a-time"))
+      ).prometheus
+
+      refute_includes metrics, "mammoth_postgres_slot_inactive_since_timestamp_seconds{"
+    end
+
     def test_prometheus_reports_down_when_store_fails
       metrics = ObservabilitySnapshot.new(
         Configuration.load(fixture_config_path),
@@ -169,7 +276,34 @@ module Mammoth
       end
     end
 
+    SlotHealthProvider = Data.define(:result) do
+      def slot_health
+        raise result if result.is_a?(Exception)
+
+        result
+      end
+    end
+
     private
+
+    def postgres_slot_health(**overrides)
+      Sources::PostgresSlotHealth.new(
+        slot_name: "mammoth_prod",
+        present: true,
+        active: true,
+        retained_wal_bytes: 8192,
+        wal_status: "reserved",
+        safe_wal_size: 4096,
+        inactive_since: nil,
+        invalidation_reason: nil,
+        restart_lsn: "0/10",
+        restart_lsn_bytes: 16,
+        confirmed_flush_lsn: "0/20",
+        confirmed_flush_lsn_bytes: 32,
+        conflicting: false,
+        **overrides
+      )
+    end
 
     def fanout_config(sqlite_path)
       minimal_config(sqlite_path: sqlite_path).sub(/^webhook:.*?(?=^retry:)/m, <<~YAML)

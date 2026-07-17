@@ -124,6 +124,7 @@ SELECT
   active,
   restart_lsn,
   confirmed_flush_lsn,
+  pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS retained_wal_bytes,
   wal_status,
   safe_wal_size,
   inactive_since,
@@ -137,6 +138,12 @@ Mammoth's old checkpoint. The lost interval requires external backfill or
 reconciliation. After that process, establish new safe operational state and
 restart Mammoth. For a first-time deployment with no checkpoint,
 `auto_create_slot: true` may create the missing slot.
+
+The same state is available through `/readyz` and the
+`mammoth_postgres_slot_*` Prometheus gauges. If
+`mammoth_postgres_slot_inspection_up` is `0`, check PostgreSQL connectivity and
+catalog permissions. If retained WAL grows continuously, investigate stalled
+delivery or acknowledgement before PostgreSQL storage is exhausted.
 
 ## Docker Compose example shows duplicate dead-letter rows
 

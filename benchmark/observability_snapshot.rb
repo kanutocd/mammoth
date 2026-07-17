@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # Benchmark Mammoth::ObservabilitySnapshot over different local SQLite state
-# sizes. This helps operators understand /readyz and /metrics cost as delivered
-# ledgers and dead-letter tables grow.
+# sizes. This helps operators understand local /readyz and /metrics formatting
+# cost as delivered ledgers and dead-letter tables grow. Live PostgreSQL slot
+# inspection latency is intentionally excluded.
 
 require_relative "support"
 

@@ -15,18 +15,20 @@ module Mammoth
     # Default TCP port for the observability server.
     DEFAULT_PORT = 9393
 
-    attr_reader :config, :host, :port, :state_adapter, :logger, :server
+    attr_reader :config, :host, :port, :state_adapter, :slot_health_provider, :logger, :server
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param host [String, nil] bind host override
     # @param port [Integer, nil] bind port override
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
+    # @param slot_health_provider [#slot_health, nil] PostgreSQL slot health dependency
     # @param logger [WEBrick::Log, nil] optional WEBrick logger
-    def initialize(config, host: nil, port: nil, state_adapter: nil, logger: nil)
+    def initialize(config, host: nil, port: nil, state_adapter: nil, slot_health_provider: nil, logger: nil)
       @config = config
       @host = host || config.dig("observability", "host") || DEFAULT_HOST
       @port = port || config.dig("observability", "port") || DEFAULT_PORT
       @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
+      @slot_health_provider = slot_health_provider || Sources::Postgres.new(config)
       @logger = logger || WEBrick::Log.new($stderr, WEBrick::Log::WARN)
       @server = build_server
       mount_endpoints
@@ -81,7 +83,7 @@ module Mammoth
     end
 
     def snapshot
-      ObservabilitySnapshot.new(config, state_adapter: state_adapter)
+      ObservabilitySnapshot.new(config, state_adapter:, slot_health_provider:)
     end
   end
 end

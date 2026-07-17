@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Added PostgreSQL slot readiness diagnostics and Prometheus gauges for
+  inspection availability, presence, activity, retained WAL bytes, safe WAL
+  size, WAL status, invalidation, inactivity time, and restart/flush LSNs.
+- `/readyz` now fails closed when the configured slot is missing, inactive,
+  invalidated, conflicting, WAL-lost, or cannot be inspected.
+
 ### Fixed
 
 - Added PostgreSQL slot preflight before streaming and fail-closed handling for
@@ -20,8 +28,8 @@
 
 ### Quality
 
-- Upgraded pgoutput-client to 0.3.0 and covered slot identity, health,
-  continuity boundaries, and safe first-time creation.
+- Upgraded pgoutput-client to 0.4.0 and covered slot identity, health,
+  retained-WAL reporting, continuity boundaries, and safe first-time creation.
 - Added end-to-end source/coordinator coverage proving that a transaction with
   decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
 - Strengthened boundary coverage for source-owned position resolution and

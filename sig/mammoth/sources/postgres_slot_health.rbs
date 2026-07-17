@@ -1,0 +1,43 @@
+module Mammoth
+  module Sources
+    class PostgresSlotHealth
+      attr_reader slot_name: String
+      attr_reader present: bool
+      attr_reader active: bool
+      attr_reader retained_wal_bytes: Integer?
+      attr_reader wal_status: String?
+      attr_reader safe_wal_size: Integer?
+      attr_reader inactive_since: untyped
+      attr_reader invalidation_reason: String?
+      attr_reader restart_lsn: String?
+      attr_reader restart_lsn_bytes: Integer?
+      attr_reader confirmed_flush_lsn: String?
+      attr_reader confirmed_flush_lsn_bytes: Integer?
+      attr_reader conflicting: bool
+
+      def initialize: (
+        slot_name: String,
+        present: bool,
+        active: bool,
+        retained_wal_bytes: Integer?,
+        wal_status: String?,
+        safe_wal_size: Integer?,
+        inactive_since: untyped,
+        invalidation_reason: String?,
+        restart_lsn: String?,
+        restart_lsn_bytes: Integer?,
+        confirmed_flush_lsn: String?,
+        confirmed_flush_lsn_bytes: Integer?,
+        conflicting: bool
+      ) -> void
+      def self.missing: (String slot_name) -> PostgresSlotHealth
+      def ready?: () -> bool
+      def reason: () -> String?
+      def summary: () -> Hash[Symbol, untyped]
+
+      private
+
+      def blank?: (untyped value) -> bool
+    end
+  end
+end

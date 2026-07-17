@@ -96,6 +96,21 @@ checkpoint. Lost continuity requires an external backfill or reconciliation,
 followed by establishment of new safe operational state. Temporary slots are
 rejected when durable checkpoint recovery is requested.
 
+## Slot readiness and retained WAL
+
+The separate `mammoth observability CONFIG` process performs read-only slot
+inspection for `/readyz` and `/metrics`. Readiness requires the configured slot
+to exist, be active, retain a restart LSN, and have no loss, conflict, or
+invalidation state.
+
+Prometheus exposes `mammoth_postgres_slot_retained_wal_bytes`,
+`mammoth_postgres_slot_safe_wal_size_bytes`, `mammoth_postgres_slot_wal_status`,
+activity/readiness gauges, inactivity time, and numeric restart and
+confirmed-flush LSN positions. Alert on inspection failure, missing or unready
+slots, and retained WAL growth appropriate to the PostgreSQL volume. Mammoth
+reports these facts; deployment infrastructure remains responsible for disk
+capacity alerts.
+
 ## One slot, one active subscriber
 
 A PostgreSQL logical replication slot is consumed by one active subscriber at a time. Run one active Mammoth replica per logical replication slot.

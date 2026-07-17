@@ -42,6 +42,16 @@ module Mammoth
       assert_equal ["0/2A"], runner.acknowledgements
     end
 
+    def test_acknowledge_wraps_runner_failures
+      runner = Object.new
+      def runner.ack(_lsn) = raise("feedback failed")
+      source = Sources::Postgres.new(Configuration.load(fixture_config_path), runner:)
+
+      error = assert_raises(ReplicationError) { source.acknowledge("0/2A") }
+
+      assert_match(/WAL acknowledgement failed: feedback failed/, error.message)
+    end
+
     def test_parser_can_use_parse_interface
       parser = Object.new
       def parser.parse(payload) = "parsed-#{payload}"
@@ -520,7 +530,7 @@ module Mammoth
 
       error = assert_raises(ReplicationError) { preflight_source(runner).each.to_a }
 
-      assert_match(/pgoutput-client 0\.3\+/, error.message)
+      assert_match(/pgoutput-client 0\.4\+/, error.message)
     end
 
     def test_preflight_wraps_slot_inspection_failure
@@ -529,6 +539,61 @@ module Mammoth
       error = assert_raises(ReplicationError) { preflight_source(runner).each.to_a }
 
       assert_match(/slot preflight failed: catalog unavailable/, error.message)
+    end
+
+    def test_slot_health_normalizes_pgoutput_catalog_metrics
+      runner = PreflightRunner.new(
+        healthy_slot_status(
+          active: true,
+          retained_wal_bytes: 8192,
+          safe_wal_size: 4096,
+          inactive_since: nil,
+          restart_lsn: "1/10",
+          confirmed_flush_lsn: "1/20"
+        )
+      )
+
+      health = preflight_source(runner).slot_health
+
+      assert_predicate health, :ready?
+      assert_equal "mammoth_prod", health.slot_name
+      assert_equal 8192, health.retained_wal_bytes
+      assert_equal 4096, health.safe_wal_size
+      assert_equal 0x1_00000010, health.restart_lsn_bytes
+      assert_equal 0x1_00000020, health.confirmed_flush_lsn_bytes
+    end
+
+    def test_slot_health_reports_missing_slot
+      health = preflight_source(PreflightRunner.new(nil)).slot_health
+
+      refute_predicate health, :present
+      refute_predicate health, :ready?
+      assert_equal "slot is missing", health.reason
+    end
+
+    def test_slot_health_wraps_inspection_failures
+      source = preflight_source(PreflightRunner.new(RuntimeError.new("catalog unavailable")))
+
+      error = assert_raises(ReplicationError) { source.slot_health }
+
+      assert_match(/slot health inspection failed: catalog unavailable/, error.message)
+    end
+
+    def test_slot_health_preserves_mammoth_lsn_validation_errors
+      source = preflight_source(PreflightRunner.new(healthy_slot_status(restart_lsn: "invalid")))
+
+      error = assert_raises(ReplicationError) { source.slot_health }
+
+      assert_match(/invalid PostgreSQL slot metric LSN/, error.message)
+      refute_match(/slot health inspection failed/, error.message)
+    end
+
+    def test_slot_health_accepts_absent_optional_lsn
+      health = preflight_source(
+        PreflightRunner.new(healthy_slot_status(active: true, confirmed_flush_lsn: nil))
+      ).slot_health
+
+      assert_nil health.confirmed_flush_lsn_bytes
     end
 
     def test_preflight_rejects_wrong_slot_identity

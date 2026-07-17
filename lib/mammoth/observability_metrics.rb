@@ -3,6 +3,8 @@
 module Mammoth
   # Prometheus formatting helpers for operational and dispatch metrics.
   module ObservabilityMetrics
+    include PostgresObservabilityMetrics
+
     # Maps canonical CDC core metric names to Mammoth's Prometheus counters.
     DISPATCH_METRIC_NAMES = {
       CDC::Core::Observer.started_metric_name => "mammoth_dispatch_started_total",
@@ -14,7 +16,7 @@ module Mammoth
     private
 
     def metric_headers
-      operational_metric_headers + dispatch_metric_headers
+      operational_metric_headers + dispatch_metric_headers + postgres_metric_headers
     end
 
     def operational_metric_headers

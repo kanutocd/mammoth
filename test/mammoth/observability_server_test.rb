@@ -13,6 +13,7 @@ module Mammoth
         config = Configuration.load(write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: store.path)))
         adapter = OperationalState::SQLiteAdapter.new(store)
         server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, state_adapter: adapter,
+                                                 slot_health_provider: healthy_slot_health_provider,
                                                  logger: quiet_logger)
         thread = Thread.new { server.start }
         port = server.server.config.fetch(:Port)
@@ -27,6 +28,7 @@ module Mammoth
         assert_equal "ready", JSON.parse(ready.body).fetch("status")
         assert_equal "200", metrics.code
         assert_match(/mammoth_up\{mammoth_name="local_mammoth"\} 1/, metrics.body)
+        assert_match(/mammoth_postgres_slot_retained_wal_bytes.* 8192/, metrics.body)
       ensure
         server&.shutdown
         thread&.join
@@ -70,6 +72,18 @@ module Mammoth
     end
 
     private
+
+    def healthy_slot_health_provider
+      health = Sources::PostgresSlotHealth.new(
+        slot_name: "mammoth_prod", present: true, active: true,
+        retained_wal_bytes: 8192, wal_status: "reserved", safe_wal_size: 4096,
+        inactive_since: nil, invalidation_reason: nil,
+        restart_lsn: "0/10", restart_lsn_bytes: 16,
+        confirmed_flush_lsn: "0/20", confirmed_flush_lsn_bytes: 32,
+        conflicting: false
+      )
+      Struct.new(:slot_health).new(health)
+    end
 
     def quiet_logger
       WEBrick::Log.new(File::NULL)

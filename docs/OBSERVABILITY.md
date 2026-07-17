@@ -44,7 +44,8 @@ Example response:
 ### `GET /readyz`
 
 Readiness endpoint. It calls `ready?` on the configured operational-state
-adapter and reports the adapter's generic summary when ready.
+adapter and inspects the configured PostgreSQL replication slot through
+pgoutput-client.
 
 Ready response status code:
 
@@ -69,6 +70,18 @@ Example ready response:
     "path": "data/mammoth.db",
     "tables": ["schema_migrations", "checkpoints", "dead_letters", "delivered_envelopes"]
   },
+  "postgres_slot": {
+    "slot_name": "mammoth_prod",
+    "present": true,
+    "active": true,
+    "retained_wal_bytes": 8192,
+    "wal_status": "reserved",
+    "safe_wal_size": 4096,
+    "restart_lsn": "0/10",
+    "confirmed_flush_lsn": "0/20",
+    "ready": true,
+    "reason": null
+  },
   "checked_at": "2026-07-17T00:00:00Z"
 }
 ```
@@ -79,11 +92,13 @@ Unready response status code:
 503
 ```
 
-Unready responses use `"operational_state": "error"` and identify the selected
-adapter without exposing backend-specific field names.
+Operational-state failures use `"operational_state": "error"`. PostgreSQL
+failures retain `"operational_state": "ok"` and include a `postgres_slot`
+reason. Missing, inactive, WAL-lost, invalidated, conflicting, and restartless
+slots return `503`. Inspection errors also return `503`.
 
-Readiness is intentionally local. It does not create a PostgreSQL replication
-connection and does not deliver events.
+Readiness opens a short catalog connection but does not start a replication
+stream, create or drop slots, send feedback, or deliver events.
 
 ### `GET /metrics`
 
@@ -103,6 +118,13 @@ mammoth_dead_letters_pending_total{mammoth_name="local_mammoth",destination="pri
 mammoth_delivered_envelopes_total{mammoth_name="local_mammoth",destination="audit_webhook"} 3
 mammoth_dispatch_started_total{mammoth_name="local_mammoth",kind="transaction_envelope",size="4",transaction_id="42"} 1
 mammoth_dispatch_succeeded_total{mammoth_name="local_mammoth",kind="processor_result",retryable="false",status="success"} 1
+mammoth_postgres_slot_inspection_up{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 1
+mammoth_postgres_slot_present{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 1
+mammoth_postgres_slot_ready{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 1
+mammoth_postgres_slot_active{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 1
+mammoth_postgres_slot_retained_wal_bytes{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 8192
+mammoth_postgres_slot_safe_wal_size_bytes{mammoth_name="local_mammoth",slot_name="mammoth_prod"} 4096
+mammoth_postgres_slot_wal_status{mammoth_name="local_mammoth",slot_name="mammoth_prod",wal_status="reserved"} 1
 ```
 
 The dispatch counters come from `Mammoth::MetricsObserver`, which implements
@@ -116,12 +138,13 @@ vocabulary to these Prometheus counters:
 
 ## Operational model
 
-The observability server resolves the configured operational-state adapter. It
+The observability server resolves the configured operational-state adapter and
+uses Mammoth's PostgreSQL source boundary for read-only slot inspection. It
 does not open SQLite or construct concrete stores itself. With the built-in
-`sqlite` adapter, it is safe to run as a separate process that points at the
-same SQLite path used by the relay.
+`sqlite` adapter, run it as a separate process pointing at the same SQLite path
+and PostgreSQL configuration used by the relay.
 
-The endpoints expose local relay state only:
+The endpoints expose relay and PostgreSQL source health:
 
 - checkpoint row count
 - dead-letter row counts
@@ -129,11 +152,14 @@ The endpoints expose local relay state only:
 - destination-labeled dead-letter and delivered-envelope counts
 - started, succeeded, failed, and skipped dispatch counters with canonical core tags
 - configured operational-state adapter readiness
+- slot inspection availability, presence, activity, readiness, and WAL status
+- retained WAL bytes, safe WAL size, invalidation, and inactivity time
+- numeric restart and confirmed-flush LSN positions
 
 Dispatch counters are process-local. A snapshot created with the same
 `DispatchMetrics` registry as the running application exposes them. A separate
 `mammoth observability` process can always expose adapter-backed gauges, but it
 does not inherit another process's in-memory dispatch counters.
 
-The endpoints do not inspect PostgreSQL replication slots, send feedback, replay
-dead letters, or mutate delivery state.
+The endpoints inspect PostgreSQL replication slots read-only. They do not send
+feedback, create or drop slots, replay dead letters, or mutate delivery state.

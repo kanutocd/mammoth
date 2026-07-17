@@ -227,7 +227,8 @@ bundle exec ruby benchmark/observability_snapshot.rb
 
 Measures readiness and Prometheus metrics snapshot cost through a seeded
 `OperationalState::SQLiteAdapter` plus representative canonical dispatch
-counter series.
+counter series. It intentionally omits a live PostgreSQL slot provider, so
+catalog connection latency is outside this local snapshot benchmark.
 
 Useful for tuning:
 

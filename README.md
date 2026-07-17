@@ -64,7 +64,7 @@ Mammoth OSS includes:
 - Docker image support
 - public Helm chart support
 - unit and e2e test tasks
-- health and metrics endpoints
+- health, PostgreSQL slot readiness, and retained-WAL metrics endpoints
 - canonical CDC dispatch counters through a `CDC::Core::Observer`
 - explicit extension registries for state, destination, and runtime adapters
 - node identity and local capability reporting

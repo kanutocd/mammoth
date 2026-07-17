@@ -346,4 +346,7 @@ observability:
 
 `host` controls the bind address. `port` controls the HTTP port. The endpoints
 are started with `mammoth observability CONFIG` and include `/healthz`,
-`/readyz`, and `/metrics`.
+`/readyz`, and `/metrics`. Readiness combines the configured operational-state
+adapter with read-only PostgreSQL slot health. Metrics include retained WAL and
+slot status; the observability process never starts a replication stream or
+changes slot lifecycle.

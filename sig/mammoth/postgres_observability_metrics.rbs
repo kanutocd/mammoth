@@ -1,0 +1,18 @@
+module Mammoth
+  module PostgresObservabilityMetrics
+    POSTGRES_METRICS: Hash[String, String]
+
+    private
+
+    def config: () -> untyped
+    def metric_line: (String name, untyped value, ?destination: untyped?, ?labels: untyped) -> String
+    def postgres_metric_headers: () -> Array[String]
+    def postgres_metric_lines: (untyped health) -> Array[String]
+    def postgres_presence_metric_lines: (untyped health, labels: untyped) -> Array[String]
+    def postgres_status_metric_lines: (untyped health, labels: untyped) -> Array[String]
+    def postgres_optional_metric_lines: (untyped health, labels: untyped) -> Array[String]
+    def postgres_inspection_error_metric_lines: () -> Array[String]
+    def timestamp_seconds: (untyped value) -> Integer?
+    def invalidated?: (untyped health) -> bool
+  end
+end
