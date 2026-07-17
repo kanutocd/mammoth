@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../config/mammoth.schema.json
+
+mammoth:
+  name: postgres_observability
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_postgres_observability
+  publications:
+    - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 2.0
+
+webhook:
+  name: primary_webhook
+  url: http://webhook_receiver:9292/webhook
+  timeout_seconds: 5
+
+retry:
+  max_attempts: 3
+  schedule_seconds:
+    - 1
+    - 2
+    - 5
+
+sqlite:
+  path: .sqlite3/mammoth.db
+
+observability:
+  host: 0.0.0.0
+  port: 9393
+
+logging:
+  level: info

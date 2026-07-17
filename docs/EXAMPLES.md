@@ -80,6 +80,34 @@ docker compose up --build
 The receiver should report that the composite identity was verified for
 `INSERT`, `UPDATE`, and `DELETE`.
 
+## `examples/postgres_observability`
+
+Purpose:
+
+```text
+PostgreSQL replication catalogs
+    ↕
+Mammoth relay + observability process
+    ↓
+/healthz + /readyz + /metrics
+```
+
+Use this when you want to correlate Mammoth's read-only slot readiness and
+Prometheus gauges with `pg_replication_slots`, `pg_stat_replication`, and
+`pg_publication_tables`.
+
+Run it with:
+
+```bash
+cd examples/postgres_observability
+docker compose up -d --build
+docker compose run --rm postgres_inspector
+curl -s http://localhost:9394/readyz
+curl -s http://localhost:9394/metrics
+```
+
+The relay and observability server share operational-state storage, but
+process-local dispatch counters are not transferred between them.
 
 ## `examples/transaction_webhook`
 

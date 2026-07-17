@@ -1,0 +1,131 @@
+services:
+  postgres:
+    image: postgres:17
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          psql -U mammoth -d mammoth_demo
+          -tAc "SELECT 1 FROM pg_publication WHERE pubname = 'mammoth_publication'"
+          | grep -qx 1
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_slot_wal_keep_size=64MB
+    ports:
+      - "54336:5432"
+    volumes:
+      - postgres_observability_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        gem install webrick --no-document
+        ruby /app/webhook_receiver.rb
+    ports:
+      - "9299:9292"
+    volumes:
+      - ./receiver:/app:ro
+
+  mammoth:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth_observability_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      webhook_receiver:
+        condition: service_started
+
+  observability:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    command:
+      - observability
+      - /config/mammoth.yml
+    environment:
+      MAMMOTH_CONFIG: /config/mammoth.yml
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+    ports:
+      - "9394:9393"
+    volumes:
+      - ./config/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth_observability_data:/app/.sqlite3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mammoth:
+        condition: service_started
+
+  producer:
+    image: postgres:17
+    profiles: ["producer"]
+    environment:
+      PGPASSWORD: mammoth
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mammoth:
+        condition: service_started
+    command:
+      - psql
+      - -h
+      - postgres
+      - -U
+      - mammoth
+      - -d
+      - mammoth_demo
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /producer/produce.sql
+    volumes:
+      - ./producer/produce.sql:/producer/produce.sql:ro
+
+  postgres_inspector:
+    image: postgres:17
+    profiles: ["operator"]
+    environment:
+      PGPASSWORD: mammoth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - psql
+      - -h
+      - postgres
+      - -U
+      - mammoth
+      - -d
+      - mammoth_demo
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /operator/inspect.sql
+    volumes:
+      - ./postgres/inspect.sql:/operator/inspect.sql:ro
+
+volumes:
+  postgres_observability_data:
+  mammoth_observability_data:

@@ -12,6 +12,7 @@ unit tests Docker-free.
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
 | [`composite_replica_identity`](./composite_replica_identity) | Proves catalog-derived composite identity preservation across live `INSERT`, `UPDATE`, and `DELETE` events. | Yes |
 | [`slot_invalidation_recovery`](./slot_invalidation_recovery) | Demonstrates fail-closed restart and explicit operator recovery after PostgreSQL invalidates an idle slot. | Yes |
+| [`postgres_observability`](./postgres_observability) | Correlates Mammoth readiness and slot metrics with PostgreSQL replication catalogs. | Yes |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
@@ -45,6 +46,11 @@ does not depend on a conventional `id` column.
 The slot invalidation recovery example demonstrates the complementary operator
 boundary: a lost or invalidated slot must be dropped and re-established outside
 Mammoth before streaming can safely resume.
+
+The PostgreSQL observability example runs the relay and read-only observability
+server as separate processes. It correlates `/readyz` and Prometheus slot
+metrics with `pg_replication_slots`, `pg_stat_replication`, and publication
+catalog state while leaving database infrastructure monitoring outside Mammoth.
 
 They do not demonstrate DDL delivery, sequence synchronization, or automatic
 destination conflict resolution. PostgreSQL does not replicate DDL or sequence
