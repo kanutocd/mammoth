@@ -1,6 +1,7 @@
 # Mammoth Sample Webhook Delivery Demo
 
-This demo exercises the current Mammoth delivery path:
+This demo exercises the current Mammoth delivery path. The sample JSON is
+deserialized into an exact `CDC::Core::ChangeEvent` before delivery:
 
 ```text
 sample CDC-shaped PostgreSQL event

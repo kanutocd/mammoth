@@ -1,0 +1,15 @@
+module Mammoth
+  # Reconstructs exact CDC core work items from persisted webhook payloads.
+  class PersistedPayloadDeserializer
+    def self.event: (Hash[untyped, untyped] payload) -> CDC::Core::ChangeEvent
+    def self.transaction: (Hash[untyped, untyped] payload) -> CDC::Core::TransactionEnvelope
+
+    private
+
+    def self.stringify_keys: (untyped payload) -> Hash[String, untyped]
+    def self.enriched_metadata: (Hash[String, untyped] attributes) -> Hash[String, untyped]
+    def self.delete_values: (Hash[String, untyped] attributes, untyped data) -> untyped
+    def self.changed_values: (Hash[String, untyped] attributes, untyped data) -> untyped
+    def self.parse_time: (untyped value) -> untyped
+  end
+end

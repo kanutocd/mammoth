@@ -5,39 +5,30 @@ require "test_helper"
 module Mammoth
   class ReplicationConsumerTest < Minitest::Test
     def test_start_raises_until_cdc_source_is_configured
-      consumer = ReplicationConsumer.new
-
-      error = assert_raises(ReplicationError) { consumer.start {} }
+      error = assert_raises(ReplicationError) { ReplicationConsumer.new.start {} }
 
       assert_match(/source is not configured/, error.message)
     end
 
-    def test_start_yields_injected_cdc_events
-      source = [sample_event("0/1"), sample_event("0/2")]
-      consumer = ReplicationConsumer.new(source: source)
-      events = []
+    def test_start_yields_exact_core_events
+      source = [core_event(source_position: "0/1"), core_event(source_position: "0/2")]
+      events = ReplicationConsumer.new(source: source).start.to_a
 
-      count = consumer.start { |event| events << event }
-
-      assert_equal 2, count
       assert_equal source, events
+      assert(events.all? { |event| event.is_a?(CDC::Core::ChangeEvent) })
     end
 
     def test_start_returns_enumerator_without_block
-      consumer = ReplicationConsumer.new(source: [sample_event("0/1")])
+      consumer = ReplicationConsumer.new(source: [core_event])
 
       assert_instance_of Enumerator, consumer.start
     end
 
-    def test_start_flattens_transaction_envelopes_inside_arrays
-      events = [sample_event("0/1"), sample_event("0/2")]
-      envelope = FakeEnvelope.new(events, "tx-1")
-      consumer = ReplicationConsumer.new(source: [[envelope]])
-      consumed = []
+    def test_start_flattens_exact_core_transaction_envelopes_inside_arrays
+      events = [core_event(source_position: "0/1"), core_event(source_position: "0/2")]
+      envelope = core_envelope(events: events)
+      consumed = ReplicationConsumer.new(source: [[envelope]]).start.to_a
 
-      count = consumer.start { |event| consumed << event }
-
-      assert_equal 2, count
       assert_equal events, consumed
     end
 
@@ -47,87 +38,53 @@ module Mammoth
       assert_equal(0, consumer.start { |_event| flunk "nil work should not yield events" })
     end
 
-    def test_start_flattens_transaction_envelope_inside_array_with_plain_event
-      envelope = FakeEnvelope.new([sample_event("0/10"), sample_event("0/11")], "tx-2")
-      consumer = ReplicationConsumer.new(source: [[envelope, sample_event("0/12")]])
-      events = []
+    def test_start_flattens_mixed_core_work
+      envelope = core_envelope(
+        events: [core_event(source_position: "0/10"), core_event(source_position: "0/11")]
+      )
+      standalone = core_event(source_position: "0/12")
+      consumed = ReplicationConsumer.new(source: [[envelope, standalone]]).start.to_a
 
-      count = consumer.start { |event| events << event }
-
-      assert_equal 3, count
-      assert_equal(%w[0/10 0/11 0/12], events.map { |event| event.fetch("source_position") })
+      assert_equal %w[0/10 0/11 0/12], consumed.map(&:commit_lsn)
     end
 
-    def test_start_preserves_transaction_envelope_when_delivery_unit_is_transaction
-      events = [sample_event("0/1"), sample_event("0/2")]
-      envelope = FakeEnvelope.new(events, "tx-1")
-      consumer = ReplicationConsumer.new(source: [envelope], delivery_unit: :transaction)
-      consumed = []
+    def test_start_preserves_exact_core_envelope_for_transaction_delivery
+      envelope = core_envelope(events: [core_event, core_event(source_position: "0/2")])
+      consumed = ReplicationConsumer.new(source: [envelope], delivery_unit: :transaction).start.to_a
 
-      count = consumer.start { |work| consumed << work }
-
-      assert_equal 1, count
       assert_equal [envelope], consumed
+      assert_instance_of CDC::Core::TransactionEnvelope, consumed.fetch(0)
     end
 
-    def test_transaction_delivery_wraps_plain_hash_event_without_to_h_conversion
-      event = {
-        "operation" => "insert",
-        "source_position" => "0/plain",
-        "event_id" => "event-plain",
-        "occurred_at" => "2026-01-01T00:00:00Z"
-      }
-      consumer = ReplicationConsumer.new(source: [event], delivery_unit: :transaction)
-      consumed = []
+    def test_transaction_delivery_wraps_core_event_in_core_envelope
+      occurred_at = Time.utc(2026, 1, 1)
+      event = core_event(
+        event_id: "event-plain",
+        source_position: "0/plain",
+        transaction_id: "tx-plain",
+        occurred_at: occurred_at
+      )
+      envelope = ReplicationConsumer.new(source: [event], delivery_unit: :transaction).start.to_a.fetch(0)
 
-      assert_equal(1, consumer.start { |work| consumed << work })
-      envelope = consumed.fetch(0)
+      assert_instance_of CDC::Core::TransactionEnvelope, envelope
       assert_equal [event], envelope.events
-      assert_equal "event-plain", envelope.transaction_id
+      assert_equal "tx-plain", envelope.transaction_id
       assert_equal "0/plain", envelope.commit_lsn
+      assert_equal occurred_at, envelope.committed_at
     end
 
-    def test_start_rejects_non_cdc_work
-      consumer = ReplicationConsumer.new(source: [:not_cdc])
+    def test_transaction_delivery_uses_core_metadata_identity_when_transaction_id_is_absent
+      event = core_event(event_id: "event-identity", transaction_id: nil)
+      envelope = ReplicationConsumer.new(source: [event], delivery_unit: :transaction).start.to_a.fetch(0)
 
-      error = assert_raises(ReplicationError) { consumer.start {} }
-
-      assert_match(/non-CDC work: Symbol/, error.message)
+      assert_equal "event-identity", envelope.transaction_id
+      assert_same event.metadata, envelope.metadata
     end
 
-    def test_start_rejects_hash_without_cdc_position
-      consumer = ReplicationConsumer.new(source: [{ "operation" => "insert" }])
+    def test_start_rejects_non_core_work
+      error = assert_raises(ReplicationError) { ReplicationConsumer.new(source: [{ operation: :insert }]).start {} }
 
-      error = assert_raises(ReplicationError) { consumer.start {} }
-
-      assert_match(/non-CDC work: Hash/, error.message)
-    end
-
-    def test_start_accepts_symbol_keyed_cdc_events
-      event = { operation: "insert", commit_lsn: "0/20" }
-      consumer = ReplicationConsumer.new(source: [event])
-      events = []
-
-      assert_equal(1, consumer.start { |consumed| events << consumed })
-      assert_equal [event], events
-    end
-
-    def test_start_rejects_to_h_without_key_protocol
-      event = Object.new
-      def event.to_h = Object.new
-      consumer = ReplicationConsumer.new(source: [event])
-
-      error = assert_raises(ReplicationError) { consumer.start {} }
-
-      assert_match(/non-CDC work/, error.message)
-    end
-
-    FakeEnvelope = Data.define(:events, :transaction_id)
-
-    private
-
-    def sample_event(position)
-      { "operation" => "insert", "source_position" => position }
+      assert_match(/non-core work: Hash/, error.message)
     end
   end
 end

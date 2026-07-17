@@ -20,7 +20,7 @@ module Mammoth
 
     # Consume normalized CDC work from the configured source.
     #
-    # @yieldparam event [Object] CDC::Core::ChangeEvent-compatible event
+    # @yieldparam event [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope] core work item
     # @return [Integer] number of consumed events
     def start
       return enum_for(:start) unless block_given?
@@ -49,65 +49,33 @@ module Mammoth
 
     def flatten_cdc_work(work)
       return [] if work.nil?
-      return validate_transaction_envelope(work) if transaction_envelope?(work) && transaction_delivery?
-      return validate_events(work.events) if transaction_envelope?(work)
       return work.flat_map { |item| flatten_cdc_work(item) } if work.is_a?(Array)
-      return [synthetic_transaction_envelope(work)] if transaction_delivery?
+      return transaction_work(work) if work.is_a?(CDC::Core::TransactionEnvelope)
+      return event_work(work) if work.is_a?(CDC::Core::ChangeEvent)
 
-      validate_events([work])
+      raise ReplicationError, "CDC source yielded non-core work: #{work.class}"
     end
 
     def transaction_delivery?
       delivery_unit == :transaction
     end
 
-    def validate_transaction_envelope(envelope)
-      validate_events(envelope.events)
-      [envelope]
+    def transaction_work(envelope)
+      transaction_delivery? ? [envelope] : envelope.events
     end
 
-    def validate_events(events)
-      events.each { |event| validate_cdc_event!(event) }
+    def event_work(event)
+      transaction_delivery? ? [transaction_envelope(event)] : [event]
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-    def synthetic_transaction_envelope(event)
-      validate_cdc_event!(event)
-
-      event_hash = event.to_h
-      SyntheticTransactionEnvelope.new(
-        [event],
-        event_hash["transaction_id"] || event_hash[:transaction_id] ||
-          event_hash["xid"] || event_hash[:xid] || event_hash["event_id"] || event_hash[:event_id],
-        event_hash["commit_lsn"] || event_hash[:commit_lsn] ||
-          event_hash["source_position"] || event_hash[:source_position],
-        event_hash["committed_at"] || event_hash[:committed_at] ||
-          event_hash["occurred_at"] || event_hash[:occurred_at],
-        event_hash["metadata"] || event_hash[:metadata] || {}
+    def transaction_envelope(event)
+      CDC::Core::TransactionEnvelope.new(
+        transaction_id: event.transaction_id || event.metadata[:event_id] || event.commit_lsn,
+        events: [event],
+        commit_lsn: event.commit_lsn,
+        committed_at: event.occurred_at,
+        metadata: event.metadata
       )
     end
-    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-
-    def validate_cdc_event!(event)
-      return event if event.respond_to?(:to_h) && cdc_event_hash?(event.to_h)
-
-      raise ReplicationError, "CDC source yielded non-CDC work: #{event.class}"
-    end
-
-    def cdc_event_hash?(event_hash)
-      return false unless event_hash.respond_to?(:key?)
-
-      has_operation = event_hash.key?("operation") || event_hash.key?(:operation)
-      has_position = event_hash.key?("source_position") || event_hash.key?(:source_position) ||
-                     event_hash.key?("commit_lsn") || event_hash.key?(:commit_lsn)
-      has_operation && has_position
-    end
-
-    def transaction_envelope?(work)
-      work.respond_to?(:events) && work.respond_to?(:transaction_id)
-    end
-
-    SyntheticTransactionEnvelope = Data.define(:events, :transaction_id, :commit_lsn, :commit_time, :metadata)
-    private_constant :SyntheticTransactionEnvelope
   end
 end

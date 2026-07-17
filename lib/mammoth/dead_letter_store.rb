@@ -15,7 +15,7 @@ module Mammoth
 
     # Store a failed delivery.
     #
-    # @param event [Hash] normalized event payload
+    # @param event [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope] normalized core work item
     # @param destination_name [String] destination name
     # @param error [Exception, nil] delivery failure
     # @param retry_count [Integer] number of delivery attempts

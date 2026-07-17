@@ -39,8 +39,8 @@ module Mammoth
             @active += 1
             @max_active = [@max_active, @active].max
             Async::Task.current.sleep(0.05)
-            @delivered << event.fetch("event_id")
-            { status: "delivered", event_id: event.fetch("event_id") }
+            @delivered << event.metadata[:event_id]
+            { status: "delivered", event_id: event.metadata[:event_id] }
           ensure
             @active -= 1
           end
@@ -54,7 +54,15 @@ module Mammoth
           timeout: nil,
           preserve_order: true
         )
-        events = Array.new(4) { |index| { "event_id" => "event-\#{index}" } }
+        events = Array.new(4) do |index|
+          CDC::Core::ChangeEvent.new(
+            operation: :insert,
+            schema: "public",
+            table: "orders",
+            new_values: { "id" => index },
+            metadata: { "event_id" => "event-\#{index}" }
+          )
+        end
 
         results = runtime.process_many(events)
         runtime.shutdown

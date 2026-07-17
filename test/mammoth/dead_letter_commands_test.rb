@@ -63,8 +63,8 @@ module Mammoth
         db_path = File.join(dir, "mammoth.db")
         config_path = write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: db_path))
         store = dead_letter_store(db_path)
-        first = store.write(event: sample_event("event-1"), destination_name: "primary_webhook")
-        store.write(event: sample_event("event-2"), destination_name: "primary_webhook")
+        first = store.write(event: core_sample_event("event-1"), destination_name: "primary_webhook")
+        store.write(event: core_sample_event("event-2"), destination_name: "primary_webhook")
         store.resolve(first)
 
         stdout, stderr = capture_io do
@@ -279,7 +279,7 @@ module Mammoth
         with_two_test_servers do |primary_url, primary_received, audit_url, audit_received|
           config_path = write_file(File.join(dir, "mammoth.yml"), fanout_config(db_path, primary_url, audit_url))
           id = dead_letter_store(db_path).write(
-            event: sample_event,
+            event: core_sample_event,
             destination_name: "audit_webhook",
             error: RuntimeError.new("boom"),
             retry_count: 3
@@ -321,7 +321,7 @@ module Mammoth
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")
         config_path = write_file(File.join(dir, "mammoth.yml"), disabled_audit_fanout_config(db_path))
-        id = dead_letter_store(db_path).write(event: sample_event, destination_name: "audit_webhook")
+        id = dead_letter_store(db_path).write(event: core_sample_event, destination_name: "audit_webhook")
 
         stdout, stderr = capture_io do
           assert_equal 0, CLI.call(["dead-letters", "replay", config_path, id.to_s])
@@ -462,7 +462,7 @@ module Mammoth
 
     def write_dead_letter(db_path)
       dead_letter_store(db_path).write(
-        event: sample_event,
+        event: core_sample_event,
         destination_name: "primary_webhook",
         error: RuntimeError.new("boom"),
         retry_count: 3
@@ -474,7 +474,14 @@ module Mammoth
     end
 
     def transaction_envelope(events)
-      Data.define(:events, :transaction_id).new(events, "tx-1")
+      core_envelope(
+        events: events.map { |event| PersistedPayloadDeserializer.event(event) },
+        transaction_id: "tx-1"
+      )
+    end
+
+    def core_sample_event(event_id = "event-1")
+      PersistedPayloadDeserializer.event(sample_event(event_id))
     end
 
     def transaction_replay_setup(dir, webhook_url)
@@ -527,9 +534,9 @@ module Mammoth
     end
 
     def write_time_window_dead_letters(store)
-      old_id = store.write(event: sample_event("old-audit"), destination_name: "audit_webhook")
-      replay_id = store.write(event: sample_event("new-audit"), destination_name: "audit_webhook")
-      store.write(event: sample_event("new-primary"), destination_name: "primary_webhook")
+      old_id = store.write(event: core_sample_event("old-audit"), destination_name: "audit_webhook")
+      replay_id = store.write(event: core_sample_event("new-audit"), destination_name: "audit_webhook")
+      store.write(event: core_sample_event("new-primary"), destination_name: "primary_webhook")
       store.sqlite_store.database.execute("UPDATE dead_letters SET failed_at = ? WHERE id = ?",
                                           ["2026-07-05T00:00:00Z", old_id])
       store.sqlite_store.database.execute("UPDATE dead_letters SET failed_at = ? WHERE id = ?",

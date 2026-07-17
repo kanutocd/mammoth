@@ -25,34 +25,7 @@ require "mammoth/delivery_processor"
 require "mammoth/concurrent_delivery_runtime"
 
 module MammothBenchmarks
-  SyntheticEvent = Data.define(:operation, :namespace, :entity, :identity, :source_position, :metadata) do
-    def to_h
-      {
-        operation: operation,
-        namespace: namespace,
-        entity: entity,
-        identity: identity,
-        source_position: source_position,
-        metadata: metadata
-      }
-    end
-  end
-
-  SyntheticEnvelope = Data.define(:event_id, :transaction_id, :source_position, :commit_lsn, :committed_at, :events, :metadata) do
-    def to_h
-      {
-        event_id: event_id,
-        transaction_id: transaction_id,
-        source_position: source_position,
-        commit_lsn: commit_lsn,
-        committed_at: committed_at,
-        events: events,
-        metadata: metadata
-      }
-    end
-  end
-
-  # DeliveryWorker-compatible fake sink.
+  # DeliveryWorker test sink used with exact CDC core work items.
   #
   # Mammoth::DeliveryProcessor calls #deliver_transaction when configured with
   # delivery_unit: :transaction. This fake worker lets the benchmark exercise the
@@ -259,24 +232,23 @@ module MammothBenchmarks
       Array.new(count) do |index|
         position = 10_000 + index
         events = Array.new(events_per_transaction) do |event_index|
-          SyntheticEvent.new(
+          CDC::Core::ChangeEvent.new(
             operation: event_index.zero? ? "insert" : "update",
-            namespace: "public",
-            entity: "orders",
-            identity: { "id" => index + 1 },
-            source_position: position,
+            schema: "public",
+            table: "orders",
+            primary_key: { "id" => index + 1 },
+            new_values: { "id" => index + 1 },
+            commit_lsn: position,
             metadata: { "benchmark" => true, "event_index" => event_index }
           )
         end
 
-        SyntheticEnvelope.new(
-          event_id: SecureRandom.uuid,
+        CDC::Core::TransactionEnvelope.new(
           transaction_id: "#{prefix}-#{index + 1}",
-          source_position: position,
           commit_lsn: position,
           committed_at: Time.now.utc,
           events: events,
-          metadata: { "benchmark" => true }
+          metadata: { "benchmark" => true, "event_id" => SecureRandom.uuid }
         )
       end
     end

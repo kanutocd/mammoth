@@ -79,11 +79,11 @@ module Mammoth
 
     # Deliver an event with retry, checkpoint, and DLQ handling.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] delivery summary
-    def deliver_transaction: (untyped envelope) -> untyped
+    def deliver_transaction: (CDC::Core::TransactionEnvelope envelope) -> untyped
 
-    def deliver: (untyped event) -> untyped
+    def deliver: (CDC::Core::ChangeEvent event) -> untyped
 
     private
 

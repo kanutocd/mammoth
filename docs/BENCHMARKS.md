@@ -102,8 +102,9 @@ synthetic delivery worker
 CDC::Core::ProcessorResult + observer notification
 ```
 
-The synthetic envelopes represent work already normalized by
-`pgoutput-source-adapter`; source transaction buffering is outside this
+The benchmark generates exact `CDC::Core::ChangeEvent` and
+`CDC::Core::TransactionEnvelope` objects representing work already normalized
+by `pgoutput-source-adapter`; source transaction buffering is outside this
 downstream runtime benchmark.
 The runtime uses the core processor/result and observer contracts; its default
 no-op observer keeps this benchmark focused on scheduling and delivery cost.
@@ -245,7 +246,8 @@ bundle exec ruby benchmark/dlq_replay.rb
 ```
 
 Measures replay mechanics without network IO: pending-row reads, JSON parsing,
-targeted fanout replay, delivered ledger writes, and row resolution.
+exact core-object reconstruction, targeted fanout replay, delivered ledger
+writes, and row resolution.
 
 Useful for tuning:
 

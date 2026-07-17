@@ -200,15 +200,7 @@ module Mammoth
     end
 
     def sample_event
-      {
-        "event_id" => "event-1",
-        "source" => "postgresql",
-        "operation" => "insert",
-        "namespace" => "public",
-        "entity" => "orders",
-        "source_position" => "0/1",
-        "data" => { "id" => 1 }
-      }
+      core_event
     end
   end
   # rubocop:enable Metrics/ClassLength

@@ -72,7 +72,7 @@ module Mammoth
 
     # Deliver a transaction envelope with retry, checkpoint, and DLQ handling.
     #
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] delivery summary
     def deliver_transaction(envelope)
       deliver_work(envelope, serializer: TransactionEnvelopeSerializer, delivery_method: :deliver_transaction)
@@ -80,7 +80,7 @@ module Mammoth
 
     # Deliver an event with retry, checkpoint, and DLQ handling.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] delivery summary
     def deliver(event)
       deliver_work(event, serializer: EventSerializer, delivery_method: :deliver)

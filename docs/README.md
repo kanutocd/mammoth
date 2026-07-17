@@ -26,6 +26,8 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 The source adapter owns incremental PostgreSQL transaction normalization.
 Mammoth consumes exact CDC-core work items and does not rebuild transaction
 envelopes inside its PostgreSQL composition layer.
+Persisted JSON samples and dead letters cross an explicit deserialization
+boundary that reconstructs exact core objects before delivery.
 
 ## Start here
 

@@ -50,7 +50,12 @@ module Mammoth
         seen = []
         hooks = { after_start: ->(context) { seen << context.fetch(:processed) } }
 
-        command = Commands::StartCommand.new(config, source: [sample_event], output: output, lifecycle_hooks: hooks)
+        command = Commands::StartCommand.new(
+          config,
+          source: [PersistedPayloadDeserializer.event(sample_event)],
+          output: output,
+          lifecycle_hooks: hooks
+        )
 
         assert_equal 0, command.call
 

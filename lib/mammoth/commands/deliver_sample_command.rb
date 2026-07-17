@@ -23,7 +23,7 @@ module Mammoth
       def call
         raise ConfigurationError, "event JSON file not found: #{event_path}" unless File.file?(event_path)
 
-        event = JSON.parse(File.read(event_path))
+        event = PersistedPayloadDeserializer.event(JSON.parse(File.read(event_path)))
         processed = Application.new(config, source: [event], lifecycle_hooks: lifecycle_hooks).start
         output.puts "Processed sample events: #{processed}"
         0

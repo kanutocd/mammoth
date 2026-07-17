@@ -101,7 +101,7 @@ module Mammoth
           YAML
         )
         sink = DeliveryWorkerTest::RecordingSink.new
-        envelope = FakeEnvelope.new([sample_event("event-1", "0/1"), sample_event("event-2", "0/2")], "tx-1")
+        envelope = core_envelope(events: [sample_event("event-1", "0/1"), sample_event("event-2", "0/2")], transaction_id: "tx-1")
         app = Application.new(Configuration.load(config_path), source: [envelope], sink: sink, sleeper: ->(_seconds) {})
 
         assert_equal 1, app.start
@@ -129,7 +129,7 @@ module Mammoth
           YAML
         )
         sink = DeliveryWorkerTest::RecordingSink.new
-        envelope = FakeEnvelope.new([sample_event("event-1", "0/1")], "tx-inline")
+        envelope = core_envelope(events: [sample_event("event-1", "0/1")], transaction_id: "tx-inline")
         app = Application.new(Configuration.load(config_path), source: [envelope], sink: sink, sleeper: ->(_seconds) {})
 
         assert_equal 1, app.start
@@ -262,7 +262,7 @@ module Mammoth
           YAML
         )
         sink = DeliveryWorkerTest::RecordingSink.new
-        envelope = FakeEnvelope.new([sample_event("event-1", "0/1")], "tx-default-order")
+        envelope = core_envelope(events: [sample_event("event-1", "0/1")], transaction_id: "tx-default-order")
         app = Application.new(Configuration.load(config_path), source: [envelope], sink: sink, sleeper: ->(_seconds) {})
 
         assert_equal 1, app.start
@@ -309,7 +309,7 @@ module Mammoth
           YAML
         )
         sink = DeliveryWorkerTest::RecordingSink.new
-        envelope = FakeEnvelope.new([sample_event("event-no-order", "0/no-order")], "tx-no-order")
+        envelope = core_envelope(events: [sample_event("event-no-order", "0/no-order")], transaction_id: "tx-no-order")
         app = Application.new(Configuration.load(config_path), source: [envelope], sink: sink, sleeper: ->(_seconds) {})
 
         assert_equal 1, app.start
@@ -358,7 +358,6 @@ module Mammoth
       refute_respond_to runtime, :shutdown
     end
 
-    FakeEnvelope = Data.define(:events, :transaction_id)
     StubStateAdapter = Data.define(:dead_letter_store, :delivered_envelope_store)
     FakeConsumer = Data.define(:items) do
       def start(&block)
@@ -388,15 +387,7 @@ module Mammoth
     end
 
     def sample_event(event_id, position)
-      {
-        "event_id" => event_id,
-        "source" => "postgresql",
-        "operation" => "insert",
-        "namespace" => "public",
-        "entity" => "orders",
-        "source_position" => position,
-        "data" => { "id" => event_id }
-      }
+      core_event(event_id: event_id, source_position: position, data: { "id" => event_id })
     end
 
     def destination_policy_config(db_path)

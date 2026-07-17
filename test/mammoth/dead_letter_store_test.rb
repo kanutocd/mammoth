@@ -107,15 +107,7 @@ module Mammoth
     private
 
     def sample_event(event_id = "event-1")
-      {
-        "event_id" => event_id,
-        "source" => "postgresql",
-        "operation" => "insert",
-        "namespace" => "public",
-        "entity" => "orders",
-        "source_position" => "0/16F4A8B0",
-        "data" => { "id" => 1 }
-      }
+      core_event(event_id: event_id, source_position: "0/16F4A8B0")
     end
   end
 end

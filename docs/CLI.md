@@ -81,7 +81,8 @@ systemctl restart mammoth
 
 ## `mammoth deliver-sample CONFIG EVENT_JSON`
 
-Delivers one CDC-shaped JSON event through Mammoth's delivery path.
+Deserializes one persisted CDC JSON event into an exact
+`CDC::Core::ChangeEvent`, then sends it through Mammoth's delivery path.
 
 ```bash
 mammoth deliver-sample \
@@ -104,7 +105,11 @@ mammoth dead-letters replay config/mammoth.yml 12
 
 `list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. Use `--destination`, `--failed-after`, `--failed-before`, and `--limit` to narrow the result set.
 
-`replay` re-delivers the stored payload through the current Mammoth configuration and marks the row resolved on success. Passing explicit IDs replays those rows. Without IDs, replay uses the same filters as `list`, so operators can replay a specific destination, status, and failed-at time window.
+`replay` reconstructs the stored payload as an exact `CDC::Core::ChangeEvent`
+or `CDC::Core::TransactionEnvelope`, re-delivers it through the current Mammoth
+configuration, and marks the row resolved on success. Passing explicit IDs
+replays those rows. Without IDs, replay uses the same filters as `list`, so
+operators can replay a specific destination, status, and failed-at time window.
 
 If the current configuration disables the destination or its route no longer
 matches the payload, replay reports `skipped` and leaves the row pending.

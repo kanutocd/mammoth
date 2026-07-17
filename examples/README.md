@@ -19,11 +19,12 @@ unit tests Docker-free.
 
 ## Boundary
 
-The sample examples use `mammoth deliver-sample` so delivery-ledger,
-checkpointing, and DLQ behavior can be exercised without requiring Docker or
-PostgreSQL in the unit suite. The live replication examples are the place where
-PostgreSQL, logical replication, TransactionEnvelope delivery, and the CDC
-Ecosystem source adapter are intentionally exercised together.
+The sample examples use `mammoth deliver-sample`, which reconstructs their JSON
+payloads as exact `CDC::Core::ChangeEvent` objects before delivery. This lets
+delivery-ledger, checkpointing, and DLQ behavior be exercised without requiring
+Docker or PostgreSQL in the unit suite. The live replication examples are the
+place where PostgreSQL, logical replication, TransactionEnvelope delivery, and
+the CDC Ecosystem source adapter are intentionally exercised together.
 
 In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.

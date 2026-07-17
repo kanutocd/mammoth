@@ -29,6 +29,10 @@ item. `DeliveryWorker` still owns retry, checkpoint, delivered-ledger, and DLQ
 behavior; the processor only translates its final delivery summary into the
 core result contract.
 
+Runtime inputs are exact `CDC::Core::ChangeEvent` or
+`CDC::Core::TransactionEnvelope` instances. Runtime adapters should not accept
+hashes or private objects that merely expose similar methods.
+
 Both built-in runtimes accept a `CDC::Core::Observer` and emit canonical
 `dispatch_started`, `dispatch_succeeded`, `dispatch_failed`, and
 `dispatch_skipped` notifications. `Mammoth::Application` installs

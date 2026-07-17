@@ -10,29 +10,29 @@ module Mammoth
 
     # Deliver an event to every configured destination.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] aggregate fanout summary
-    def deliver: (untyped event) -> untyped
+    def deliver: (CDC::Core::ChangeEvent event) -> untyped
 
     # Deliver a transaction envelope to every configured destination.
     #
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] aggregate fanout summary
-    def deliver_transaction: (untyped envelope) -> untyped
+    def deliver_transaction: (CDC::Core::TransactionEnvelope envelope) -> untyped
 
     # Deliver an event to one configured destination.
     #
     # @param destination_name [String] destination name
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] destination delivery summary
-    def deliver_to: (String destination_name, untyped event) -> untyped
+    def deliver_to: (String destination_name, CDC::Core::ChangeEvent event) -> untyped
 
     # Deliver a transaction envelope to one configured destination.
     #
     # @param destination_name [String] destination name
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] destination delivery summary
-    def deliver_transaction_to: (String destination_name, untyped envelope) -> untyped
+    def deliver_transaction_to: (String destination_name, CDC::Core::TransactionEnvelope envelope) -> untyped
 
     private
 

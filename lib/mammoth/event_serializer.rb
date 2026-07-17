@@ -15,17 +15,19 @@ module Mammoth
     # Default source label used in serialized webhook payloads.
     DEFAULT_SOURCE = "postgresql"
 
-    # Serialize an event-like object into a webhook-ready Hash.
+    # Serialize a core change event into a webhook-ready Hash.
     #
-    # @param event [Hash, #to_h] normalized CDC event
+    # @param event [CDC::Core::ChangeEvent] normalized CDC event
     # @return [Hash] webhook payload
     def self.call(event)
       new(event).call
     end
 
-    # @param event [Hash, #to_h] normalized CDC event
+    # @param event [CDC::Core::ChangeEvent] normalized CDC event
     def initialize(event)
-      @event = event.respond_to?(:to_h) ? event.to_h : event
+      raise ArgumentError, "event must be a CDC::Core::ChangeEvent" unless event.is_a?(CDC::Core::ChangeEvent)
+
+      @event = event.to_h
     end
 
     # Return the webhook payload.
@@ -33,19 +35,20 @@ module Mammoth
     # @return [Hash] webhook payload
     def call
       event_hash = stringify_keys(@event)
+      metadata = stringify_keys(event_hash["metadata"] || {})
       {
-        "event_id" => event_hash["event_id"] || SecureRandom.uuid,
-        "source" => event_hash["source"] || DEFAULT_SOURCE,
+        "event_id" => event_id(metadata),
+        "source" => source(metadata),
         "operation" => normalize_operation(event_hash.fetch("operation")),
-        "namespace" => event_hash["namespace"] || event_hash["schema"],
-        "entity" => event_hash["entity"] || event_hash["table"],
-        "identity" => event_hash["identity"] || event_hash["primary_key"],
-        "source_position" => event_hash["source_position"] || event_hash["commit_lsn"],
+        "namespace" => event_hash["schema"],
+        "entity" => event_hash["table"],
+        "identity" => event_hash["primary_key"],
+        "source_position" => event_hash["commit_lsn"],
         "transaction_id" => event_hash["transaction_id"],
         "occurred_at" => occurred_at(event_hash),
         "data" => event_data(event_hash),
-        "changes" => event_hash["changes"] || [],
-        "metadata" => event_hash["metadata"] || {}
+        "changes" => metadata["changes"] || [],
+        "metadata" => metadata
       }
     end
 
@@ -64,6 +67,14 @@ module Mammoth
 
     def normalize_operation(operation)
       operation.to_s
+    end
+
+    def event_id(metadata)
+      metadata["event_id"] || SecureRandom.uuid
+    end
+
+    def source(metadata)
+      metadata["source"] || DEFAULT_SOURCE
     end
 
     def occurred_at(event_hash)

@@ -18,7 +18,7 @@ module Mammoth
     def test_delivers_event_to_webhook
       with_test_server(201) do |url, received|
         sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
-        result = sink.deliver("event_id" => "event-1", "operation" => "insert", "data" => { "id" => 1 })
+        result = sink.deliver(core_event(event_id: "event-1", data: { "id" => 1 }))
 
         assert_equal "delivered", result.fetch(:status)
         assert_equal 201, result.fetch(:http_status)
@@ -41,7 +41,7 @@ module Mammoth
           }
         )
 
-        sink.deliver("event_id" => "event-headers", "operation" => "insert")
+        sink.deliver(core_event(event_id: "event-headers"))
 
         assert_equal "static-value", received.fetch(:headers).fetch("x-static").fetch(0)
         assert_equal "Bearer test-token", received.fetch(:headers).fetch("authorization").fetch(0)
@@ -85,7 +85,7 @@ module Mammoth
           }
         )
 
-        sink.deliver("event_id" => "event-signed", "operation" => "insert")
+        sink.deliver(core_event(event_id: "event-signed"))
 
         timestamp = received.fetch(:headers).fetch("x-test-timestamp").fetch(0)
         signature = received.fetch(:headers).fetch("x-test-signature").fetch(0)
@@ -133,9 +133,9 @@ module Mammoth
     def test_delivers_transaction_envelope_to_webhook
       with_test_server(202) do |url, received|
         sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
-        envelope = FakeEnvelope.new(
-          [{ "event_id" => "event-1", "operation" => "insert", "source_position" => "0/1" }],
-          "tx-1"
+        envelope = core_envelope(
+          events: [core_event(event_id: "event-1", source_position: "0/1")],
+          transaction_id: "tx-1"
         )
 
         result = sink.deliver_transaction(envelope)
@@ -151,7 +151,7 @@ module Mammoth
         sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
 
         error = assert_raises(DeliveryError) do
-          sink.deliver("event_id" => "event-1", "operation" => "insert")
+          sink.deliver(core_event(event_id: "event-1"))
         end
 
         assert_match(/HTTP 500/, error.message)
@@ -161,10 +161,8 @@ module Mammoth
     def test_raises_delivery_error_for_unreachable_host
       sink = WebhookSink.new(name: "primary_webhook", url: "http://127.0.0.1:1/webhook", timeout_seconds: 1)
 
-      assert_raises(DeliveryError) { sink.deliver("event_id" => "event-1", "operation" => "insert") }
+      assert_raises(DeliveryError) { sink.deliver(core_event(event_id: "event-1")) }
     end
-
-    FakeEnvelope = Data.define(:events, :transaction_id)
 
     private
 

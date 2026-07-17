@@ -5,16 +5,6 @@ require "json"
 module Mammoth
   # Small command dispatcher for Mammoth's operator-facing CLI.
   class CLI
-    # Internal replay envelope used for transaction dead-letter recovery.
-    DEAD_LETTER_TRANSACTION_ENVELOPE = Data.define(
-      :events,
-      :transaction_id,
-      :source_position,
-      :commit_lsn,
-      :committed_at,
-      :metadata
-    )
-
     # Human-readable command usage printed for invalid or incomplete invocations.
     USAGE = [
       "Usage:",

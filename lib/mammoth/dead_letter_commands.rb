@@ -7,16 +7,6 @@ module Mammoth
   # Operator commands for inspecting and replaying dead letters.
   # rubocop:disable Metrics/ClassLength
   class DeadLetterCommands
-    # Internal replay envelope used for transaction dead-letter recovery.
-    DEAD_LETTER_TRANSACTION_ENVELOPE = Data.define(
-      :events,
-      :transaction_id,
-      :source_position,
-      :commit_lsn,
-      :committed_at,
-      :metadata
-    )
-
     attr_reader :argv, :lifecycle_hooks
 
     # @param argv [Array<String>] command line arguments
@@ -256,9 +246,10 @@ module Mammoth
     end
 
     def replay_event(destination_name, payload)
-      return worker.deliver_to(destination_name, payload) if worker.respond_to?(:deliver_to)
+      event = PersistedPayloadDeserializer.event(payload)
+      return worker.deliver_to(destination_name, event) if worker.respond_to?(:deliver_to)
 
-      worker.deliver(payload)
+      worker.deliver(event)
     end
 
     def replay_transaction(destination_name, envelope)
@@ -276,14 +267,7 @@ module Mammoth
     end
 
     def transaction_envelope(payload)
-      DEAD_LETTER_TRANSACTION_ENVELOPE.new(
-        payload.fetch("events"),
-        payload.fetch("transaction_id"),
-        payload["source_position"],
-        payload["commit_lsn"],
-        payload["committed_at"],
-        payload["metadata"] || {}
-      )
+      PersistedPayloadDeserializer.transaction(payload)
     end
 
     def show_payload(row)

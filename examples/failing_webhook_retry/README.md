@@ -1,7 +1,8 @@
 # Mammoth Failing Webhook Retry Demo
 
 This example demonstrates Mammoth's reliability behavior when a destination does
-not accept delivery:
+not accept delivery. Its sample JSON is reconstructed as an exact
+`CDC::Core::ChangeEvent` before entering the delivery pipeline:
 
 ```text
 sample CDC-shaped event

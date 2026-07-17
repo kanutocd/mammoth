@@ -113,8 +113,12 @@ module Mammoth
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
         worker = build_worker(sqlite, sink: sink)
-        envelope = FakeEnvelope.new(
-          [sample_event.merge("source_position" => "0/1"), sample_event.merge("source_position" => "0/2")], "tx-1"
+        envelope = core_envelope(
+          events: [
+            core_event(event_id: "event-1", source_position: "0/1"),
+            core_event(event_id: "event-2", source_position: "0/2")
+          ],
+          transaction_id: "tx-1"
         )
 
         result = worker.deliver_transaction(envelope)
@@ -159,18 +163,8 @@ module Mammoth
     end
 
     def sample_event
-      {
-        "event_id" => "event-1",
-        "source" => "postgresql",
-        "operation" => "insert",
-        "namespace" => "public",
-        "entity" => "orders",
-        "source_position" => "0/16F4A8B0",
-        "data" => { "id" => 1 }
-      }
+      core_event(event_id: "event-1", source_position: "0/16F4A8B0")
     end
-
-    FakeEnvelope = Data.define(:events, :transaction_id)
 
     class RecordingSink
       attr_reader :name, :delivered_transactions, :delivered_events
@@ -183,7 +177,8 @@ module Mammoth
 
       def deliver(event)
         @delivered_events += 1
-        { event_id: event.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
+        payload = EventSerializer.call(event)
+        { event_id: payload.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
       end
 
       def deliver_transaction(envelope)

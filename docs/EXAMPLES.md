@@ -15,6 +15,8 @@ webhook receiver
 ```
 
 Use this when you want a deterministic happy-path delivery demo without running logical replication.
+`mammoth deliver-sample` reconstructs the persisted JSON fixture as an exact
+`CDC::Core::ChangeEvent` before the delivery runtime receives it.
 
 ## `examples/live_postgres_webhook`
 

@@ -11,21 +11,16 @@ module Mammoth
 
     def initialize: (?source: untyped, ?delivery_unit: untyped) -> void
 
-    def start: () ?{ (untyped event) -> untyped } -> (Integer | Enumerator[untyped, Integer])
+    def start: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) event) -> untyped } -> (Integer | Enumerator[untyped, Integer])
 
     private
 
     def each_event: () { (untyped event) -> untyped } -> untyped
     def effective_source: () -> untyped
     def flatten_cdc_work: (untyped work) -> Array[untyped]
-    def validate_events: (Array[untyped] events) -> Array[untyped]
-    def validate_cdc_event!: (untyped event) -> untyped
-    def cdc_event_hash?: (untyped event_hash) -> bool
     def transaction_delivery?: () -> bool
-    def validate_transaction_envelope: (untyped envelope) -> Array[untyped]
-    def synthetic_transaction_envelope: (untyped event) -> untyped
-    def transaction_envelope?: (untyped work) -> bool
-
-    SyntheticTransactionEnvelope: untyped
+    def transaction_work: (CDC::Core::TransactionEnvelope envelope) -> Array[untyped]
+    def event_work: (CDC::Core::ChangeEvent event) -> Array[untyped]
+    def transaction_envelope: (CDC::Core::ChangeEvent event) -> CDC::Core::TransactionEnvelope
   end
 end

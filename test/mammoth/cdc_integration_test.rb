@@ -5,7 +5,7 @@ require "test_helper"
 module Mammoth
   class CDCIntegrationTest < Minitest::Test
     def test_serializer_projects_cdc_core_change_event_shape
-      event = FakeChangeEvent.new
+      event = change_event
 
       payload = EventSerializer.call(event)
 
@@ -18,8 +18,8 @@ module Mammoth
     end
 
     def test_consumer_flattens_transaction_envelopes_into_events
-      events = [FakeChangeEvent.new, FakeChangeEvent.new]
-      envelope = FakeTransactionEnvelope.new(events)
+      events = [change_event, change_event]
+      envelope = core_envelope(events: events)
       consumer = ReplicationConsumer.new(source: [envelope])
       consumed = []
 
@@ -29,22 +29,18 @@ module Mammoth
       assert_equal events, consumed
     end
 
-    class FakeChangeEvent
-      def to_h
-        {
-          "operation" => :insert,
-          "schema" => "public",
-          "table" => "orders",
-          "primary_key" => { "id" => 1 },
-          "commit_lsn" => "0/16F4A8B0",
-          "new_values" => { "id" => 1, "total" => 100 },
-          "metadata" => { "source" => "pgoutput" }
-        }
-      end
-    end
+    private
 
-    FakeTransactionEnvelope = Data.define(:events) do
-      def transaction_id = "tx-1"
+    def change_event
+      CDC::Core::ChangeEvent.new(
+        operation: :insert,
+        schema: "public",
+        table: "orders",
+        primary_key: { "id" => 1 },
+        commit_lsn: "0/16F4A8B0",
+        new_values: { "id" => 1, "total" => 100 },
+        metadata: { "source" => "pgoutput" }
+      )
     end
   end
 end

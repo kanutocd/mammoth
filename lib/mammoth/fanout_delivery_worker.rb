@@ -14,7 +14,7 @@ module Mammoth
 
     # Deliver an event to every configured destination.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] aggregate fanout summary
     def deliver(event)
       fanout(:deliver, event)
@@ -22,7 +22,7 @@ module Mammoth
 
     # Deliver a transaction envelope to every configured destination.
     #
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] aggregate fanout summary
     def deliver_transaction(envelope)
       fanout(:deliver_transaction, envelope)
@@ -31,7 +31,7 @@ module Mammoth
     # Deliver an event to one configured destination.
     #
     # @param destination_name [String] destination name
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] destination delivery summary
     def deliver_to(destination_name, event)
       worker_for(destination_name).deliver(event)
@@ -40,7 +40,7 @@ module Mammoth
     # Deliver a transaction envelope to one configured destination.
     #
     # @param destination_name [String] destination name
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] destination delivery summary
     def deliver_transaction_to(destination_name, envelope)
       worker_for(destination_name).deliver_transaction(envelope)

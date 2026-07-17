@@ -6,40 +6,12 @@ require "securerandom"
 require "socket"
 require "tmpdir"
 require "time"
+require "cdc/core"
 
 ROOT = File.expand_path("..", __dir__)
 $LOAD_PATH.unshift(File.join(ROOT, "lib"))
 
 module MammothBenchmarks
-  SyntheticEvent = Data.define(:event_id, :operation, :namespace, :entity, :identity, :source_position, :metadata) do
-    def to_h
-      {
-        "event_id" => event_id,
-        "source" => "postgresql",
-        "operation" => operation,
-        "namespace" => namespace,
-        "entity" => entity,
-        "identity" => identity,
-        "source_position" => source_position,
-        "metadata" => metadata
-      }
-    end
-  end
-
-  SyntheticEnvelope = Data.define(:event_id, :transaction_id, :source_position, :commit_lsn, :committed_at, :events, :metadata) do
-    def to_h
-      {
-        "event_id" => event_id,
-        "transaction_id" => transaction_id,
-        "source_position" => source_position,
-        "commit_lsn" => commit_lsn,
-        "committed_at" => committed_at,
-        "events" => events,
-        "metadata" => metadata
-      }
-    end
-  end
-
   module Helpers
     module_function
 
@@ -117,14 +89,19 @@ module MammothBenchmarks
     def build_events(count, prefix: "event", source_position: nil)
       Array.new(count) do |index|
         position = source_position || (10_000 + index).to_s
-        SyntheticEvent.new(
-          "#{prefix}-#{index + 1}",
-          index.zero? ? "insert" : "update",
-          "public",
-          "orders",
-          { "id" => index + 1 },
-          position,
-          { "benchmark" => true, "event_index" => index }
+        CDC::Core::ChangeEvent.new(
+          operation: index.zero? ? :insert : :update,
+          schema: "public",
+          table: "orders",
+          new_values: { "id" => index + 1 },
+          primary_key: { "id" => index + 1 },
+          commit_lsn: position,
+          metadata: {
+            "benchmark" => true,
+            "event_id" => "#{prefix}-#{index + 1}",
+            "event_index" => index,
+            "source" => "postgresql"
+          }
         )
       end
     end
@@ -133,14 +110,12 @@ module MammothBenchmarks
       Array.new(count) do |index|
         position = (10_000 + index).to_s
         events = build_events(events_per_transaction, prefix: "#{prefix}-#{index + 1}", source_position: position)
-        SyntheticEnvelope.new(
-          SecureRandom.uuid,
-          "#{prefix}-#{index + 1}",
-          position,
-          position,
-          Time.now.utc.iso8601,
-          events,
-          { "benchmark" => true }
+        CDC::Core::TransactionEnvelope.new(
+          transaction_id: "#{prefix}-#{index + 1}",
+          commit_lsn: position,
+          committed_at: Time.now.utc,
+          events: events,
+          metadata: { "benchmark" => true, "event_id" => SecureRandom.uuid }
         )
       end
     end

@@ -88,6 +88,11 @@ concurrent runtimes notify a `CDC::Core::Observer`; Mammoth's default observer
 maps the canonical started, succeeded, failed, and skipped notifications to
 Prometheus counters.
 
+`Mammoth::ReplicationConsumer` accepts only exact core events and transaction
+envelopes. Operator-facing JSON, such as `deliver-sample` input and persisted
+dead letters, is reconstructed by `PersistedPayloadDeserializer` before it
+re-enters delivery; stored hashes do not masquerade as live CDC work.
+
 ## Extensions
 
 Mammoth OSS exposes small adapter registries for future extensions:
@@ -144,7 +149,8 @@ bundle exec ./exe/mammoth start config/mammoth.example.yml
 bundle exec ./exe/mammoth observability config/mammoth.example.yml
 ```
 
-Deliver a single normalized event JSON file through Mammoth's delivery path:
+Reconstruct and deliver a single persisted event JSON file through Mammoth's
+core delivery path:
 
 ```bash
 bundle exec ./exe/mammoth deliver-sample \

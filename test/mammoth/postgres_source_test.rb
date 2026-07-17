@@ -17,7 +17,9 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal [sample_event("decoded-parsed-payload-1")], source.each.to_a
+      events = source.each.to_a
+      assert_equal ["decoded-parsed-payload-1"], events.map(&:commit_lsn)
+      assert(events.all? { |event| event.is_a?(CDC::Core::ChangeEvent) })
     end
 
     def test_each_returns_enumerator_without_block
@@ -43,7 +45,7 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal "parsed-payload", source.each.first.fetch("source_position")
+      assert_equal "parsed-payload", source.each.first.commit_lsn
     end
 
     def test_decoder_can_use_decode_interface
@@ -57,11 +59,11 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal "decoded-payload", source.each.first.fetch("source_position")
+      assert_equal "decoded-payload", source.each.first.commit_lsn
     end
 
     def test_adapter_can_use_streaming_normalization_interface
-      adapter = streaming_adapter { |decoded| { "operation" => "insert", "source_position" => decoded } }
+      adapter = streaming_adapter { |decoded| sample_event(decoded) }
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
         runner: FakeRunner.new(["payload"]),
@@ -70,7 +72,7 @@ module Mammoth
         adapter: adapter
       )
 
-      assert_equal "payload", source.each.first.fetch("source_position")
+      assert_equal "payload", source.each.first.commit_lsn
     end
 
     def test_ignores_nil_decoded_messages
@@ -96,7 +98,7 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal "processed-payload", source.each.first.fetch("source_position")
+      assert_equal "processed-payload", source.each.first.commit_lsn
     end
 
     def test_decoder_decode_interface_can_receive_metadata
@@ -110,7 +112,7 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal "payload-0/42", source.each.first.fetch("source_position")
+      assert_equal "payload-0/42", source.each.first.commit_lsn
     end
 
     def test_decoder_call_interface_can_receive_metadata
@@ -123,7 +125,7 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal "payload-0/43", source.each.first.fetch("source_position")
+      assert_equal "payload-0/43", source.each.first.commit_lsn
     end
 
     def test_adapter_can_return_array_of_work
@@ -135,7 +137,9 @@ module Mammoth
         adapter: streaming_adapter { |decoded| [nil, sample_event(decoded)] }
       )
 
-      assert_equal [sample_event("payload")], source.each.to_a
+      events = source.each.to_a
+      assert_equal ["payload"], events.map(&:commit_lsn)
+      assert_instance_of CDC::Core::ChangeEvent, events.fetch(0)
     end
 
     def test_reports_adapter_with_no_supported_interface
@@ -213,7 +217,7 @@ module Mammoth
         adapter: adapter
       )
 
-      assert_equal(%w[0/1 0/2], source.each.map { |event_payload| event_payload.fetch("source_position") })
+      assert_equal(%w[0/1 0/2], source.each.map(&:commit_lsn))
       assert_equal %w[0/1 0/2], adapter.inputs.map(&:source_position)
     end
 
@@ -226,7 +230,7 @@ module Mammoth
         adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
-      assert_equal(%w[row-1 row-2], source.each.map { |event| event.fetch("source_position") })
+      assert_equal(%w[row-1 row-2], source.each.map(&:commit_lsn))
     end
 
     def test_adapter_without_stream_event_receives_decoded_values
@@ -479,7 +483,7 @@ module Mammoth
     end
 
     def sample_event(position)
-      { "operation" => "insert", "source_position" => position }
+      CDC::Core::ChangeEvent.new(operation: :insert, schema: "public", table: "orders", commit_lsn: position)
     end
   end
   # rubocop:enable Metrics/ClassLength

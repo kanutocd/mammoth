@@ -33,7 +33,11 @@ module Mammoth
                                             build_worker(sqlite, sink: healthy)
                                           ])
 
-        result = worker.deliver_transaction(FakeEnvelope.new([sample_event("0/partial")], "tx-partial"))
+        envelope = core_envelope(
+          events: [PersistedPayloadDeserializer.event(sample_event("0/partial"))],
+          transaction_id: "tx-partial"
+        )
+        result = worker.deliver_transaction(envelope)
 
         assert_partial_fanout(result)
         assert_equal 1, healthy.delivered_transactions.length
@@ -94,15 +98,7 @@ module Mammoth
     end
 
     def sample_event(source_position)
-      {
-        "event_id" => "event-#{source_position}",
-        "source" => "postgresql",
-        "operation" => "insert",
-        "namespace" => "public",
-        "entity" => "orders",
-        "source_position" => source_position,
-        "data" => { "id" => 1 }
-      }
+      core_event(event_id: "event-#{source_position}", source_position: source_position)
     end
 
     def assert_partial_fanout(result)
@@ -110,8 +106,6 @@ module Mammoth
       assert_equal 1, result.fetch(:dead_lettered)
       assert_equal 1, result.fetch(:delivered)
     end
-
-    FakeEnvelope = Data.define(:events, :transaction_id)
 
     class RecordingSink
       attr_reader :name, :delivered_events, :delivered_transactions
@@ -124,7 +118,8 @@ module Mammoth
 
       def deliver(event)
         delivered_events << event
-        { event_id: event.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
+        { event_id: EventSerializer.call(event).fetch("event_id"), destination: name, status: "delivered",
+          http_status: 200 }
       end
 
       def deliver_transaction(envelope)

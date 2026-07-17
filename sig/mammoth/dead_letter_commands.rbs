@@ -7,8 +7,6 @@ module Mammoth
 
     @state_adapter: untyped
 
-    DEAD_LETTER_TRANSACTION_ENVELOPE: untyped
-
     attr_reader argv: untyped
     attr_reader lifecycle_hooks: untyped
 
@@ -71,7 +69,7 @@ module Mammoth
 
     def transaction_payload?: (untyped payload) -> bool
 
-    def transaction_envelope: (untyped payload) -> untyped
+    def transaction_envelope: (untyped payload) -> CDC::Core::TransactionEnvelope
 
     def show_payload: (untyped row) -> untyped
 

@@ -14,7 +14,7 @@ module Mammoth
           delivered_envelope_store: injected_ledger
         )
 
-        result = worker.deliver_transaction(FakeEnvelope.new([sample_event("0/INJECTED")], "tx-injected"))
+        result = worker.deliver_transaction(transaction_envelope("0/INJECTED", "tx-injected"))
 
         assert_equal "delivered", result.fetch(:status)
         assert_same injected_ledger, worker.delivered_envelope_store
@@ -27,7 +27,7 @@ module Mammoth
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         worker = build_worker(sqlite, sink: NamelessSink.new)
 
-        result = worker.deliver_transaction(FakeEnvelope.new([sample_event("0/NAMELESS")], "tx-nameless"))
+        result = worker.deliver_transaction(transaction_envelope("0/NAMELESS", "tx-nameless"))
         row = DeliveredEnvelopeStore.new(sqlite).all.first
 
         assert_equal "delivered", result.fetch(:status)
@@ -47,7 +47,7 @@ module Mammoth
           sleeper: ->(seconds) { sleeps << seconds }
         )
 
-        result = worker.deliver_transaction(FakeEnvelope.new([sample_event("0/RETRY")], "tx-retry"))
+        result = worker.deliver_transaction(transaction_envelope("0/RETRY", "tx-retry"))
 
         assert_equal "dead_lettered", result.fetch(:status)
         assert_equal [0.25, 0.25], sleeps
@@ -60,7 +60,13 @@ module Mammoth
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
         worker = build_worker(sqlite, sink: sink)
-        event = sample_event("0/NOEVENTID").tap { |payload| payload.delete("event_id") }
+        event = CDC::Core::ChangeEvent.new(
+          operation: :insert,
+          schema: "public",
+          table: "orders",
+          new_values: { "id" => 1 },
+          commit_lsn: "0/NOEVENTID"
+        )
 
         first = worker.deliver(event)
         second = worker.deliver(event)
@@ -104,7 +110,12 @@ module Mammoth
       }
     end
 
-    FakeEnvelope = Data.define(:events, :transaction_id)
+    def transaction_envelope(source_position, transaction_id)
+      core_envelope(
+        events: [PersistedPayloadDeserializer.event(sample_event(source_position))],
+        transaction_id: transaction_id
+      )
+    end
 
     class RecordingSink
       attr_reader :name, :delivered_events, :delivered_transactions
@@ -117,7 +128,8 @@ module Mammoth
 
       def deliver(event)
         delivered_events << event
-        { event_id: event["event_id"] || "generated", destination: name, status: "delivered", http_status: 200 }
+        { event_id: EventSerializer.call(event).fetch("event_id"), destination: name, status: "delivered",
+          http_status: 200 }
       end
 
       def deliver_transaction(envelope)

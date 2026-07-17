@@ -15,16 +15,20 @@ module Mammoth
     # Default payload type for transaction webhook delivery.
     PAYLOAD_TYPE = "transaction.committed"
 
-    # Serialize a CDC::Core::TransactionEnvelope-like object into a Hash.
+    # Serialize a CDC::Core::TransactionEnvelope into a Hash.
     #
-    # @param envelope [#events, #transaction_id] transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] transaction envelope
     # @return [Hash] webhook-ready transaction payload
     def self.call(envelope)
       new(envelope).call
     end
 
-    # @param envelope [#events, #transaction_id] transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] transaction envelope
     def initialize(envelope)
+      unless envelope.is_a?(CDC::Core::TransactionEnvelope)
+        raise ArgumentError, "envelope must be a CDC::Core::TransactionEnvelope"
+      end
+
       @envelope = envelope
     end
 
@@ -34,7 +38,7 @@ module Mammoth
     def call
       event_payloads = envelope.events.map { |event| EventSerializer.call(event) }
       {
-        "event_id" => envelope_value("event_id") || SecureRandom.uuid,
+        "event_id" => envelope_metadata["event_id"] || SecureRandom.uuid,
         "type" => PAYLOAD_TYPE,
         "source" => first_event_value(event_payloads, "source") || EventSerializer::DEFAULT_SOURCE,
         "transaction_id" => envelope.transaction_id,
@@ -43,7 +47,7 @@ module Mammoth
         "committed_at" => committed_at,
         "event_count" => event_payloads.length,
         "events" => event_payloads,
-        "metadata" => envelope_value("metadata") || {}
+        "metadata" => envelope_metadata
       }
     end
 
@@ -58,27 +62,21 @@ module Mammoth
 
     attr_reader :envelope
 
-    def envelope_hash
-      @envelope_hash ||= envelope.respond_to?(:to_h) ? stringify_keys(envelope.to_h) : {}
-    end
-
     def stringify_keys(hash)
       hash.to_h.transform_keys(&:to_s)
     end
 
-    def envelope_value(key)
-      return envelope.public_send(key) if envelope.respond_to?(key)
-
-      envelope_hash[key]
+    def envelope_metadata
+      @envelope_metadata ||= stringify_keys(envelope.metadata)
     end
 
     def source_position(event_payloads)
-      envelope_value("source_position") || envelope_value("commit_lsn") ||
+      envelope.commit_lsn ||
         first_event_value(event_payloads.reverse, "source_position")
     end
 
     def committed_at
-      value = envelope_value("committed_at") || envelope_value("commit_time")
+      value = envelope.committed_at
       return value.iso8601 if value.respond_to?(:iso8601)
 
       value || Time.now.utc.iso8601

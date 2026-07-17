@@ -15,12 +15,12 @@ module Mammoth
 
     def test_matches_transaction_when_any_event_matches
       route = RouteFilter.new("tables" => ["orders"])
-      envelope = Data.define(:events, :transaction_id).new(
-        [
+      envelope = core_envelope(
+        events: [
           sample_event("insert", "public", "users"),
           sample_event("update", "public", "orders")
         ],
-        "tx-1"
+        transaction_id: "tx-1"
       )
 
       assert route.match?(envelope, serializer: TransactionEnvelopeSerializer)
@@ -33,13 +33,12 @@ module Mammoth
     private
 
     def sample_event(operation, namespace, entity)
-      {
-        "event_id" => "#{namespace}-#{entity}-#{operation}",
-        "operation" => operation,
-        "namespace" => namespace,
-        "entity" => entity,
-        "source_position" => "0/1"
-      }
+      core_event(
+        event_id: "#{namespace}-#{entity}-#{operation}",
+        operation: operation,
+        schema: namespace,
+        table: entity
+      )
     end
   end
 end

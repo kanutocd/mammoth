@@ -16,11 +16,16 @@
 - Wired `CDC::Core::Observer` notifications through inline and concurrent
   runtimes and translated canonical dispatch metrics into Mammoth Prometheus
   counters.
+- Replaced duck-typed CDC lookalikes with exact `CDC::Core::ChangeEvent` and
+  `CDC::Core::TransactionEnvelope` objects.
+- Added an explicit persisted-payload deserialization boundary for sample JSON
+  and dead-letter replay.
 
 ### Quality
 
 - Added processor contract, observer, runtime notification, dispatch counter,
   and Prometheus exposition coverage.
+- Added exact core-type and persisted-payload round-trip coverage.
 - Updated RBS signatures, YARD API documentation, examples, and benchmark
   descriptions for the corrected processor/observer boundary.
 

@@ -43,12 +43,12 @@ module Mammoth
 
     # Deliver an event to the webhook endpoint.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] delivery result
     # @raise [Mammoth::DeliveryError] when delivery fails
-    def deliver: (untyped event) -> untyped
+    def deliver: (CDC::Core::ChangeEvent event) -> untyped
 
-    def deliver_transaction: (untyped envelope) -> untyped
+    def deliver_transaction: (CDC::Core::TransactionEnvelope envelope) -> untyped
 
     private
 

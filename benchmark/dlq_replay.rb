@@ -110,24 +110,13 @@ module MammothBenchmarks
       payload = JSON.parse(row.fetch("payload_json"))
       destination_name = row.fetch("destination_name")
       if payload.fetch("type", nil) == Mammoth::TransactionEnvelopeSerializer::PAYLOAD_TYPE
-        envelope = replay_envelope(payload)
+        envelope = Mammoth::PersistedPayloadDeserializer.transaction(payload)
         worker.respond_to?(:deliver_transaction_to) ? worker.deliver_transaction_to(destination_name, envelope) : worker.deliver_transaction(envelope)
       elsif worker.respond_to?(:deliver_to)
-        worker.deliver_to(destination_name, payload)
+        worker.deliver_to(destination_name, Mammoth::PersistedPayloadDeserializer.event(payload))
       else
-        worker.deliver(payload)
+        worker.deliver(Mammoth::PersistedPayloadDeserializer.event(payload))
       end
-    end
-
-    def replay_envelope(payload)
-      Data.define(:events, :transaction_id, :source_position, :commit_lsn, :committed_at, :metadata).new(
-        payload.fetch("events"),
-        payload.fetch("transaction_id"),
-        payload["source_position"],
-        payload["commit_lsn"],
-        payload["committed_at"],
-        payload["metadata"] || {}
-      )
     end
 
     class RecordingSink
@@ -138,7 +127,8 @@ module MammothBenchmarks
       end
 
       def deliver(event)
-        { event_id: event.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
+        { event_id: Mammoth::EventSerializer.call(event).fetch("event_id"), destination: name, status: "delivered",
+          http_status: 200 }
       end
 
       def deliver_transaction(envelope)

@@ -94,7 +94,7 @@ module Mammoth
 
     # Deliver an event to the webhook endpoint.
     #
-    # @param event [Hash, #to_h] normalized event
+    # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] delivery result
     # @raise [Mammoth::DeliveryError] when delivery fails
     def deliver(event)
@@ -103,7 +103,7 @@ module Mammoth
 
     # Deliver a transaction envelope to the webhook endpoint.
     #
-    # @param envelope [#events, #transaction_id] CDC transaction envelope
+    # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] delivery result
     # @raise [Mammoth::DeliveryError] when delivery fails
     def deliver_transaction(envelope)
