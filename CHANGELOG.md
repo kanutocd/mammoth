@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.0
+
 ### Changed
 
 - Refactored observability, status, bootstrap, and dead-letter command
