@@ -14,6 +14,7 @@ unit tests Docker-free.
 | [`slot_invalidation_recovery`](./slot_invalidation_recovery) | Demonstrates fail-closed restart and explicit operator recovery after PostgreSQL invalidates an idle slot. | Yes |
 | [`postgres_observability`](./postgres_observability) | Correlates Mammoth readiness and slot metrics with PostgreSQL replication catalogs. | Yes |
 | [`schema_evolution`](./schema_evolution) | Demonstrates a consumer-first additive schema rollout and relation-metadata refresh without implying DDL delivery. | Yes |
+| [`destination_idempotency`](./destination_idempotency) | Proves that isolated relay ledgers may both deliver while the destination applies one atomic side effect. | No |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
@@ -57,6 +58,11 @@ The schema evolution example demonstrates a consumer-first additive migration.
 The receiver accepts both payload shapes before PostgreSQL adds a nullable
 column; pgoutput refreshes relation metadata for later row events, but the DDL
 statement itself is never delivered.
+
+The destination idempotency example sends one stable event through two isolated
+Mammoth operational stores. It demonstrates why the receiver must atomically
+deduplicate semantic side effects even when Mammoth has its own local
+delivered-envelope ledger.
 
 They do not demonstrate DDL delivery, sequence synchronization, or automatic
 destination conflict resolution. PostgreSQL does not replicate DDL or sequence

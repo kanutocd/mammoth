@@ -1,0 +1,18 @@
+{
+  "event_id": "order-created-42",
+  "source": "postgresql",
+  "operation": "insert",
+  "namespace": "public",
+  "entity": "orders",
+  "source_position": "0/1D3A42",
+  "occurred_at": "2026-07-18T00:00:00Z",
+  "data": {
+    "id": 42,
+    "status": "created",
+    "total_cents": 4200
+  },
+  "metadata": {
+    "slot": "mammoth_idempotency",
+    "publication": "mammoth_publication"
+  }
+}

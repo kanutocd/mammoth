@@ -22,6 +22,8 @@
   Prometheus slot gauges with native replication and publication catalogs.
 - Added a live additive schema-evolution example demonstrating consumer-first
   compatibility, relation-metadata refresh, and the non-delivery of DDL.
+- Added a destination idempotency example proving atomic receiver-side
+  duplicate suppression across isolated Mammoth delivery ledgers.
 
 ### Fixed
 

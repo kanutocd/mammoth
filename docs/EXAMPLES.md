@@ -140,6 +140,38 @@ docker compose logs webhook_receiver
 The receiver rejects a v1 event containing `currency` and a v2 event that does
 not contain `currency: "USD"`.
 
+## `examples/destination_idempotency`
+
+Purpose:
+
+```text
+isolated Mammoth ledger A ─┐
+                           ├─ duplicate event → one destination side effect
+isolated Mammoth ledger B ─┘
+```
+
+Use this to distinguish Mammoth's local duplicate-suppression ledger from
+destination-owned semantic idempotency. Two delivery processes with independent
+SQLite stores send the same stable event ID. The receiver records two HTTP
+attempts while a unique constraint and atomic transaction apply the order side
+effect once.
+
+Run it with:
+
+```bash
+cd examples/destination_idempotency
+docker compose down -v
+docker compose build delivery_a delivery_b
+docker compose up -d --wait webhook_receiver
+docker compose run --rm delivery_a
+docker compose run --rm delivery_b
+curl -s http://localhost:9301/state
+```
+
+The resulting state should contain `delivery_attempts: 2` and
+`applied_side_effects: 1`. Re-running the delivery services then demonstrates
+that each Mammoth process suppresses duplicates found in its own ledger.
+
 ## `examples/transaction_webhook`
 
 Purpose:

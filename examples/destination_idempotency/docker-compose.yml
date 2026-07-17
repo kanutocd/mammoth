@@ -1,0 +1,68 @@
+services:
+  webhook_receiver:
+    image: ruby:4.0-slim
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        gem install sqlite3 webrick --no-document
+        ruby /app/idempotent_receiver.rb
+    healthcheck:
+      test:
+        - CMD
+        - ruby
+        - -rsocket
+        - -e
+        - TCPSocket.new("127.0.0.1", 9292).close
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "9301:9292"
+    environment:
+      RECEIVER_DATABASE: /data/receiver.db
+    volumes:
+      - ./receiver:/app:ro
+      - destination_idempotency_receiver_data:/data
+
+  delivery_a:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: unused-by-deliver-sample
+    depends_on:
+      webhook_receiver:
+        condition: service_healthy
+    command:
+      - deliver-sample
+      - /config/relay_a.yml
+      - /events/order_insert.json
+    volumes:
+      - ./config/relay_a.yml:/config/relay_a.yml:ro
+      - ./events/order_insert.json:/events/order_insert.json:ro
+      - destination_idempotency_relay_a_data:/app/.sqlite3
+
+  delivery_b:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: unused-by-deliver-sample
+    depends_on:
+      webhook_receiver:
+        condition: service_healthy
+    command:
+      - deliver-sample
+      - /config/relay_b.yml
+      - /events/order_insert.json
+    volumes:
+      - ./config/relay_b.yml:/config/relay_b.yml:ro
+      - ./events/order_insert.json:/events/order_insert.json:ro
+      - destination_idempotency_relay_b_data:/app/.sqlite3
+
+volumes:
+  destination_idempotency_receiver_data:
+  destination_idempotency_relay_a_data:
+  destination_idempotency_relay_b_data:
