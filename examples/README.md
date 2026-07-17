@@ -21,10 +21,11 @@ unit tests Docker-free.
 
 The sample examples use `mammoth deliver-sample`, which reconstructs their JSON
 payloads as exact `CDC::Core::ChangeEvent` objects before delivery. This lets
-delivery-ledger, checkpointing, and DLQ behavior be exercised without requiring
-Docker or PostgreSQL in the unit suite. The live replication examples are the
-place where PostgreSQL, logical replication, TransactionEnvelope delivery, and
-the CDC Ecosystem source adapter are intentionally exercised together.
+delivery-ledger, contiguous checkpointing, and DLQ behavior be exercised
+without requiring Docker or PostgreSQL in the unit suite. The live replication
+examples are the place where PostgreSQL acknowledgement, logical replication,
+TransactionEnvelope delivery, and the CDC Ecosystem source adapter are
+intentionally exercised together.
 
 In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.
@@ -39,4 +40,5 @@ for dispatch metrics.
 built-in SQLite operational-state adapter and a permanent PostgreSQL replication
 slot. It validates that persisted checkpoints and delivered-envelope ledger
 entries suppress replay after Mammoth restarts while later transactions continue
-to flow.
+to flow. Contiguous progress is checkpointed before the same position is
+acknowledged through pgoutput-client.

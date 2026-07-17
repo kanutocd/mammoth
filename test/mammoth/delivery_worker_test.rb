@@ -4,17 +4,15 @@ require "test_helper"
 
 module Mammoth
   class DeliveryWorkerTest < Minitest::Test
-    def test_delivers_and_checkpoints_successful_event
+    def test_delivers_without_advancing_shared_progress
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         worker = build_worker(sqlite, sink: RecordingSink.new)
 
         result = worker.deliver(sample_event)
-        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
-
         assert_equal "delivered", result.fetch(:status)
         assert_equal 1, result.fetch(:attempts)
-        assert_equal "0/16F4A8B0", checkpoint.fetch("last_lsn")
+        assert_equal 0, CheckpointStore.new(sqlite).count
         assert_equal 0, DeadLetterStore.new(sqlite).count
       end
     end
@@ -74,25 +72,23 @@ module Mammoth
       end
     end
 
-    def test_disabled_destination_skips_and_checkpoints_without_delivery
+    def test_disabled_destination_skips_without_advancing_shared_progress
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
         worker = build_worker(sqlite, sink: sink, enabled: false)
 
         result = worker.deliver(sample_event)
-        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
-
         assert_equal "skipped", result.fetch(:status)
         assert_equal "disabled", result.fetch(:reason)
         assert_equal 0, result.fetch(:attempts)
         assert_equal 0, sink.delivered_events
-        assert_equal "0/16F4A8B0", checkpoint.fetch("last_lsn")
+        assert_equal 0, CheckpointStore.new(sqlite).count
         assert_equal 0, DeliveredEnvelopeStore.new(sqlite).count
       end
     end
 
-    def test_route_mismatch_skips_and_checkpoints_without_delivery
+    def test_route_mismatch_skips_without_advancing_shared_progress
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
@@ -104,11 +100,11 @@ module Mammoth
         assert_equal "skipped", result.fetch(:status)
         assert_equal "route_mismatch", result.fetch(:reason)
         assert_equal 0, sink.delivered_events
-        assert_equal 1, CheckpointStore.new(sqlite).count
+        assert_equal 0, CheckpointStore.new(sqlite).count
       end
     end
 
-    def test_delivers_and_checkpoints_successful_transaction_envelope
+    def test_delivers_transaction_without_advancing_shared_progress
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
@@ -122,24 +118,10 @@ module Mammoth
         )
 
         result = worker.deliver_transaction(envelope)
-        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
-
         assert_equal "delivered", result.fetch(:status)
         assert_equal "transaction.committed", result.fetch(:payload_type)
-        assert_equal "0/2", checkpoint.fetch("last_lsn")
+        assert_equal 0, CheckpointStore.new(sqlite).count
         assert_equal envelope, sink.delivered_transactions.fetch(0)
-      end
-    end
-
-    def test_checkpoint_helper_serializes_work
-      with_temp_dir do |dir|
-        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
-        worker = build_worker(sqlite, sink: RecordingSink.new)
-
-        worker.send(:checkpoint, sample_event, serializer: EventSerializer)
-
-        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
-        assert_equal "0/16F4A8B0", checkpoint.fetch("last_lsn")
       end
     end
 

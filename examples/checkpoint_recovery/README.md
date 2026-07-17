@@ -9,7 +9,8 @@ It proves the operational recovery path:
 transaction A
 transaction B
         ↓
-Mammoth delivers and checkpoints
+Mammoth records durable delivery, checkpoints,
+and acknowledges contiguous progress
         ↓
 Mammoth restarts
         ↓
@@ -96,7 +97,9 @@ logical replication slot in this example.
 The important property is not just that Mammoth restarts. The configured
 operational-state adapter persists both checkpoints and the delivered-envelope
 ledger, so already delivered transactions are not replayed after restart while
-later transactions continue to be delivered.
+later transactions continue to be delivered. Mammoth writes each contiguous
+watermark to SQLite before acknowledging the same position through
+pgoutput-client.
 
 ## Reset
 

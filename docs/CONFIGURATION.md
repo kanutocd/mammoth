@@ -143,6 +143,9 @@ replication:
 - `temporary_slot` controls whether the replication slot is temporary.
 - `feedback_interval` controls standby feedback cadence in seconds.
 
+Feedback cadence does not determine the acknowledged position. Mammoth advances
+that position only after persisting the contiguous durable-delivery watermark.
+
 ### `webhook`
 
 ```yaml
@@ -236,8 +239,9 @@ delivery:
 ```
 
 `unit` controls whether Mammoth delivers individual events or complete
-transaction envelopes. `transaction` is the safer default because checkpointing
-advances after the transaction payload succeeds.
+transaction envelopes. Both modes checkpoint only after every delivery in the
+source transaction has a durable outcome. `transaction` is recommended when a
+consumer needs transaction context in one payload.
 
 `ordering.scope` describes the order Mammoth asks the delivery runtime to
 preserve. Supported values are `global`, `transaction`, `relation`,

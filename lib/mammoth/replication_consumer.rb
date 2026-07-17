@@ -27,7 +27,7 @@ module Mammoth
 
       count = 0
 
-      each_event do |event|
+      each_grouped_event do |event, _group_end|
         yield event
         count += 1
       end
@@ -35,11 +35,27 @@ module Mammoth
       count
     end
 
+    # Consume work with an explicit source-group boundary for safe progress.
+    #
+    # @yieldparam event [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope] core work item
+    # @yieldparam group_end [Boolean] true for the final delivery in a source transaction
+    # @return [Integer] number of consumed work items
+    def start_with_boundaries
+      return enum_for(:start_with_boundaries) unless block_given?
+
+      count = 0
+      each_grouped_event do |event, group_end|
+        yield event, group_end
+        count += 1
+      end
+      count
+    end
+
     private
 
-    def each_event(&block)
+    def each_grouped_event(&block)
       effective_source.each do |work|
-        flatten_cdc_work(work).each(&block)
+        grouped_cdc_work(work).each { |event, group_end| block.call(event, group_end) }
       end
     end
 
@@ -47,13 +63,18 @@ module Mammoth
       source || raise(ReplicationError, "replication source is not configured")
     end
 
-    def flatten_cdc_work(work)
+    def grouped_cdc_work(work)
       return [] if work.nil?
-      return work.flat_map { |item| flatten_cdc_work(item) } if work.is_a?(Array)
-      return transaction_work(work) if work.is_a?(CDC::Core::TransactionEnvelope)
-      return event_work(work) if work.is_a?(CDC::Core::ChangeEvent)
+      return work.flat_map { |item| grouped_cdc_work(item) } if work.is_a?(Array)
+      return grouped_transaction_work(work) if work.is_a?(CDC::Core::TransactionEnvelope)
+      return event_work(work).map { |item| [item, true] } if work.is_a?(CDC::Core::ChangeEvent)
 
       raise ReplicationError, "CDC source yielded non-core work: #{work.class}"
+    end
+
+    def grouped_transaction_work(envelope)
+      items = transaction_work(envelope)
+      items.each_with_index.map { |item, index| [item, index == items.length - 1] }
     end
 
     def transaction_delivery?

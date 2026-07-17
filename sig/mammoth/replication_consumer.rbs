@@ -12,12 +12,14 @@ module Mammoth
     def initialize: (?source: untyped, ?delivery_unit: untyped) -> void
 
     def start: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) event) -> untyped } -> (Integer | Enumerator[untyped, Integer])
+    def start_with_boundaries: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) event, bool group_end) -> untyped } -> (Integer | Enumerator[untyped, Integer])
 
     private
 
-    def each_event: () { (untyped event) -> untyped } -> untyped
+    def each_grouped_event: () { (untyped event, bool group_end) -> untyped } -> untyped
     def effective_source: () -> untyped
-    def flatten_cdc_work: (untyped work) -> Array[untyped]
+    def grouped_cdc_work: (untyped work) -> Array[untyped]
+    def grouped_transaction_work: (CDC::Core::TransactionEnvelope envelope) -> Array[untyped]
     def transaction_delivery?: () -> bool
     def transaction_work: (CDC::Core::TransactionEnvelope envelope) -> Array[untyped]
     def event_work: (CDC::Core::ChangeEvent event) -> Array[untyped]

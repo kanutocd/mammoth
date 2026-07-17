@@ -99,6 +99,10 @@ logging:
   level: info
 ```
 
+Mammoth checkpoints only contiguous durable delivery outcomes and then
+acknowledges the same progress through pgoutput-client. The feedback interval
+controls transport cadence, not which position is safe.
+
 Export the password referenced by `postgres.password_env`:
 
 ```bash

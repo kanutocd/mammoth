@@ -127,8 +127,9 @@ replication:
 
   # Standby feedback interval in seconds.
   #
-  # Mammoth sends periodic feedback while streaming so PostgreSQL knows the
-  # consumer is alive and can advance slot state safely.
+  # Mammoth sends periodic feedback while streaming. The feedback position
+  # advances only after every earlier delivery has a durable outcome and the
+  # same contiguous position has been written to Mammoth's checkpoint store.
   #
   # Lower values:
   #   faster liveness/feedback visibility, slightly more network chatter
@@ -145,13 +146,13 @@ delivery:
   # Delivery granularity.
   #
   # event:
-  #   Deliver each change event independently. This has lower latency but weaker
-  #   transaction-level semantics.
+  #   Deliver each change event independently. This has lower latency but does
+  #   not give consumers one atomic transaction payload. Checkpoint and WAL
+  #   acknowledgement still wait for every event in the transaction.
   #
   # transaction:
-  #   Deliver a complete TransactionEnvelope as one payload. This is the safer
-  #   default because checkpointing can advance only after the whole transaction
-  #   has been delivered successfully.
+  #   Deliver a complete TransactionEnvelope as one payload. This is recommended
+  #   when downstream consumers need transaction-level context.
   #
   # Recommended:
   #   transaction

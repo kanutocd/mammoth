@@ -69,7 +69,7 @@ This example exercises:
 - `delivery.unit: transaction`
 - `runtime.adapter: concurrent`
 - webhook transaction payloads
-- transaction-level checkpoint boundary foundations
+- contiguous transaction-group checkpoint and acknowledgement behavior
 
 Run it with:
 
@@ -202,9 +202,13 @@ webhook returns 500
 retry exhaustion
     ↓
 SQLite dead letter
+    ↓
+contiguous checkpoint advances
 ```
 
 Use this to validate retry and dead-letter behavior.
+A persisted dead letter is a durable outcome, so it closes the corresponding
+gap in the progress watermark while replay remains operator-controlled.
 
 After running the example, inspect the SQLite database in the Docker volume.
 
@@ -245,4 +249,5 @@ The example expects you to provide real deployment dependencies such as PostgreS
 built-in SQLite operational-state adapter and a permanent PostgreSQL replication
 slot. It validates that persisted checkpoints and delivered-envelope ledger
 entries suppress replay after Mammoth restarts while later transactions continue
-to flow.
+to flow. Mammoth persists the contiguous checkpoint before acknowledging the
+same position through pgoutput-client.

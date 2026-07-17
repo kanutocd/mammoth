@@ -84,6 +84,23 @@ For Kubernetes, this is why the Helm chart defaults to one replica.
 
 Mammoth uses pgoutput-client transport behavior that sends replication feedback during idle periods. The `replication.feedback_interval` setting controls the feedback cadence.
 
+The acknowledged feedback position is not the latest position Mammoth has
+received. Mammoth first records a durable outcome for every destination and
+advances only the contiguous delivery watermark. It writes that watermark to
+the checkpoint store before acknowledging the same position to pgoutput-client.
+Concurrent completion therefore cannot skip unfinished earlier work.
+
+The durable outcomes that permit progress are:
+
+- successful delivery recorded in the delivered-envelope ledger;
+- a duplicate already present in that ledger;
+- an intentional disabled-destination or route-filter skip;
+- retry exhaustion persisted in the dead-letter store.
+
+An exception before one of those outcomes leaves a gap and prevents later work
+from advancing the checkpoint or PostgreSQL acknowledgement. Event delivery
+also waits for every event in a source transaction before advancing.
+
 Example:
 
 ```yaml

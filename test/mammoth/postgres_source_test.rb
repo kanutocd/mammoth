@@ -34,6 +34,14 @@ module Mammoth
       assert_instance_of Enumerator, source.each
     end
 
+    def test_acknowledge_delegates_durable_progress_to_runner
+      runner = RecordingAckRunner.new
+      source = Sources::Postgres.new(Configuration.load(fixture_config_path), runner: runner)
+
+      assert_equal 42, source.acknowledge("0/2A")
+      assert_equal ["0/2A"], runner.acknowledgements
+    end
+
     def test_parser_can_use_parse_interface
       parser = Object.new
       def parser.parse(payload) = "parsed-#{payload}"
@@ -503,6 +511,19 @@ module Mammoth
     FakeRunnerWithMetadata = Data.define(:pairs) do
       def start(&block)
         pairs.each(&block)
+      end
+    end
+
+    class RecordingAckRunner
+      attr_reader :acknowledgements
+
+      def initialize
+        @acknowledgements = []
+      end
+
+      def ack(lsn)
+        acknowledgements << lsn
+        42
       end
     end
 

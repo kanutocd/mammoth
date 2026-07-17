@@ -23,6 +23,27 @@ module Mammoth
       end
     end
 
+    def test_acknowledges_a_transaction_only_after_every_event_is_durable
+      with_temp_dir do |dir|
+        config = Configuration.load(
+          write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: File.join(dir, "mammoth.db")))
+        )
+        events = [
+          sample_event("event-1", "0/2"),
+          sample_event("event-2", "0/2")
+        ]
+        source = AcknowledgingSource.new([core_envelope(events:, commit_lsn: "0/2")])
+        app = Application.new(config, source:, sink: DeliveryWorkerTest::RecordingSink.new)
+
+        assert_equal 2, app.start
+        assert_equal ["0/2"], source.acknowledgements
+        assert_equal "0/2", app.checkpoint_store.fetch(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod"
+        ).fetch("last_lsn")
+      end
+    end
+
     def test_wires_injected_core_observer_through_runtime
       with_temp_dir do |dir|
         config = Configuration.load(
@@ -349,6 +370,7 @@ module Mammoth
       app.instance_variable_set(:@consumer, FakeConsumer.new([sample_event("event-no-shutdown", "0/no-shutdown")]))
       app.instance_variable_set(:@delivery_worker, DeliveryWorkerTest::RecordingSink.new)
       app.instance_variable_set(:@lifecycle_hooks, LifecycleHooks.new)
+      app.instance_variable_set(:@progress_coordinator, NullProgressCoordinator.new)
 
       app.define_singleton_method(:build_runtime) { runtime }
       def app.process_work(_runtime, _work) = nil
@@ -359,10 +381,32 @@ module Mammoth
     end
 
     StubStateAdapter = Data.define(:dead_letter_store, :delivered_envelope_store)
-    FakeConsumer = Data.define(:items) do
-      def start(&block)
-        items.each(&block)
+
+    class AcknowledgingSource
+      attr_reader :work, :acknowledgements
+
+      def initialize(work)
+        @work = work
+        @acknowledgements = []
       end
+
+      def each(&block)
+        work.each(&block)
+      end
+
+      def acknowledge(lsn)
+        acknowledgements << lsn
+      end
+    end
+    FakeConsumer = Data.define(:items) do
+      def start_with_boundaries
+        items.each { |item| yield item, true }
+      end
+    end
+
+    class NullProgressCoordinator
+      def register(_work, group_end:); end
+      def finalize; end
     end
 
     private

@@ -9,8 +9,10 @@ module Mammoth
   # composition stays outside this class so the application runtime consumes an
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
+  # rubocop:disable Metrics/ClassLength
   class Application
-    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks, :observer
+    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks, :observer,
+                :progress_coordinator
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -27,6 +29,7 @@ module Mammoth
       @state_adapter = state_adapter || build_state_adapter
       @checkpoint_store = @state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
+      @progress_coordinator = build_progress_coordinator
       @delivery_worker = sink ? build_delivery_worker(sink: sink, sleeper: sleeper) : build_configured_delivery_worker(sleeper:)
     end
 
@@ -72,12 +75,14 @@ module Mammoth
     def process_consumer(runtime)
       processed = 0
 
-      consumer.start do |work|
+      consumer.start_with_boundaries do |work, group_end|
+        progress_coordinator.register(work, group_end:)
         process_work(runtime, work)
         processed += 1
       end
 
       runtime.flush
+      progress_coordinator.finalize
       processed
     end
 
@@ -88,7 +93,11 @@ module Mammoth
     def build_runtime
       Runtimes::Registry.build(
         runtime_adapter,
-        processor: DeliveryProcessor.new(delivery_worker:, delivery_unit: delivery_unit),
+        processor: DeliveryProcessor.new(
+          delivery_worker:,
+          delivery_unit: delivery_unit,
+          progress_coordinator: progress_coordinator
+        ),
         concurrency: runtime_concurrency,
         timeout: runtime_timeout,
         preserve_order: runtime_preserve_order?,
@@ -99,6 +108,21 @@ module Mammoth
 
     def build_source
       Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
+    end
+
+    def build_progress_coordinator
+      DeliveryProgressCoordinator.new(
+        checkpoint_store: checkpoint_store,
+        source_name: config.dig("mammoth", "name"),
+        slot_name: config.dig("replication", "slot"),
+        publication_name: Array(config.dig("replication", "publications")).join(","),
+        acknowledger: source_acknowledger
+      )
+    end
+
+    def source_acknowledger
+      source = consumer.source
+      source.method(:acknowledge) if source.respond_to?(:acknowledge)
     end
 
     def build_delivery_worker(sink:, sleeper:, delivery_policy: {})
@@ -176,4 +200,5 @@ module Mammoth
       value.nil? || value
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

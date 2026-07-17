@@ -4,7 +4,7 @@ require "test_helper"
 
 module Mammoth
   class DeliveryWorkerLedgerTest < Minitest::Test
-    def test_skips_duplicate_transaction_delivery_but_advances_checkpoint
+    def test_skips_duplicate_transaction_delivery_without_advancing_shared_progress
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
@@ -13,7 +13,6 @@ module Mammoth
 
         first = worker.deliver_transaction(envelope)
         second = worker.deliver_transaction(envelope)
-        checkpoint = CheckpointStore.new(sqlite).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
         ledger = DeliveredEnvelopeStore.new(sqlite)
 
         assert_equal "delivered", first.fetch(:status)
@@ -21,7 +20,7 @@ module Mammoth
         assert second.fetch(:duplicate)
         assert_equal 1, sink.delivered_transactions.length
         assert_equal 1, ledger.count
-        assert_equal "0/AAA", checkpoint.fetch("last_lsn")
+        assert_equal 0, CheckpointStore.new(sqlite).count
       end
     end
 

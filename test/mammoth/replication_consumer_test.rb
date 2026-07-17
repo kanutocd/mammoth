@@ -22,6 +22,7 @@ module Mammoth
       consumer = ReplicationConsumer.new(source: [core_event])
 
       assert_instance_of Enumerator, consumer.start
+      assert_instance_of Enumerator, consumer.start_with_boundaries
     end
 
     def test_start_flattens_exact_core_transaction_envelopes_inside_arrays
@@ -30,6 +31,18 @@ module Mammoth
       consumed = ReplicationConsumer.new(source: [[envelope]]).start.to_a
 
       assert_equal events, consumed
+    end
+
+    def test_start_with_boundaries_marks_only_the_last_transaction_event
+      events = [core_event(source_position: "0/2"), core_event(source_position: "0/2")]
+      envelope = core_envelope(events: events, commit_lsn: "0/2")
+      consumed = []
+
+      ReplicationConsumer.new(source: [envelope]).start_with_boundaries do |event, group_end|
+        consumed << [event, group_end]
+      end
+
+      assert_equal [[events.fetch(0), false], [events.fetch(1), true]], consumed
     end
 
     def test_start_returns_empty_count_for_nil_source_items

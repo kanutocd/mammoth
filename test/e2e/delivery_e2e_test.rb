@@ -80,7 +80,8 @@ module Mammoth
           store = SQLiteStore.connect(db_path).bootstrap!
           dead_letters = DeadLetterStore.new(store)
           assert_equal 1, dead_letters.count(status: "pending")
-          assert_equal 0, CheckpointStore.new(store).count
+          checkpoint = CheckpointStore.new(store).fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+          assert_equal "0/E2E", checkpoint.fetch("last_lsn")
           assert_equal "event-e2e", dead_letters.pending.fetch(0).fetch("event_id")
         end
       end

@@ -46,8 +46,13 @@ CREATE TABLE checkpoints (
 The checkpoint table answers:
 
 ```text
-Where did this Mammoth source stop?
+Through which source position does Mammoth have contiguous durable outcomes?
 ```
+
+The shared progress coordinator writes this row only after every earlier work
+item has a durable outcome. For PostgreSQL sources, Mammoth persists the
+checkpoint before acknowledging the same watermark through pgoutput-client.
+Individual destination workers never advance this table independently.
 
 ### `dead_letters`
 

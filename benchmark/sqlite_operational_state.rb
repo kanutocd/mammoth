@@ -2,7 +2,9 @@
 
 # Benchmark Mammoth's local SQLite operational-state costs. This helps operators
 # understand the overhead of checkpoints, delivered-envelope idempotency ledgers,
-# duplicate checks, and dead-letter writes as local state grows.
+# duplicate checks, and dead-letter writes as local state grows. Checkpoint
+# cadence here is synthetic store load; it does not model the runtime's
+# contiguous progress coordinator.
 
 require_relative "support"
 

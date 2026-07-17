@@ -74,6 +74,16 @@ module Mammoth
         raise ReplicationError, "PostgreSQL CDC source failed: #{e.message}"
       end
 
+      # Acknowledge a durably handled PostgreSQL WAL position.
+      #
+      # @param lsn [String, Integer] pgoutput-client compatible WAL position
+      # @return [Integer] normalized acknowledged WAL position
+      def acknowledge(lsn)
+        effective_runner.ack(lsn)
+      rescue StandardError => e
+        raise ReplicationError, "PostgreSQL WAL acknowledgement failed: #{e.message}"
+      end
+
       private
 
       def decoded_stream

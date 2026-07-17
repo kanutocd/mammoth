@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 module Mammoth
-  # Delivers normalized events with retry, checkpoint, and dead-letter handling.
+  # Delivers normalized events with retry, ledger, and dead-letter handling.
   #
   # DeliveryWorker is Mammoth's first reliable delivery unit. It intentionally keeps
-  # the delivery contract small: attempt webhook delivery, advance the checkpoint
-  # after success, and persist the failed event to the dead letter queue after
-  # retry exhaustion.
+  # the delivery contract small: attempt webhook delivery, record idempotent
+  # success, and persist exhausted failures to the dead letter queue. Contiguous
+  # checkpointing is owned by DeliveryProgressCoordinator.
   class DeliveryWorker
     # Default source name used when an event does not provide one.
     DEFAULT_SOURCE = "postgresql"
@@ -15,7 +15,7 @@ module Mammoth
                 :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :enabled
 
     # @param sink [#deliver] destination sink
-    # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
+    # @param checkpoint_store [Mammoth::CheckpointStore] retained dependency; shared progress owns writes
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
     # @param delivered_envelope_store [Mammoth::DeliveredEnvelopeStore] downstream delivery ledger
     # @param source_name [String] logical source name
@@ -47,7 +47,7 @@ module Mammoth
     #
     # @param config [Mammoth::Configuration] loaded configuration
     # @param sink [#deliver] destination sink
-    # @param checkpoint_store [Mammoth::CheckpointStore] checkpoint persistence
+    # @param checkpoint_store [Mammoth::CheckpointStore] retained dependency; shared progress owns writes
     # @param dead_letter_store [Mammoth::DeadLetterStore] dead letter persistence
     # @param delivered_envelope_store [Mammoth::DeliveredEnvelopeStore] downstream delivery ledger
     # @param sleeper [#call] sleep strategy
@@ -70,7 +70,7 @@ module Mammoth
       )
     end
 
-    # Deliver a transaction envelope with retry, checkpoint, and DLQ handling.
+    # Deliver a transaction envelope with retry, ledger, and DLQ handling.
     #
     # @param envelope [CDC::Core::TransactionEnvelope] CDC transaction envelope
     # @return [Hash] delivery summary
@@ -78,7 +78,7 @@ module Mammoth
       deliver_work(envelope, serializer: TransactionEnvelopeSerializer, delivery_method: :deliver_transaction)
     end
 
-    # Deliver an event with retry, checkpoint, and DLQ handling.
+    # Deliver an event with retry, ledger, and DLQ handling.
     #
     # @param event [CDC::Core::ChangeEvent] normalized event
     # @return [Hash] delivery summary
@@ -99,7 +99,6 @@ module Mammoth
       return skip_result if skip_result
 
       if delivered_envelope_store.delivered?(idempotency_key)
-        checkpoint_payload(payload)
         return {
           status: "skipped",
           duplicate: true,
@@ -121,7 +120,6 @@ module Mammoth
           transaction_id: payload["transaction_id"],
           source_position: payload["source_position"]
         )
-        checkpoint_payload(payload)
         result.merge(attempts: attempts, idempotency_key: idempotency_key)
       rescue DeliveryError => e
         return dead_letter(work, e, attempts, serializer:) if attempts >= max_attempts
@@ -131,19 +129,6 @@ module Mammoth
       end
     end
     # rubocop:enable Metrics/MethodLength
-
-    def checkpoint(work, serializer:)
-      checkpoint_payload(serializer.call(work))
-    end
-
-    def checkpoint_payload(payload)
-      checkpoint_store.write(
-        source_name: source_name,
-        slot_name: slot_name,
-        publication_name: publication_name,
-        last_lsn: payload["source_position"]
-      )
-    end
 
     def idempotency_key_for(payload:, delivery_unit:)
       [
@@ -170,8 +155,7 @@ module Mammoth
       skipped(payload, idempotency_key:, reason: "route_mismatch") unless route_filter.match_payload?(payload)
     end
 
-    def skipped(payload, idempotency_key:, reason:)
-      checkpoint_payload(payload)
+    def skipped(_payload, idempotency_key:, reason:)
       {
         status: "skipped",
         reason: reason,

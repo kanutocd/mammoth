@@ -3,9 +3,11 @@ module Mammoth
   class DeliveryProcessor < CDC::Core::Processor
     @delivery_worker: untyped
     @delivery_unit: untyped
+    @progress_coordinator: untyped
 
     attr_reader delivery_worker: untyped
     attr_reader delivery_unit: untyped
+    attr_reader progress_coordinator: untyped
 
     def self.concurrent_safe!: () -> bool
     def self.concurrent_safe?: () -> bool
@@ -14,7 +16,7 @@ module Mammoth
     def concurrent_safe?: () -> bool
     def concurrent_safe: () -> bool
 
-    def initialize: (delivery_worker: untyped, ?delivery_unit: untyped) -> void
+    def initialize: (delivery_worker: untyped, ?delivery_unit: untyped, ?progress_coordinator: untyped) -> void
 
     def call: (untyped work) -> CDC::Core::ProcessorResult
     def process: (untyped work) -> CDC::Core::ProcessorResult

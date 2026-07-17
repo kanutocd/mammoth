@@ -15,6 +15,7 @@ module Mammoth
       application.rb
       cli.rb
       dead_letter_commands.rb
+      delivery_progress_coordinator.rb
       observability_snapshot.rb
       status.rb
       commands/bootstrap_command.rb
@@ -190,6 +191,40 @@ module Mammoth
 
     def relative_path(path)
       path.delete_prefix("#{PROJECT_ROOT}/")
+    end
+  end
+
+  class DeliveryProgressBoundaryTest < Minitest::Test
+    LIB_ROOT = BoundaryTest::LIB_ROOT
+    SIG_ROOT = BoundaryTest::SIG_ROOT
+    POSTGRES_SOURCE_FILE = BoundaryTest::POSTGRES_SOURCE_FILE
+
+    def test_pgoutput_acknowledgement_stays_in_postgres_source
+      offenders = Dir.glob(File.join(LIB_ROOT, "**", "*.rb")).filter_map do |path|
+        next if path == POSTGRES_SOURCE_FILE
+        next unless File.read(path).match?(/(?:effective_)?runner\.ack\(/)
+
+        path
+      end
+
+      assert_empty offenders, "pgoutput acknowledgement must stay behind Sources::Postgres: #{offenders.join(", ")}"
+      assert_match(/effective_runner\.ack\(lsn\)/, File.read(POSTGRES_SOURCE_FILE))
+    end
+
+    def test_delivery_progress_uses_injected_ports_without_transport_dependencies
+      body = File.read(File.join(LIB_ROOT, "mammoth", "delivery_progress_coordinator.rb"))
+
+      assert_match(/checkpoint_store\.write/, body)
+      assert_match(/@acknowledger&\.call/, body)
+      refute_match(%r{Pgoutput::|pgoutput[_/-]|effective_runner|Sources::Postgres}, body)
+      refute_match(/SQLite3::|SQLiteStore\.connect|CheckpointStore\.new/, body)
+      refute_match(/CDC::Core::(?:ChangeEvent|TransactionEnvelope)\.new/, body)
+    end
+
+    def test_progress_coordinator_signature_does_not_leak_pgoutput_types
+      signature = File.read(File.join(SIG_ROOT, "mammoth", "delivery_progress_coordinator.rbs"))
+
+      refute_match(/Pgoutput|pgoutput/, signature)
     end
   end
 end

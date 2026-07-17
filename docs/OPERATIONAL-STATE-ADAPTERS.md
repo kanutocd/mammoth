@@ -27,7 +27,9 @@ Adapter authors must preserve Mammoth's data-plane semantics. A state adapter
 stores checkpoints, dead letters, and delivered-envelope ledgers; it must not
 invent checkpoint positions or bypass replay rules.
 
-`Application` injects all three stores into its delivery components.
+`Application` injects all three stores into its delivery components. The shared
+progress coordinator is the sole checkpoint writer and persists only contiguous
+durable progress before upstream acknowledgement.
 `DeliveryWorker` never derives one store from another or assumes that a store
 exposes adapter-specific persistence internals.
 

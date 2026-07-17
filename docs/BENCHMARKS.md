@@ -30,9 +30,11 @@ entrypoint stay aligned.
 Set `MAMMOTH_BENCH_JSON=1` on any benchmark to emit machine-readable JSON after
 the table.
 
-Benchmarks that construct a real `DeliveryWorker` obtain its checkpoint,
-dead-letter, and delivered-envelope stores from one configured
-`OperationalState::SQLiteAdapter`.
+Benchmarks that construct a real `DeliveryWorker` inject stores from one
+configured `OperationalState::SQLiteAdapter`. The worker records delivered
+ledger and dead-letter outcomes; it does not advance checkpoints independently.
+These local downstream benchmarks do not measure the shared contiguous progress
+coordinator or PostgreSQL acknowledgement.
 
 ## Snapshot Runner
 
@@ -108,6 +110,8 @@ by `pgoutput-source-adapter`; source transaction buffering is outside this
 downstream runtime benchmark.
 The runtime uses the core processor/result and observer contracts; its default
 no-op observer keeps this benchmark focused on scheduling and delivery cost.
+It intentionally omits the progress coordinator, checkpoint writes, and
+PostgreSQL acknowledgement.
 
 Useful for tuning:
 
@@ -195,7 +199,8 @@ checkpoints, and dead-letter writes.
 
 This is intentionally a concrete store microbenchmark: it creates no
 `DeliveryWorker` or operator command and measures the built-in SQLite store
-implementations directly.
+implementations directly. Its configured checkpoint interval is synthetic and
+does not model Mammoth's contiguous delivery watermark policy.
 
 Useful for tuning:
 

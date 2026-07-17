@@ -31,4 +31,6 @@ The compose file starts:
 ## Operational note
 
 Logical replication slots allow one active subscriber per slot. The example uses
-one Mammoth process and one replication slot named `mammoth_live`.
+one Mammoth process and one replication slot named `mammoth_live`. Mammoth
+persists its contiguous delivery watermark before acknowledging that position
+through pgoutput-client.

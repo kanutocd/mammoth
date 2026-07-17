@@ -1,0 +1,42 @@
+module Mammoth
+  class DeliveryProgressCoordinator
+    class Group
+      attr_reader items: Array[Entry]
+      attr_accessor closed: bool
+      def initialize: (items: Array[Entry], closed: bool) -> void
+    end
+
+    class Entry
+      attr_reader work: untyped
+      attr_reader source_position: untyped
+      attr_accessor completed: bool
+      def initialize: (work: untyped, source_position: untyped, completed: bool) -> void
+    end
+
+    attr_reader checkpoint_store: CheckpointStore
+    attr_reader source_name: String
+    attr_reader slot_name: String
+    attr_reader publication_name: String
+
+    def initialize: (
+      checkpoint_store: CheckpointStore,
+      source_name: String,
+      slot_name: String,
+      publication_name: String,
+      ?acknowledger: untyped
+    ) -> void
+
+    def register: (untyped work, group_end: bool) -> void
+    def complete: (untyped work) -> String?
+    def finalize: () -> String?
+
+    private
+
+    def current_group: () -> Group
+    def pending_entry_for: (untyped work) -> Entry?
+    def advance_contiguous_groups: () -> String?
+    def persist_and_acknowledge: (untyped position) -> untyped
+    def remove_group: (Group group) -> untyped
+    def source_position: (untyped work) -> untyped
+  end
+end

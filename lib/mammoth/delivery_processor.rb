@@ -32,14 +32,16 @@ module Mammoth
 
     concurrent_safe!
 
-    attr_reader :delivery_worker, :delivery_unit
+    attr_reader :delivery_worker, :delivery_unit, :progress_coordinator
 
     # @param delivery_worker [Mammoth::DeliveryWorker] relay-aware delivery worker
     # @param delivery_unit [String, Symbol] event or transaction
-    def initialize(delivery_worker:, delivery_unit: :event)
+    # @param progress_coordinator [Mammoth::DeliveryProgressCoordinator, nil] contiguous progress coordinator
+    def initialize(delivery_worker:, delivery_unit: :event, progress_coordinator: nil)
       super()
       @delivery_worker = delivery_worker
       @delivery_unit = delivery_unit.to_sym
+      @progress_coordinator = progress_coordinator
     end
 
     # @return [Boolean] true when this processor instance is safe for concurrent execution.
@@ -63,6 +65,7 @@ module Mammoth
     # @return [CDC::Core::ProcessorResult] normalized processor result
     def process(work)
       summary = deliver(work)
+      progress_coordinator&.complete(work)
       build_result(work, summary)
     rescue StandardError => e
       failure_result(work, e, retryable: e.is_a?(DeliveryError))

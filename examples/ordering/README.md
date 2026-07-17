@@ -78,6 +78,10 @@ B
 A
 ```
 
+Delivery completion may be out of order, but durable source progress is not.
+The shared coordinator advances checkpoints and PostgreSQL acknowledgements
+only across the contiguous A → B → C watermark.
+
 Configuration:
 
 ```yaml

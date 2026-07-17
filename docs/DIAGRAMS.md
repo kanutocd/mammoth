@@ -16,4 +16,8 @@ Mammoth architecture diagrams should communicate operational flow clearly.
 
 ## Canonical Flow
 
-PostgreSQL logical replication flows into Mammoth. Mammoth owns delivery correctness, replay, checkpointing, routing, fan-out, delivery ledger, and operational state. Downstream systems are destinations, not Mammoth's source of truth.
+PostgreSQL logical replication flows into Mammoth. Mammoth owns delivery
+correctness, replay, the contiguous checkpoint watermark, routing, fan-out, the
+delivery ledger, and operational state. pgoutput-client owns the transport
+feedback mechanism; Mammoth supplies it only with durably safe acknowledged
+progress. Downstream systems are destinations, not Mammoth's source of truth.

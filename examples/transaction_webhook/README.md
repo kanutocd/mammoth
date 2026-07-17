@@ -64,20 +64,28 @@ PostgreSQL and the source adapter output.
 
 ## Why this matters
 
-Transaction delivery gives Mammoth a safer correctness boundary:
+Transaction delivery gives downstream consumers one committed transaction
+payload. Mammoth's progress boundary is safe in both event and transaction
+delivery modes:
 
 ```text
 receive WAL
   ↓
 pgoutput-source-adapter emits the committed TransactionEnvelope
   ↓
-deliver the whole transaction
+record a durable outcome for every destination
   ↓
-checkpoint only after successful delivery
+advance the contiguous delivery watermark
+  ↓
+persist the checkpoint
+  ↓
+acknowledge the same position through pgoutput-client
 ```
 
-That is the foundation for concurrent delivery without advancing checkpoints
-past earlier incomplete committed work.
+Successful delivery, an existing duplicate ledger record, an intentional route
+or disabled-destination skip, and a persisted dead letter are durable outcomes.
+Concurrent completion cannot advance the checkpoint or PostgreSQL
+acknowledgement past earlier incomplete committed work.
 
 Mammoth does not buffer `Begin`/`Commit` messages in this path. The
 `pgoutput-source-adapter` streaming API owns transaction state and yields an

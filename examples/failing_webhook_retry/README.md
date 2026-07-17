@@ -14,6 +14,8 @@ webhook returns 500
 retry exhaustion
       ↓
 SQLite dead letter
+      ↓
+contiguous checkpoint advances
 ```
 
 ## Run
@@ -24,6 +26,8 @@ docker compose up --build
 
 The receiver always returns HTTP 500. Mammoth retries according to the example
 configuration and then records the failed event as a dead letter.
+Because the dead letter is durable, the progress coordinator may then advance
+the contiguous checkpoint. Replay remains an explicit operator action.
 
 ## Inspect state
 

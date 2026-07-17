@@ -7,7 +7,7 @@ they do not take over Mammoth's delivery semantics.
 Mammoth owns:
 
 - PostgreSQL CDC relay behavior
-- checkpoint semantics
+- contiguous checkpoint and upstream acknowledgement semantics
 - retry and backoff behavior
 - delivered-envelope ledger semantics
 - dead-letter persistence and replay rules

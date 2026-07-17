@@ -22,6 +22,7 @@ module Mammoth
 
     @lifecycle_hooks: untyped
     @observer: untyped
+    @progress_coordinator: untyped
 
     attr_reader config: untyped
 
@@ -33,6 +34,7 @@ module Mammoth
     attr_reader checkpoint_store: untyped
     attr_reader lifecycle_hooks: untyped
     attr_reader observer: untyped
+    attr_reader progress_coordinator: untyped
 
     def sqlite_store: () -> untyped
 
@@ -61,6 +63,8 @@ module Mammoth
     def build_runtime: () -> untyped
 
     def build_source: () -> untyped
+    def build_progress_coordinator: () -> untyped
+    def source_acknowledger: () -> untyped
     def build_delivery_worker: (sink: untyped, sleeper: untyped, ?delivery_policy: untyped) -> untyped
     def build_configured_delivery_worker: (sleeper: untyped) -> untyped
     def destination_specs: () -> untyped

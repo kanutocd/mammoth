@@ -32,9 +32,10 @@ does not buffer or partition work itself.
 
 The processor passed to a runtime is `Mammoth::DeliveryProcessor`. It implements
 `CDC::Core::Processor` and returns a `CDC::Core::ProcessorResult` for every work
-item. `DeliveryWorker` still owns retry, checkpoint, delivered-ledger, and DLQ
-behavior; the processor only translates its final delivery summary into the
-core result contract.
+item. `DeliveryWorker` owns retry, delivered-ledger, and DLQ behavior. After a
+durable result, the processor reports completion to the shared contiguous
+progress coordinator; the coordinator alone advances checkpoints and upstream
+acknowledgements.
 
 Runtime inputs are exact `CDC::Core::ChangeEvent` or
 `CDC::Core::TransactionEnvelope` instances. Runtime adapters should not accept
