@@ -23,6 +23,29 @@ module Mammoth
       end
     end
 
+    def test_wires_injected_core_observer_through_runtime
+      with_temp_dir do |dir|
+        config = Configuration.load(
+          write_file(File.join(dir, "mammoth.yml"), minimal_config(sqlite_path: File.join(dir, "mammoth.db")))
+        )
+        metrics = DispatchMetrics.new
+        observer = MetricsObserver.new(metrics: metrics)
+        app = Application.new(
+          config,
+          source: [sample_event("event-1", "0/1")],
+          sink: DeliveryWorkerTest::RecordingSink.new,
+          observer: observer
+        )
+
+        assert_same observer, app.observer
+        assert_equal 1, app.start
+        assert_equal(
+          [CDC::Core::Observer.started_metric_name, CDC::Core::Observer.succeeded_metric_name].sort,
+          metrics.snapshot.map { |entry| entry.fetch(:name) }.sort
+        )
+      end
+    end
+
     def test_dead_letters_failed_injected_source_event
       with_temp_dir do |dir|
         db_path = File.join(dir, "mammoth.db")

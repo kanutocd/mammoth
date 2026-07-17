@@ -39,7 +39,11 @@ module MammothBenchmarks
       adapter = Mammoth::OperationalState::SQLiteAdapter.new(Mammoth::SQLiteStore.connect(db_path))
       adapter.bootstrap!
       seed_state(adapter)
-      snapshot = Mammoth::ObservabilitySnapshot.new(config(db_path), state_adapter: adapter)
+      snapshot = Mammoth::ObservabilitySnapshot.new(
+        config(db_path),
+        state_adapter: adapter,
+        dispatch_metrics: build_dispatch_metrics
+      )
 
       readiness_elapsed = measure { snapshots.times { snapshot.readiness } }
       metrics_elapsed = measure { snapshots.times { snapshot.prometheus } }
@@ -65,6 +69,19 @@ module MammothBenchmarks
       )
       delivered.times { |index| write_delivered(adapter.delivered_envelope_store, index) }
       dead_letters.times { |index| write_dead_letter(adapter.dead_letter_store, index) }
+    end
+
+    def build_dispatch_metrics
+      Mammoth::DispatchMetrics.new.tap do |metrics|
+        metrics.increment(
+          CDC::Core::Observer.started_metric_name,
+          "kind" => "transaction_envelope", "size" => 4
+        )
+        metrics.increment(
+          CDC::Core::Observer.succeeded_metric_name,
+          "kind" => "processor_result", "status" => "success", "retryable" => false
+        )
+      end
     end
 
     def write_delivered(store, index)

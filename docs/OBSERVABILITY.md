@@ -101,7 +101,18 @@ mammoth_dead_letters_ignored_total{mammoth_name="local_mammoth"} 0
 mammoth_delivered_envelopes_total{mammoth_name="local_mammoth"} 3
 mammoth_dead_letters_pending_total{mammoth_name="local_mammoth",destination="primary_webhook"} 0
 mammoth_delivered_envelopes_total{mammoth_name="local_mammoth",destination="audit_webhook"} 3
+mammoth_dispatch_started_total{mammoth_name="local_mammoth",kind="transaction_envelope",size="4",transaction_id="42"} 1
+mammoth_dispatch_succeeded_total{mammoth_name="local_mammoth",kind="processor_result",retryable="false",status="success"} 1
 ```
+
+The dispatch counters come from `Mammoth::MetricsObserver`, which implements
+the canonical `CDC::Core::Observer` hooks. Mammoth maps the core metric
+vocabulary to these Prometheus counters:
+
+- `cdc_core.dispatch.started` → `mammoth_dispatch_started_total`
+- `cdc_core.dispatch.succeeded` → `mammoth_dispatch_succeeded_total`
+- `cdc_core.dispatch.failed` → `mammoth_dispatch_failed_total`
+- `cdc_core.dispatch.skipped` → `mammoth_dispatch_skipped_total`
 
 ## Operational model
 
@@ -116,7 +127,13 @@ The endpoints expose local relay state only:
 - dead-letter row counts
 - delivered-envelope ledger row count
 - destination-labeled dead-letter and delivered-envelope counts
+- started, succeeded, failed, and skipped dispatch counters with canonical core tags
 - configured operational-state adapter readiness
+
+Dispatch counters are process-local. A snapshot created with the same
+`DispatchMetrics` registry as the running application exposes them. A separate
+`mammoth observability` process can always expose adapter-backed gauges, but it
+does not inherit another process's in-memory dispatch counters.
 
 The endpoints do not inspect PostgreSQL replication slots, send feedback, replay
 dead letters, or mutate delivery state.

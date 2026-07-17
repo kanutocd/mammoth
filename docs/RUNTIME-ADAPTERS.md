@@ -23,9 +23,17 @@ runtime.process_many(work_items)
 runtime.shutdown
 ```
 
-The processor passed to a runtime is still `Mammoth::DeliveryProcessor`.
-`DeliveryWorker` still owns retry, checkpoint, delivered-ledger, and DLQ
-behavior.
+The processor passed to a runtime is `Mammoth::DeliveryProcessor`. It implements
+`CDC::Core::Processor` and returns a `CDC::Core::ProcessorResult` for every work
+item. `DeliveryWorker` still owns retry, checkpoint, delivered-ledger, and DLQ
+behavior; the processor only translates its final delivery summary into the
+core result contract.
+
+Both built-in runtimes accept a `CDC::Core::Observer` and emit canonical
+`dispatch_started`, `dispatch_succeeded`, `dispatch_failed`, and
+`dispatch_skipped` notifications. `Mammoth::Application` installs
+`Mammoth::MetricsObserver` by default. Custom runtime adapters should preserve
+the same processor-result and observer lifecycle contract.
 
 Built-in registration:
 

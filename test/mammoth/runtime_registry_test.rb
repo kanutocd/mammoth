@@ -24,8 +24,28 @@ module Mammoth
         preserve_order: true
       )
 
-      assert_equal [{ status: "ok", event_id: "event-1" }], runtime.process_many([{ "event_id" => "event-1" }])
+      results = runtime.process_many([{ "event_id" => "event-1" }])
+      assert_equal [{ status: "ok", event_id: "event-1" }], results.map(&:value)
       assert_nil runtime.shutdown
+    end
+
+    def test_inline_adapter_observes_skipped_and_failed_results
+      observer = ResultRecordingObserver.new
+      processor = SequenceProcessor.new
+      runtime = Runtimes::Registry.build(
+        "inline",
+        processor: processor,
+        observer: observer,
+        concurrency: 1,
+        timeout: nil,
+        preserve_order: true
+      )
+
+      results = runtime.process_many(%w[skip fail])
+
+      assert_equal %w[skip fail], observer.started
+      assert_equal [results.fetch(0)], observer.skipped
+      assert_equal [results.fetch(1)], observer.failed
     end
 
     def test_unknown_runtime_fails_clearly
@@ -38,6 +58,29 @@ module Mammoth
       def deliver(event)
         { status: "ok", event_id: event.fetch("event_id") }
       end
+    end
+
+    class SequenceProcessor
+      def process(item)
+        return CDC::Core::ProcessorResult.skipped(item) if item == "skip"
+
+        CDC::Core::ProcessorResult.failure(DeliveryError.new("boom"), event: item)
+      end
+    end
+
+    class ResultRecordingObserver < CDC::Core::Observer
+      attr_reader :started, :skipped, :failed
+
+      def initialize
+        super
+        @started = []
+        @skipped = []
+        @failed = []
+      end
+
+      def dispatch_started(item) = started << item
+      def dispatch_skipped(result) = skipped << result
+      def dispatch_failed(result) = failed << result
     end
 
     CustomAdapter = Class.new(Runtimes::Adapter)

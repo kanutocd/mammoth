@@ -1,6 +1,6 @@
 module Mammoth
   # Adapter object used by CDC::Concurrent::ProcessorPool.
-  class DeliveryProcessor
+  class DeliveryProcessor < CDC::Core::Processor
     @delivery_worker: untyped
     @delivery_unit: untyped
 
@@ -16,7 +16,15 @@ module Mammoth
 
     def initialize: (delivery_worker: untyped, ?delivery_unit: untyped) -> void
 
-    def call: (untyped work) -> untyped
-    def process: (untyped work) -> untyped
+    def call: (untyped work) -> CDC::Core::ProcessorResult
+    def process: (untyped work) -> CDC::Core::ProcessorResult
+
+    private
+
+    def deliver: (untyped work) -> untyped
+    def build_result: (untyped work, untyped summary) -> CDC::Core::ProcessorResult
+    def failure_result: (untyped work, StandardError error, retryable: bool, ?summary: untyped?) -> CDC::Core::ProcessorResult
+    def failure_reason: (untyped summary) -> String
+    def result_metadata: (untyped? summary) -> untyped
   end
 end

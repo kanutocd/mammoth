@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cdc/core"
+
 require_relative "mammoth/version"
 require_relative "mammoth/errors"
 require_relative "mammoth/registry"
@@ -14,6 +16,9 @@ require_relative "mammoth/commands/status_command"
 require_relative "mammoth/commands/start_command"
 require_relative "mammoth/commands/deliver_sample_command"
 require_relative "mammoth/commands/dead_letters_command"
+require_relative "mammoth/dispatch_metrics"
+require_relative "mammoth/metrics_observer"
+require_relative "mammoth/observability_metrics"
 require_relative "mammoth/observability_snapshot"
 require_relative "mammoth/observability_server"
 require_relative "mammoth/sqlite_store"
@@ -47,7 +52,7 @@ require_relative "mammoth/cli"
 
 # Mammoth is a self-hosted PostgreSQL event relay.
 #
-# Mammoth 0.7.x is a single-node PostgreSQL CDC relay with webhook fanout,
+# Mammoth 0.8.x is a single-node PostgreSQL CDC relay with webhook fanout,
 # replayable operational SQLite state, health/metrics endpoints, and explicit
 # extension contracts for state, destination, runtime, lifecycle, configuration,
 # and local command integrations.

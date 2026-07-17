@@ -16,13 +16,15 @@ module Mammoth
         # @param concurrency [Integer] worker count
         # @param timeout [Numeric, nil] optional timeout
         # @param preserve_order [Boolean] preserve ordering when supported
+        # @param observer [CDC::Core::Observer] dispatch lifecycle observer
         # @return [Mammoth::ConcurrentDeliveryRuntime]
-        def build(processor:, concurrency:, timeout:, preserve_order:)
+        def build(processor:, concurrency:, timeout:, preserve_order:, observer: CDC::Core::Observer.new)
           ConcurrentDeliveryRuntime.new(
             processor: processor,
             concurrency: concurrency,
             timeout: timeout,
-            preserve_order: preserve_order
+            preserve_order: preserve_order,
+            observer: observer
           )
         end
       end

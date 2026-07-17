@@ -59,6 +59,7 @@ Mammoth 0.8.x focuses on:
 - webhook static headers, env-backed headers, and HMAC-SHA256 signing
 - dead-letter inspection and filtered replay commands
 - explicit extension registries for state, destination, and runtime adapters
+- CDC-core processor results and observer-backed dispatch metrics
 - node identity and local capability reporting
 - lifecycle hooks, configuration providers, and reusable local command objects
 - Docker image distribution

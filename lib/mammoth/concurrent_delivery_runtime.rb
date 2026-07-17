@@ -7,17 +7,19 @@ module Mammoth
   # I/O fan-out to cdc-concurrent. This class is intentionally small so the
   # runtime boundary remains easy to test and replace.
   class ConcurrentDeliveryRuntime
-    attr_reader :processor, :concurrency, :timeout, :preserve_order, :pool
+    attr_reader :processor, :concurrency, :timeout, :preserve_order, :pool, :observer
 
     # @param processor [#process] delivery processor
     # @param concurrency [Integer] number of concurrent delivery workers
     # @param timeout [Numeric, nil] optional per-item timeout
     # @param preserve_order [Boolean] preserve output order when supported
-    def initialize(processor:, concurrency:, timeout:, preserve_order:)
+    # @param observer [CDC::Core::Observer] dispatch lifecycle observer
+    def initialize(processor:, concurrency:, timeout:, preserve_order:, observer: CDC::Core::Observer.new)
       @processor = processor
       @concurrency = concurrency
       @timeout = timeout
       @preserve_order = preserve_order
+      @observer = observer
       @pool = build_pool
     end
 
@@ -28,7 +30,10 @@ module Mammoth
     def process_many(items)
       return [] if items.empty?
 
-      pool.process_many(items)
+      items.each { |item| observer.dispatch_started(item) }
+      pool.process_many(items).tap do |results|
+        results.each { |result| observe_result(result) }
+      end
     end
 
     # Shutdown the underlying runtime when supported.
@@ -40,6 +45,13 @@ module Mammoth
     end
 
     private
+
+    def observe_result(result)
+      return observer.dispatch_succeeded(result) if result.success?
+      return observer.dispatch_failed(result) if result.failure?
+
+      observer.dispatch_skipped(result)
+    end
 
     def build_pool
       require "cdc/concurrent"

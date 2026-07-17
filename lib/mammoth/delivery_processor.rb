@@ -6,7 +6,7 @@ module Mammoth
   # The processor keeps cdc-concurrent integration narrow: cdc-concurrent owns
   # I/O-heavy fan-out mechanics, while DeliveryWorker owns Mammoth relay
   # semantics such as retries, dead letters, and checkpoint writes.
-  class DeliveryProcessor
+  class DeliveryProcessor < CDC::Core::Processor
     @concurrent_safe = false
 
     class << self
@@ -37,6 +37,7 @@ module Mammoth
     # @param delivery_worker [Mammoth::DeliveryWorker] relay-aware delivery worker
     # @param delivery_unit [String, Symbol] event or transaction
     def initialize(delivery_worker:, delivery_unit: :event)
+      super()
       @delivery_worker = delivery_worker
       @delivery_unit = delivery_unit.to_sym
     end
@@ -51,7 +52,7 @@ module Mammoth
     # Process one work item from CDC::Concurrent::ProcessorPool.
     #
     # @param work [Object] event or transaction envelope
-    # @return [Hash] delivery summary
+    # @return [CDC::Core::ProcessorResult] normalized processor result
     def call(work)
       process(work)
     end
@@ -59,14 +60,52 @@ module Mammoth
     # Process one work item using the configured delivery unit.
     #
     # @param work [Object] event or transaction envelope
-    # @return [Hash] delivery summary
+    # @return [CDC::Core::ProcessorResult] normalized processor result
     def process(work)
-      case delivery_unit
-      when :transaction
-        delivery_worker.deliver_transaction(work)
+      summary = deliver(work)
+      build_result(work, summary)
+    rescue StandardError => e
+      failure_result(work, e, retryable: e.is_a?(DeliveryError))
+    end
+
+    private
+
+    def deliver(work)
+      return delivery_worker.deliver_transaction(work) if delivery_unit == :transaction
+
+      delivery_worker.deliver(work)
+    end
+
+    def build_result(work, summary)
+      case summary[:status].to_s
+      when "skipped"
+        CDC::Core::ProcessorResult.skipped(work, metadata: result_metadata(summary))
+      when "dead_lettered", "fanout_partial"
+        failure_result(work, DeliveryError.new(failure_reason(summary)), retryable: false, summary: summary)
       else
-        delivery_worker.deliver(work)
+        CDC::Core::ProcessorResult.success(work, value: summary, metadata: result_metadata(summary))
       end
+    end
+
+    def failure_result(work, error, retryable:, summary: nil)
+      CDC::Core::ProcessorResult.failure(
+        error,
+        event: work,
+        reason: error.message,
+        retryable: retryable,
+        processor: self.class.name,
+        metadata: result_metadata(summary)
+      )
+    end
+
+    def failure_reason(summary)
+      "delivery completed with #{summary.fetch(:status)} status"
+    end
+
+    def result_metadata(summary)
+      metadata = { processor: self.class.name, delivery_unit: delivery_unit.to_s }
+      metadata[:delivery] = summary if summary
+      metadata
     end
   end
 end

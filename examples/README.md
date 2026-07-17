@@ -27,6 +27,9 @@ Ecosystem source adapter are intentionally exercised together.
 
 In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.
+Mammoth's delivery processor returns exact `CDC::Core::ProcessorResult` objects,
+and the selected runtime emits canonical `CDC::Core::Observer` notifications
+for dispatch metrics.
 
 
 ## Checkpoint Recovery

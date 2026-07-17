@@ -5,6 +5,7 @@
 # boundary used after pgoutput-source-adapter creates a TransactionEnvelope:
 #
 #   TransactionEnvelope -> ConcurrentDeliveryRuntime -> DeliveryProcessor
+#                       -> DeliveryWorker -> ProcessorResult -> Observer
 #
 # It is intentionally not a PostgreSQL logical-replication benchmark. Use this
 # to measure downstream concurrent delivery behavior under controlled sink
@@ -14,6 +15,7 @@
 require "json"
 require "securerandom"
 require "time"
+require "cdc/core"
 
 ROOT = File.expand_path("..", __dir__)
 $LOAD_PATH.unshift(File.join(ROOT, "lib"))

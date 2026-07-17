@@ -9,11 +9,20 @@
   or constructing concrete stores.
 - Added adapter-owned `bootstrap!`, `ready?`, and configured registry
   composition for backend-neutral operational tooling.
-
-### Changed
-
 - Inject the configured operational-state delivered-envelope store into every
   delivery worker instead of deriving a SQLite ledger from the checkpoint store.
+- Made `Mammoth::DeliveryProcessor` implement `CDC::Core::Processor` and return
+  `CDC::Core::ProcessorResult` for successful, skipped, and failed deliveries.
+- Wired `CDC::Core::Observer` notifications through inline and concurrent
+  runtimes and translated canonical dispatch metrics into Mammoth Prometheus
+  counters.
+
+### Quality
+
+- Added processor contract, observer, runtime notification, dispatch counter,
+  and Prometheus exposition coverage.
+- Updated RBS signatures, YARD API documentation, examples, and benchmark
+  descriptions for the corrected processor/observer boundary.
 
 ## 0.8.0
 

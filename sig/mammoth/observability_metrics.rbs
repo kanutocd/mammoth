@@ -1,0 +1,17 @@
+module Mammoth
+  module ObservabilityMetrics
+    DISPATCH_METRIC_NAMES: Hash[String, String]
+
+    def dispatch_metrics: () -> DispatchMetrics
+
+    private
+
+    def mammoth_name: () -> untyped
+    def metric_headers: () -> Array[String]
+    def operational_metric_headers: () -> Array[String]
+    def dispatch_metric_headers: () -> Array[String]
+    def dispatch_metric_lines: () -> Array[String]
+    def metric_line: (untyped name, untyped value, ?destination: untyped?, ?labels: untyped) -> String
+    def escape_label: (untyped value) -> String
+  end
+end

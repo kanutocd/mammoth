@@ -11,15 +11,19 @@ module Mammoth
   # health and metrics endpoints use this object to expose Mammoth process and
   # operational-state adapter status in a predictable format.
   class ObservabilitySnapshot
-    attr_reader :config, :state_adapter, :clock
+    include ObservabilityMetrics
+
+    attr_reader :config, :state_adapter, :clock, :dispatch_metrics
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param clock [#call] time source returning a Time-like object
-    def initialize(config, state_adapter: nil, clock: -> { Time.now.utc })
+    # @param dispatch_metrics [Mammoth::DispatchMetrics] dispatch counter registry
+    def initialize(config, state_adapter: nil, clock: -> { Time.now.utc }, dispatch_metrics: DispatchMetrics::INSTANCE)
       @config = config
       @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
       @clock = clock
+      @dispatch_metrics = dispatch_metrics
     end
 
     # Build a liveness response.
@@ -67,7 +71,7 @@ module Mammoth
       ) + destination_metric_lines(
         dead_letter_store: state_adapter.dead_letter_store,
         delivered_store: state_adapter.delivered_envelope_store
-      )
+      ) + dispatch_metric_lines
       "#{lines.join("\n")}\n"
     rescue Mammoth::Error
       down_metrics
@@ -129,7 +133,7 @@ module Mammoth
     end
 
     def down_metrics
-      "#{(metric_headers + [metric_line("mammoth_up", 0)]).join("\n")}\n"
+      "#{(metric_headers + [metric_line("mammoth_up", 0)] + dispatch_metric_lines).join("\n")}\n"
     end
 
     def state_summary
@@ -153,35 +157,6 @@ module Mammoth
 
     def checked_at
       clock.call.utc.iso8601
-    end
-
-    def metric_headers
-      [
-        "# HELP mammoth_up 1 when Mammoth operational state can be inspected, 0 otherwise.",
-        "# TYPE mammoth_up gauge",
-        "# HELP mammoth_checkpoints_total Number of checkpoint rows stored by Mammoth.",
-        "# TYPE mammoth_checkpoints_total gauge",
-        "# HELP mammoth_dead_letters_total Number of dead-letter rows stored by Mammoth.",
-        "# TYPE mammoth_dead_letters_total gauge",
-        "# HELP mammoth_dead_letters_pending_total Number of pending dead-letter rows.",
-        "# TYPE mammoth_dead_letters_pending_total gauge",
-        "# HELP mammoth_dead_letters_resolved_total Number of resolved dead-letter rows.",
-        "# TYPE mammoth_dead_letters_resolved_total gauge",
-        "# HELP mammoth_dead_letters_ignored_total Number of ignored dead-letter rows.",
-        "# TYPE mammoth_dead_letters_ignored_total gauge",
-        "# HELP mammoth_delivered_envelopes_total Number of delivered-envelope ledger rows.",
-        "# TYPE mammoth_delivered_envelopes_total gauge"
-      ]
-    end
-
-    def metric_line(name, value, destination: nil)
-      labels = { "mammoth_name" => mammoth_name }
-      labels["destination"] = destination if destination
-      %(#{name}{#{labels.map { |label, label_value| %(#{label}="#{escape_label(label_value)}") }.join(",")}} #{Integer(value)})
-    end
-
-    def escape_label(value)
-      value.to_s.gsub("\\", "\\\\").gsub('"', '\\"').gsub("\n", "\\n")
     end
   end
 end

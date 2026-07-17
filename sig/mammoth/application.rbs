@@ -21,6 +21,7 @@ module Mammoth
     @checkpoint_store: untyped
 
     @lifecycle_hooks: untyped
+    @observer: untyped
 
     attr_reader config: untyped
 
@@ -31,6 +32,7 @@ module Mammoth
     attr_reader delivery_worker: untyped
     attr_reader checkpoint_store: untyped
     attr_reader lifecycle_hooks: untyped
+    attr_reader observer: untyped
 
     def sqlite_store: () -> untyped
 
@@ -39,7 +41,7 @@ module Mammoth
     # @param sink [#deliver, nil] optional destination sink
     # @param sleeper [#call] retry sleep strategy
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
-    def initialize: (untyped config, ?source: untyped?, ?sink: untyped?, ?state_adapter: untyped?, ?sleeper: untyped, ?lifecycle_hooks: untyped) -> void
+    def initialize: (untyped config, ?source: untyped?, ?sink: untyped?, ?state_adapter: untyped?, ?sleeper: untyped, ?lifecycle_hooks: untyped, ?observer: untyped?) -> void
 
     # Start the application runtime and deliver consumed events.
     #

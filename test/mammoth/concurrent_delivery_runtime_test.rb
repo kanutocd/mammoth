@@ -19,11 +19,39 @@ module Mammoth
 
     def test_process_many_delegates_to_cdc_concurrent_pool
       processor = RecordingProcessor.new
-      runtime = ConcurrentDeliveryRuntime.new(processor: processor, concurrency: 2, timeout: 1, preserve_order: false)
+      observer = RecordingObserver.new
+      runtime = ConcurrentDeliveryRuntime.new(
+        processor: processor,
+        concurrency: 2,
+        timeout: 1,
+        preserve_order: false,
+        observer: observer
+      )
 
-      assert_equal [{ processed: "a" }, { processed: "b" }], runtime.process_many(%w[a b])
+      results = runtime.process_many(%w[a b])
+      assert_equal [{ processed: "a" }, { processed: "b" }], results.map(&:value)
+      assert_equal %w[a b], observer.started
+      assert_equal results, observer.succeeded
       refute CDC::Concurrent::ProcessorPool.last_options.fetch(:preserve_order)
       assert_equal 1, CDC::Concurrent::ProcessorPool.last_options.fetch(:timeout)
+    ensure
+      runtime&.shutdown
+    end
+
+    def test_process_many_observes_skipped_and_failed_results
+      observer = OutcomeObserver.new
+      runtime = ConcurrentDeliveryRuntime.new(
+        processor: OutcomeProcessor.new,
+        concurrency: 2,
+        timeout: nil,
+        preserve_order: true,
+        observer: observer
+      )
+
+      results = runtime.process_many(%w[skip fail])
+
+      assert_equal [results.fetch(0)], observer.skipped
+      assert_equal [results.fetch(1)], observer.failed
     ensure
       runtime&.shutdown
     end
@@ -81,8 +109,47 @@ module Mammoth
 
     class RecordingProcessor
       def process(item)
-        { processed: item }
+        CDC::Core::ProcessorResult.success(item, value: { processed: item })
       end
+    end
+
+    class RecordingObserver < CDC::Core::Observer
+      attr_reader :started, :succeeded
+
+      def initialize
+        super
+        @started = []
+        @succeeded = []
+      end
+
+      def dispatch_started(event)
+        started << event
+      end
+
+      def dispatch_succeeded(result)
+        succeeded << result
+      end
+    end
+
+    class OutcomeProcessor
+      def process(item)
+        return CDC::Core::ProcessorResult.skipped(item) if item == "skip"
+
+        CDC::Core::ProcessorResult.failure(DeliveryError.new("boom"), event: item)
+      end
+    end
+
+    class OutcomeObserver < CDC::Core::Observer
+      attr_reader :skipped, :failed
+
+      def initialize
+        super
+        @skipped = []
+        @failed = []
+      end
+
+      def dispatch_skipped(result) = skipped << result
+      def dispatch_failed(result) = failed << result
     end
 
     class ShutdownRecordingPool

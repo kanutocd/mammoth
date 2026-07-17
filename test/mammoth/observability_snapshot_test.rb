@@ -115,6 +115,31 @@ module Mammoth
       end
     end
 
+    def test_prometheus_reports_core_dispatch_counters_and_tags
+      metrics_registry = DispatchMetrics.new
+      observer = MetricsObserver.new(metrics: metrics_registry)
+      result = CDC::Core::ProcessorResult.failure(
+        DeliveryError.new("boom"),
+        event: "event",
+        retryable: false,
+        processor: "Mammoth::DeliveryProcessor"
+      )
+      observer.dispatch_started("event")
+      observer.dispatch_failed(result)
+      metrics_registry.increment("custom.dispatch.metric")
+
+      metrics = ObservabilitySnapshot.new(
+        Configuration.load(fixture_config_path),
+        dispatch_metrics: metrics_registry
+      ).prometheus
+
+      assert_includes metrics, %(mammoth_dispatch_started_total{mammoth_name="local_mammoth",kind="String"} 1)
+      assert_includes metrics, %(mammoth_dispatch_failed_total{mammoth_name="local_mammoth")
+      assert_includes metrics, %(kind="processor_result")
+      assert_includes metrics, %(processor="Mammoth::DeliveryProcessor")
+      refute_includes metrics, "custom.dispatch.metric"
+    end
+
     def test_prometheus_reports_down_when_store_fails
       metrics = ObservabilitySnapshot.new(
         Configuration.load(fixture_config_path),

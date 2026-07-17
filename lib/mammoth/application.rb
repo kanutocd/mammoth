@@ -10,7 +10,7 @@ module Mammoth
   # injected CDC work source rather than owning upstream CDC source-adapter
   # lifecycle decisions.
   class Application
-    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks
+    attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks, :observer
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -18,10 +18,12 @@ module Mammoth
     # @param state_adapter [Mammoth::OperationalState::Adapter, nil] operational state dependency
     # @param sleeper [#call] retry sleep strategy
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
+    # @param observer [CDC::Core::Observer, nil] dispatch lifecycle observer
     def initialize(config, source: nil, sink: nil, state_adapter: nil, sleeper: Kernel.method(:sleep),
-                   lifecycle_hooks: LifecycleHooks.new)
+                   lifecycle_hooks: LifecycleHooks.new, observer: nil)
       @config = config
       @lifecycle_hooks = build_lifecycle_hooks(lifecycle_hooks)
+      @observer = observer || MetricsObserver.new
       @state_adapter = state_adapter || build_state_adapter
       @checkpoint_store = @state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
@@ -112,7 +114,8 @@ module Mammoth
         processor: DeliveryProcessor.new(delivery_worker:, delivery_unit: delivery_unit),
         concurrency: runtime_concurrency,
         timeout: runtime_timeout,
-        preserve_order: runtime_preserve_order?
+        preserve_order: runtime_preserve_order?,
+        observer: observer
       )
     end
 

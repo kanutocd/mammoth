@@ -62,6 +62,7 @@ Mammoth OSS includes:
 - public Helm chart support
 - unit and e2e test tasks
 - health and metrics endpoints
+- canonical CDC dispatch counters through a `CDC::Core::Observer`
 - explicit extension registries for state, destination, and runtime adapters
 - node identity and local capability reporting
 - lifecycle hooks, configuration providers, and reusable local command objects
@@ -71,14 +72,21 @@ Mammoth OSS includes:
 Mammoth begins at CDC-core work items and ends at webhook fanout delivery.
 
 Mammoth does not own pgoutput protocol parsing, value decoding, source
-normalization, ordering policy, or runtime execution. Those belong to the
-upstream CDC Ecosystem components.
+normalization, or core dispatch vocabulary. Those belong to upstream CDC
+Ecosystem components. Mammoth selects and composes a delivery runtime while
+delegating its scheduling mechanics to the selected adapter.
 
 For the live PostgreSQL stream, `pgoutput-source-adapter` incrementally owns
 `Begin`/`Commit` buffering and emits exact `CDC::Core::ChangeEvent` or
 `CDC::Core::TransactionEnvelope` work items. Mammoth only composes the
 transport, parser, decoder, and source adapter and forwards the resulting core
 work to delivery.
+
+At the downstream boundary, `Mammoth::DeliveryProcessor` implements
+`CDC::Core::Processor` and returns `CDC::Core::ProcessorResult`. Inline and
+concurrent runtimes notify a `CDC::Core::Observer`; Mammoth's default observer
+maps the canonical started, succeeded, failed, and skipped notifications to
+Prometheus counters.
 
 ## Extensions
 

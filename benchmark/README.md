@@ -88,11 +88,15 @@ Mammoth::ConcurrentDeliveryRuntime
 Mammoth::DeliveryProcessor
       ↓
 synthetic delivery worker
+      ↓
+CDC::Core::ProcessorResult + observer notification
 ```
 
 The synthetic envelopes represent work already normalized by
 `pgoutput-source-adapter`. This benchmark intentionally excludes PostgreSQL
 transport, decoding, and transaction buffering.
+The runtime uses the core processor/result and observer contracts; its default
+no-op observer keeps this benchmark focused on scheduling and delivery cost.
 
 Useful for tuning:
 
@@ -205,7 +209,8 @@ bundle exec ruby benchmark/observability_snapshot.rb
 ```
 
 Measures readiness and Prometheus metrics snapshot cost through a seeded
-`OperationalState::SQLiteAdapter`.
+`OperationalState::SQLiteAdapter` plus representative canonical dispatch
+counter series.
 
 Useful for tuning:
 

@@ -3,7 +3,7 @@ module Mammoth
     # Runtime adapter backed by Mammoth's existing cdc-concurrent wrapper.
     class ConcurrentAdapter < Adapter
       def self.adapter_type: () -> String
-      def self.build: (processor: untyped, concurrency: untyped, timeout: untyped, preserve_order: untyped) -> untyped
+      def self.build: (processor: untyped, concurrency: untyped, timeout: untyped, preserve_order: untyped, ?observer: untyped) -> untyped
     end
   end
 end

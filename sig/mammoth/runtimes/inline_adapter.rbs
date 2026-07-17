@@ -3,14 +3,20 @@ module Mammoth
     # Inline runtime adapter that processes work in the caller thread.
     class InlineAdapter < Adapter
       @processor: untyped
+      @observer: untyped
 
       attr_reader processor: untyped
+      attr_reader observer: untyped
 
-      def initialize: (processor: untyped) -> void
-      def self.build: (processor: untyped, **untyped options) -> untyped
+      def initialize: (processor: untyped, ?observer: untyped) -> void
+      def self.build: (processor: untyped, ?observer: untyped, **untyped options) -> untyped
       def self.adapter_type: () -> String
       def process_many: (untyped items) -> untyped
       def shutdown: () -> nil
+
+      private
+
+      def observe_result: (untyped result) -> untyped
     end
   end
 end

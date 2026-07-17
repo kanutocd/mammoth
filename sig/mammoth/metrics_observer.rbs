@@ -1,0 +1,17 @@
+module Mammoth
+  class MetricsObserver < CDC::Core::Observer
+    @metrics: DispatchMetrics
+
+    attr_reader metrics: DispatchMetrics
+
+    def initialize: (?metrics: DispatchMetrics) -> void
+    def dispatch_started: (untyped event) -> Integer
+    def dispatch_succeeded: (untyped result) -> Integer
+    def dispatch_failed: (untyped result) -> Integer
+    def dispatch_skipped: (untyped result) -> Integer
+
+    private
+
+    def record: (String name, untyped payload) -> Integer
+  end
+end

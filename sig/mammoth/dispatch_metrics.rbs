@@ -1,0 +1,17 @@
+module Mammoth
+  class DispatchMetrics
+    INSTANCE: DispatchMetrics
+
+    @mutex: Mutex
+    @counters: untyped
+
+    def initialize: () -> void
+    def increment: (String name, ?untyped tags) -> Integer
+    def snapshot: () -> Array[Hash[Symbol, untyped]]
+    def reset!: () -> DispatchMetrics
+
+    private
+
+    def normalized_tags: (untyped tags) -> untyped
+  end
+end
