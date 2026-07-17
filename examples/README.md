@@ -11,6 +11,7 @@ unit tests Docker-free.
 | [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered with SQLite checkpoints and duplicate-suppression ledger. | No |
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
 | [`composite_replica_identity`](./composite_replica_identity) | Proves catalog-derived composite identity preservation across live `INSERT`, `UPDATE`, and `DELETE` events. | Yes |
+| [`slot_invalidation_recovery`](./slot_invalidation_recovery) | Demonstrates fail-closed restart and explicit operator recovery after PostgreSQL invalidates an idle slot. | Yes |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
@@ -41,6 +42,10 @@ Mammoth's startup replica-identity preflight for `UPDATE` and `DELETE`. The
 composite replica identity example additionally proves that identity extraction
 does not depend on a conventional `id` column.
 
+The slot invalidation recovery example demonstrates the complementary operator
+boundary: a lost or invalidated slot must be dropped and re-established outside
+Mammoth before streaming can safely resume.
+
 They do not demonstrate DDL delivery, sequence synchronization, or automatic
 destination conflict resolution. PostgreSQL does not replicate DDL or sequence
 state through this stream, and Mammoth is an HTTP relay rather than a SQL
@@ -58,3 +63,12 @@ to flow. Contiguous progress is checkpointed before the same position is
 acknowledged through pgoutput-client. The retained slot is preflighted on
 restart, and a missing or checkpoint-unreachable slot fails closed rather than
 being silently recreated.
+
+## Slot Invalidation Recovery
+
+`examples/slot_invalidation_recovery` demonstrates the fail-closed path when
+PostgreSQL invalidates an idle logical replication slot and the explicit
+operator reconciliation required afterward. Mammoth refuses to stream across
+the invalidated slot, the example drops that slot and clears Mammoth's durable
+checkpoint state outside the transport boundary, and a fresh startup
+auto-creates a new safe baseline before later transactions resume.

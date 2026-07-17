@@ -301,3 +301,12 @@ to flow. Mammoth persists the contiguous checkpoint before acknowledging the
 same position through pgoutput-client. Restart recovery also preflights the
 retained slot; a missing or checkpoint-unreachable slot fails closed instead of
 being recreated as though continuity still existed.
+
+## Slot Invalidation Recovery
+
+`examples/slot_invalidation_recovery` demonstrates the fail-closed path when
+PostgreSQL invalidates an idle logical replication slot and the explicit
+operator reconciliation required afterward. Mammoth refuses to stream across
+the invalidated slot, the example drops that slot and clears Mammoth's durable
+checkpoint state outside the transport boundary, and a fresh startup
+auto-creates a new safe baseline before later transactions resume.

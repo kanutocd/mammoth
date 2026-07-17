@@ -16,6 +16,8 @@
   schema-qualified tables.
 - Added a self-verifying live PostgreSQL example for composite, non-`id`
   replica identities across `INSERT`, `UPDATE`, and `DELETE`.
+- Added a live PostgreSQL example that shows fail-closed restart after slot
+  invalidation and the explicit operator reconciliation required to resume.
 
 ### Fixed
 
