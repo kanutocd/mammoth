@@ -9,12 +9,17 @@ module Mammoth
     slot_name: "mammoth_prod", plugin: "pgoutput", slot_type: "logical",
     database: "app_development", active: false, restart_lsn: "0/0"
   }.freeze
+  BoundaryPublicationInspector = Data.define(:tables) do
+    def inspect(_publication_names) = tables
+  end
 
+  # rubocop:disable Metrics/ClassLength
   class BoundaryTest < Minitest::Test
     PROJECT_ROOT = File.expand_path("../..", __dir__)
     LIB_ROOT = File.expand_path("../../lib", __dir__)
     SIG_ROOT = File.expand_path("../../sig", __dir__)
     POSTGRES_SOURCE_FILE = File.join(LIB_ROOT, "mammoth", "sources", "postgres.rb")
+    PUBLICATION_INSPECTOR_FILE = File.join(LIB_ROOT, "mammoth", "sources", "postgres_publication_inspector.rb")
     POSTGRES_SOURCE_SIGNATURE = File.join(SIG_ROOT, "mammoth", "sources", "postgres.rbs")
     OPERATIONAL_STATE_CONSUMERS = %w[
       application.rb
@@ -66,6 +71,17 @@ module Mammoth
       assert_match(/stream_event/, body)
       refute_match(/Data\.define|TransactionEnvelope\.new/, body)
       refute_match(/transaction_buffer|begin_message\?|commit_message\?/, body)
+    end
+
+    def test_replica_identity_catalog_access_is_isolated_from_source_policy
+      source = File.read(POSTGRES_SOURCE_FILE)
+      inspector = File.read(PUBLICATION_INSPECTOR_FILE)
+
+      assert_match(/PostgresPublicationInspector/, source)
+      refute_match(/pg_publication_tables|pg_index|PG\.connect|exec_params/, source)
+      assert_match(/pg_publication_tables/, inspector)
+      assert_match(/pg_index/, inspector)
+      assert_match(/PG\.connect/, inspector)
     end
 
     def test_postgres_source_yields_exact_core_output_types_from_pgoutput_adapter
@@ -192,7 +208,8 @@ module Mammoth
         runner: BoundaryRunner.new(messages, BOUNDARY_SLOT_STATUS),
         parser: ->(payload) { payload },
         decoder: ->(message, _metadata) { message },
-        adapter: Pgoutput::SourceAdapter::Cdc.new
+        adapter: Pgoutput::SourceAdapter::Cdc.new,
+        publication_inspector: BoundaryPublicationInspector.new([])
       )
     end
 
@@ -200,6 +217,7 @@ module Mammoth
       path.delete_prefix("#{PROJECT_ROOT}/")
     end
   end
+  # rubocop:enable Metrics/ClassLength
 
   class DeliveryProgressBoundaryTest < Minitest::Test
     LIB_ROOT = BoundaryTest::LIB_ROOT

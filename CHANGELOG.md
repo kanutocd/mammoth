@@ -9,6 +9,9 @@
   size, WAL status, invalidation, inactivity time, and restart/flush LSNs.
 - `/readyz` now fails closed when the configured slot is missing, inactive,
   invalidated, conflicting, WAL-lost, or cannot be inspected.
+- Added startup validation for every configured publication table that publishes
+  `UPDATE` or `DELETE`, accepting a usable primary key, selected replica-identity
+  index, or `REPLICA IDENTITY FULL` and reporting all invalid tables together.
 
 ### Fixed
 
@@ -33,8 +36,8 @@
 - Added end-to-end source/coordinator coverage proving that a transaction with
   decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
 - Strengthened boundary coverage for source-owned position resolution and
-  synchronized PostgreSQL, runtime, operational-state, configuration, and
-  transaction-example documentation.
+  publication-catalog inspection, and synchronized PostgreSQL, runtime,
+  operational-state, configuration, and transaction-example documentation.
 
 ## 0.9.0
 

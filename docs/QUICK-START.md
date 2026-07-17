@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE PUBLICATION mammoth_publication FOR TABLE orders;
 ```
 
+The primary key supplies replica identity for published `UPDATE` and `DELETE`
+operations. Mammoth validates this before streaming; an eligible selected
+unique index or `REPLICA IDENTITY FULL` is also supported.
+
 Create a replication user according to your local security policy. For local development, examples may use a simple user/password setup.
 
 ## 3. Configure Mammoth

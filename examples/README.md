@@ -35,6 +35,9 @@ for dispatch metrics. Mammoth preserves pgoutput-client's transport LSN
 separately for checkpoints and acknowledgement; a normalized payload
 `commit_lsn` is not used as the feedback position.
 
+The live examples define primary keys on every published table, satisfying
+Mammoth's startup replica-identity preflight for `UPDATE` and `DELETE`.
+
 
 ## Checkpoint Recovery
 

@@ -87,6 +87,34 @@ kubectl exec deploy/postgres -- psql -U postgres -d mammoth_demo -c \
 "INSERT INTO orders (status, total_cents) VALUES ('created', 8888);"
 ```
 
+## Replica identity preflight fails
+
+Mammoth lists every published `UPDATE`/`DELETE` table without usable old-row
+identity. Inspect the configured publications and table identity:
+
+```sql
+SELECT
+  publication.pubname,
+  publication.pubupdate,
+  publication.pubdelete,
+  publication_table.schemaname,
+  publication_table.tablename,
+  relation.relreplident
+FROM pg_publication_tables AS publication_table
+JOIN pg_publication AS publication USING (pubname)
+JOIN pg_namespace AS namespace
+  ON namespace.nspname = publication_table.schemaname
+JOIN pg_class AS relation
+  ON relation.relnamespace = namespace.oid
+ AND relation.relname = publication_table.tablename
+WHERE publication.pubname = 'mammoth_publication';
+```
+
+Add a primary key, select an eligible unique index with `REPLICA IDENTITY USING
+INDEX`, use `REPLICA IDENTITY FULL`, or remove `UPDATE`/`DELETE` from the
+publication when it is intentionally insert-only. `FULL` is valid but has WAL
+volume and row-matching costs.
+
 ## Replication slot is active but nothing is delivered
 
 Check slot movement:

@@ -139,6 +139,8 @@ replication:
 
 - `slot` is the logical replication slot name.
 - `publications` is the list of PostgreSQL publications to subscribe to.
+  Before streaming, Mammoth validates replica identity for every included table
+  whose publication enables `UPDATE` or `DELETE`.
 - `auto_create_slot` permits first-time slot creation only when no configured
   or persisted resume LSN exists. A missing slot with a checkpoint always fails
   closed instead of being recreated.
@@ -151,6 +153,8 @@ that position only after persisting the contiguous durable-delivery watermark.
 Before streaming, Mammoth inspects the configured slot through pgoutput-client
 and rejects missing, active, lost, invalidated, incompatible, or
 checkpoint-unreachable slots.
+It also rejects published `UPDATE`/`DELETE` tables without a usable primary
+key, selected replica-identity index, or `REPLICA IDENTITY FULL`.
 
 ### `webhook`
 

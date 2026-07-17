@@ -1,0 +1,46 @@
+module Mammoth
+  module Sources
+    class PostgresPublicationTable
+      attr_reader schema_name: String
+      attr_reader table_name: String
+      attr_reader publishes_updates: bool
+      attr_reader publishes_deletes: bool
+      attr_reader replica_identity: String
+      attr_reader primary_key_usable: bool
+      attr_reader replica_identity_index_usable: bool
+
+      def initialize: (
+        schema_name: String,
+        table_name: String,
+        publishes_updates: bool,
+        publishes_deletes: bool,
+        replica_identity: String,
+        primary_key_usable: bool,
+        replica_identity_index_usable: bool
+      ) -> void
+      def qualified_name: () -> String
+      def identity_actions: () -> Array[String]
+      def identity_required?: () -> bool
+      def identity_usable?: () -> bool
+    end
+
+    class PostgresPublicationInspector
+      QUERY: String
+
+      @database_url: String
+      @connection_factory: untyped
+
+      attr_reader database_url: String
+
+      def initialize: (database_url: String, ?connection_factory: untyped?) -> void
+      def inspect: (Array[String] publication_names) -> Array[PostgresPublicationTable]
+
+      private
+
+      def open_connection: () -> untyped
+      def build_table: (untyped row) -> PostgresPublicationTable
+      def postgres_boolean: (untyped value) -> bool
+      def pg_error_class: () -> singleton(::PG::Error)
+    end
+  end
+end

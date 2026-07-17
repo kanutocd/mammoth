@@ -58,6 +58,7 @@ Mammoth OSS includes:
 - contiguous delivery watermark for checkpoint and PostgreSQL acknowledgement
 - source-owned transport LSN preservation independent of payload `commit_lsn`
 - fail-closed PostgreSQL slot and checkpoint continuity preflight
+- fail-closed publication replica-identity preflight for `UPDATE` and `DELETE`
 - dead-letter inspection and filtered replay commands
 - CDC-core event serialization boundary
 - CDC Ecosystem source-adapter integration boundary

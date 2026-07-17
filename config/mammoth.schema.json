@@ -141,7 +141,7 @@
             "type": "string",
             "minLength": 1
           },
-          "description": "PostgreSQL publications to subscribe to. Publications define which table changes PostgreSQL sends to Mammoth."
+          "description": "PostgreSQL publications to subscribe to. Publications define which table changes PostgreSQL sends to Mammoth. Tables publishing UPDATE or DELETE require a usable primary key, selected replica-identity index, or REPLICA IDENTITY FULL."
         },
         "start_lsn": {
           "type": [

@@ -89,6 +89,8 @@ replication:
   #
   # Publications define which table changes PostgreSQL sends to Mammoth.
   # Create them explicitly in production so the database boundary is clear.
+  # Tables that publish UPDATE or DELETE must have a primary key, an eligible
+  # REPLICA IDENTITY USING INDEX, or REPLICA IDENTITY FULL.
   #
   # Example SQL:
   #   CREATE PUBLICATION mammoth_publication FOR TABLE users, orders;

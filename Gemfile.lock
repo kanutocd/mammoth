@@ -5,6 +5,7 @@ PATH
       cdc-concurrent (~> 0.1)
       cdc-core (~> 0.1)
       json-schema (~> 6.2)
+      pg (~> 1.6)
       pgoutput-client (~> 0.4)
       pgoutput-decoder (~> 0.1)
       pgoutput-parser (~> 0.1)

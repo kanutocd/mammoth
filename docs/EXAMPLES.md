@@ -242,6 +242,11 @@ Use this to validate chart rendering, installation, and persistence wiring.
 
 The example expects you to provide real deployment dependencies such as PostgreSQL, secrets, publications, and webhook destinations.
 
+Every live example defines a primary key on its published table. Production
+tables that publish `UPDATE` or `DELETE` must likewise use a primary key, an
+eligible selected replica-identity index, or `REPLICA IDENTITY FULL`; Mammoth
+validates this before streaming.
+
 
 ## Checkpoint Recovery
 

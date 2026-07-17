@@ -27,6 +27,8 @@ module Mammoth
       attr_reader :adapter
       # @return [Mammoth::CheckpointStore, nil] checkpoint store used for restart resume
       attr_reader :checkpoint_store
+      # @return [#inspect, nil] injected PostgreSQL publication inspector
+      attr_reader :publication_inspector
 
       # Build a PostgreSQL CDC source.
       #
@@ -36,13 +38,16 @@ module Mammoth
       # @param decoder [Object, nil] injected pgoutput decoder
       # @param adapter [Object, nil] injected source adapter
       # @param checkpoint_store [Mammoth::CheckpointStore, nil] persisted checkpoints for restart resume
-      def initialize(config, runner: nil, parser: nil, decoder: nil, adapter: nil, checkpoint_store: nil)
+      # @param publication_inspector [#inspect, nil] injected publication metadata inspector
+      def initialize(config, runner: nil, parser: nil, decoder: nil, adapter: nil, checkpoint_store: nil,
+                     publication_inspector: nil)
         @config = config
         @runner = runner
         @parser = parser
         @decoder = decoder
         @adapter = adapter
         @checkpoint_store = checkpoint_store
+        @publication_inspector = publication_inspector
       end
 
       # Stream CDC::Core work from PostgreSQL logical replication.
@@ -60,6 +65,7 @@ module Mammoth
         return enum_for(:each) unless block_given?
 
         preflight_slot!
+        preflight_replica_identity!
         normalizer = effective_adapter
         unless normalizer.respond_to?(:each_normalized)
           raise ReplicationError, "pgoutput source adapter must respond to #each_normalized"
@@ -260,6 +266,12 @@ module Mammoth
         end
       end
 
+      def effective_publication_inspector
+        publication_inspector || @effective_publication_inspector || begin
+          @effective_publication_inspector = build_publication_inspector
+        end
+      end
+
       def build_runner
         require_optional!("pgoutput/client", "pgoutput-client")
 
@@ -282,6 +294,10 @@ module Mammoth
         require_optional!("pgoutput/source_adapter", "pgoutput-source-adapter")
 
         Pgoutput::SourceAdapter::Cdc.new
+      end
+
+      def build_publication_inspector
+        PostgresPublicationInspector.new(database_url:)
       end
 
       def runner_options
@@ -324,6 +340,24 @@ module Mammoth
         raise e if e.is_a?(ReplicationError)
 
         raise ReplicationError, "PostgreSQL slot preflight failed: #{e.message}"
+      end
+
+      def preflight_replica_identity!
+        invalid_tables = effective_publication_inspector.inspect(required_publications).reject(&:identity_usable?)
+        return if invalid_tables.empty?
+
+        details = invalid_tables.map do |table|
+          "#{table.qualified_name} (actions=#{table.identity_actions.join("/")}, " \
+            "replica_identity=#{replica_identity_name(table.replica_identity)})"
+        end
+        raise ReplicationError,
+              "PostgreSQL replica identity preflight failed for #{details.join(", ")}. " \
+              "Add a primary key, select an eligible unique index with REPLICA IDENTITY USING INDEX, " \
+              "use REPLICA IDENTITY FULL, or remove UPDATE/DELETE from the publication."
+      rescue StandardError => e
+        raise e if e.is_a?(ReplicationError)
+
+        raise ReplicationError, "PostgreSQL replica identity preflight failed: #{e.message}"
       end
 
       def inspected_slot_status
@@ -400,6 +434,15 @@ module Mammoth
         return nil if blank?(value)
 
         parse_transport_lsn(value, "slot metric")
+      end
+
+      def replica_identity_name(value)
+        {
+          "d" => "default",
+          "n" => "nothing",
+          "f" => "full",
+          "i" => "index"
+        }.fetch(value, value)
       end
 
       def safe_auto_create_slot?

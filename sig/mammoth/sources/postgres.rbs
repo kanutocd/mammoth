@@ -8,18 +8,21 @@ module Mammoth
       @decoder: untyped
       @adapter: untyped
       @checkpoint_store: untyped
+      @publication_inspector: untyped
       @effective_runner: untyped
       @effective_parser: untyped
       @effective_decoder: untyped
       @effective_adapter: untyped
+      @effective_publication_inspector: untyped
       attr_reader config: Mammoth::Configuration
       attr_reader runner: untyped
       attr_reader parser: untyped
       attr_reader decoder: untyped
       attr_reader adapter: untyped
       attr_reader checkpoint_store: untyped
+      attr_reader publication_inspector: untyped
 
-      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped, ?checkpoint_store: untyped) -> void
+      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped, ?checkpoint_store: untyped, ?publication_inspector: untyped) -> void
 
       def each: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) work) -> untyped } -> (Enumerator[(CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope), nil] | nil)
       def acknowledge: (untyped lsn) -> untyped
@@ -44,13 +47,16 @@ module Mammoth
       def effective_parser: () -> untyped
       def effective_decoder: () -> untyped
       def effective_adapter: () -> untyped
+      def effective_publication_inspector: () -> untyped
       def build_runner: () -> untyped
       def runner_options: () -> Hash[Symbol, untyped]
       def build_parser: () -> untyped
       def build_decoder: () -> untyped
       def build_adapter: () -> untyped
+      def build_publication_inspector: () -> PostgresPublicationInspector
       def replication_start_lsn: () -> untyped
       def preflight_slot!: () -> nil
+      def preflight_replica_identity!: () -> nil
       def inspected_slot_status: () -> untyped
       def validate_temporary_slot_resume!: (untyped resume_lsn) -> untyped
       def validate_slot_identity!: (untyped status) -> untyped
@@ -58,6 +64,7 @@ module Mammoth
       def validate_slot_reachability!: (untyped status, untyped resume_lsn) -> untyped
       def parse_transport_lsn: (untyped value, String label) -> Integer
       def metric_lsn: (untyped value) -> Integer?
+      def replica_identity_name: (untyped value) -> untyped
       def safe_auto_create_slot?: () -> bool
       def missing_slot_message: (untyped resume_lsn) -> String
       def checkpoint_lsn: () -> untyped

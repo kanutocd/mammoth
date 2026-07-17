@@ -36,6 +36,35 @@ Check publications:
 SELECT * FROM pg_publication;
 ```
 
+## Replica identity preflight
+
+Before streaming, Mammoth inspects every table included by the configured
+publications. A table needs usable replica identity whenever any configured
+publication enables `UPDATE` or `DELETE` for it. Mammoth accepts PostgreSQL's
+supported identity modes:
+
+- the default identity with a usable primary key;
+- an eligible unique index selected by `REPLICA IDENTITY USING INDEX`; or
+- `REPLICA IDENTITY FULL`.
+
+An insert-only publication does not require old-row identity. Mammoth reports
+all invalid schema-qualified tables and publication actions together, then
+fails before decoding or delivery.
+
+Preferred remediation is a stable primary key. Existing schemas may select an
+eligible unique, non-partial, non-null index:
+
+```sql
+ALTER TABLE public.orders REPLICA IDENTITY USING INDEX orders_external_id_key;
+```
+
+As an explicit tradeoff, full-row identity is also valid but increases WAL
+volume and may make downstream matching more expensive:
+
+```sql
+ALTER TABLE public.orders REPLICA IDENTITY FULL;
+```
+
 ## Replication slot
 
 Mammoth consumes one logical replication slot per active stream.

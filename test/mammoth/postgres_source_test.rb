@@ -8,6 +8,13 @@ require "pgoutput/source_adapter"
 module Mammoth
   # rubocop:disable Metrics/ClassLength
   class PostgresSourceTest < Minitest::Test
+    HealthyPublicationInspector = Object.new
+    def HealthyPublicationInspector.inspect(_publication_names) = []
+
+    def run
+      Sources::PostgresPublicationInspector.stub(:new, HealthyPublicationInspector) { super }
+    end
+
     def test_streams_from_injected_cdc_source_components
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
@@ -541,6 +548,69 @@ module Mammoth
       assert_match(/slot preflight failed: catalog unavailable/, error.message)
     end
 
+    def test_preflight_accepts_primary_key_index_full_and_insert_only_tables # rubocop:disable Metrics/MethodLength
+      tables = [
+        publication_table(table_name: "primary_orders", replica_identity: "d", primary_key_usable: true),
+        publication_table(
+          table_name: "indexed_orders",
+          replica_identity: "i",
+          replica_identity_index_usable: true
+        ),
+        publication_table(table_name: "full_orders", replica_identity: "f"),
+        publication_table(
+          table_name: "insert_only",
+          publishes_updates: false,
+          publishes_deletes: false,
+          replica_identity: "n"
+        )
+      ]
+      inspector = Struct.new(:tables) do
+        def inspect(_publication_names) = tables
+      end.new(tables)
+      runner = PreflightRunner.new(healthy_slot_status)
+
+      preflight_source(runner, publication_inspector: inspector).each.to_a
+
+      assert runner.started
+    end
+
+    def test_preflight_rejects_update_delete_tables_without_usable_identity
+      tables = [
+        publication_table(table_name: "orders", replica_identity: "d"),
+        publication_table(table_name: "audit_log", replica_identity: "n", publishes_updates: false)
+      ]
+      inspector = Struct.new(:tables) do
+        def inspect(_publication_names) = tables
+      end.new(tables)
+
+      error = assert_raises(ReplicationError) do
+        preflight_source(
+          PreflightRunner.new(healthy_slot_status),
+          publication_inspector: inspector
+        ).each.to_a
+      end
+
+      assert_match(/replica identity preflight failed/, error.message)
+      assert_match(%r{public\.orders.*actions=UPDATE/DELETE.*replica_identity=default}, error.message)
+      assert_match(/public\.audit_log.*actions=DELETE.*replica_identity=nothing/, error.message)
+      assert_match(/REPLICA IDENTITY USING INDEX/, error.message)
+      assert_match(/REPLICA IDENTITY FULL/, error.message)
+    end
+
+    def test_preflight_wraps_unexpected_publication_inspection_failure
+      inspector = Object.new
+      def inspector.inspect(_publication_names) = raise("catalog unavailable")
+
+      error = assert_raises(ReplicationError) do
+        preflight_source(
+          PreflightRunner.new(healthy_slot_status),
+          publication_inspector: inspector
+        ).each.to_a
+      end
+
+      assert_match(/replica identity preflight failed: catalog unavailable/, error.message)
+    end
+
     def test_slot_health_normalizes_pgoutput_catalog_metrics
       runner = PreflightRunner.new(
         healthy_slot_status(
@@ -902,12 +972,14 @@ module Mammoth
 
     private
 
-    def preflight_source(runner, config: Configuration.load(fixture_config_path), checkpoint_store: nil)
+    def preflight_source(runner, config: Configuration.load(fixture_config_path), checkpoint_store: nil,
+                         publication_inspector: HealthyPublicationInspector)
       Sources::Postgres.new(
         config,
         runner: runner,
         adapter: BareStreamingAdapter.new,
-        checkpoint_store: checkpoint_store
+        checkpoint_store: checkpoint_store,
+        publication_inspector: publication_inspector
       )
     end
 
@@ -931,6 +1003,19 @@ module Mammoth
         invalidation_reason: nil,
         **overrides
       }
+    end
+
+    def publication_table(**overrides)
+      Sources::PostgresPublicationTable.new(
+        schema_name: "public",
+        table_name: "orders",
+        publishes_updates: true,
+        publishes_deletes: true,
+        replica_identity: "d",
+        primary_key_usable: false,
+        replica_identity_index_usable: false,
+        **overrides
+      )
     end
 
     def streaming_adapter(&block)
