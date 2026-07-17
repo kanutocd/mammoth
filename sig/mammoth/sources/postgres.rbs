@@ -49,6 +49,15 @@ module Mammoth
       def build_decoder: () -> untyped
       def build_adapter: () -> untyped
       def replication_start_lsn: () -> untyped
+      def preflight_slot!: () -> nil
+      def inspected_slot_status: () -> untyped
+      def validate_temporary_slot_resume!: (untyped resume_lsn) -> untyped
+      def validate_slot_identity!: (untyped status) -> untyped
+      def validate_slot_health!: (untyped status) -> untyped
+      def validate_slot_reachability!: (untyped status, untyped resume_lsn) -> untyped
+      def parse_transport_lsn: (untyped value, String label) -> Integer
+      def safe_auto_create_slot?: () -> bool
+      def missing_slot_message: (untyped resume_lsn) -> String
       def checkpoint_lsn: () -> untyped
       def source_name: () -> untyped
       def normalize_lsn: (untyped value) -> untyped

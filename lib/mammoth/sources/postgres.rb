@@ -59,6 +59,7 @@ module Mammoth
       def each(&block)
         return enum_for(:each) unless block_given?
 
+        preflight_slot!
         normalizer = effective_adapter
         unless normalizer.respond_to?(:each_normalized)
           raise ReplicationError, "pgoutput source adapter must respond to #each_normalized"
@@ -257,7 +258,7 @@ module Mammoth
           slot_name: required_config("replication", "slot"),
           publication_names: required_publications,
           start_lsn: replication_start_lsn,
-          auto_create_slot: config.dig("replication", "auto_create_slot") == true,
+          auto_create_slot: safe_auto_create_slot?,
           temporary_slot: config.dig("replication", "temporary_slot") == true
         }.tap do |options|
           feedback_interval = config.dig("replication", "feedback_interval")
@@ -270,6 +271,108 @@ module Mammoth
         return configured unless blank?(configured)
 
         checkpoint_lsn
+      end
+
+      def preflight_slot!
+        resume_lsn = replication_start_lsn
+        validate_temporary_slot_resume!(resume_lsn)
+        status = inspected_slot_status
+
+        if status.nil?
+          return if safe_auto_create_slot?
+
+          raise ReplicationError, missing_slot_message(resume_lsn)
+        end
+
+        validate_slot_identity!(status)
+        validate_slot_health!(status)
+        validate_slot_reachability!(status, resume_lsn) unless blank?(resume_lsn)
+        nil
+      rescue StandardError => e
+        raise e if e.is_a?(ReplicationError)
+
+        raise ReplicationError, "PostgreSQL slot preflight failed: #{e.message}"
+      end
+
+      def inspected_slot_status
+        client = effective_runner
+        unless client.respond_to?(:slot_status)
+          raise ReplicationError, "pgoutput-client 0.3+ with #slot_status is required for PostgreSQL slot preflight"
+        end
+
+        client.slot_status
+      end
+
+      def validate_temporary_slot_resume!(resume_lsn)
+        return if blank?(resume_lsn)
+        return unless config.dig("replication", "temporary_slot") == true
+
+        raise ReplicationError, "cannot resume durable PostgreSQL checkpoint #{resume_lsn} with a temporary slot"
+      end
+
+      def validate_slot_identity!(status)
+        slot_name = required_config("replication", "slot")
+        unless value_from(status, :slot_name) == slot_name
+          raise ReplicationError, "PostgreSQL slot preflight returned the wrong slot for #{slot_name}"
+        end
+        unless value_from(status, :slot_type) == "logical" && value_from(status, :plugin) == "pgoutput"
+          raise ReplicationError, "PostgreSQL slot #{slot_name} must be a logical pgoutput slot"
+        end
+
+        database = required_config("postgres", "database")
+        return if value_from(status, :database) == database
+
+        raise ReplicationError, "PostgreSQL slot #{slot_name} belongs to a different database"
+      end
+
+      def validate_slot_health!(status)
+        slot_name = required_config("replication", "slot")
+        raise ReplicationError, "PostgreSQL slot #{slot_name} is already active" if value_from(status, :active) == true
+
+        wal_status = value_from(status, :wal_status)
+        if %w[lost unreserved].include?(wal_status)
+          raise ReplicationError, "PostgreSQL slot #{slot_name} cannot retain required WAL (wal_status=#{wal_status})"
+        end
+
+        invalidation_reason = value_from(status, :invalidation_reason)
+        if value_from(status, :conflicting) == true || !blank?(invalidation_reason)
+          raise ReplicationError,
+                "PostgreSQL slot #{slot_name} is invalidated#{": #{invalidation_reason}" unless blank?(invalidation_reason)}"
+        end
+
+        return unless blank?(value_from(status, :restart_lsn))
+
+        raise ReplicationError, "PostgreSQL slot #{slot_name} has no reachable restart LSN"
+      end
+
+      def validate_slot_reachability!(status, resume_lsn)
+        requested = parse_transport_lsn(resume_lsn, "resume checkpoint")
+        %i[restart_lsn confirmed_flush_lsn].each do |field|
+          boundary = value_from(status, field)
+          next if blank?(boundary)
+          next unless requested < parse_transport_lsn(boundary, field.to_s)
+
+          raise ReplicationError,
+                "PostgreSQL slot cannot serve checkpoint #{resume_lsn}; #{field}=#{boundary} has already advanced past it"
+        end
+      end
+
+      def parse_transport_lsn(value, label)
+        require_optional!("pgoutput/client", "pgoutput-client")
+        Pgoutput::Client::LSN.parse(value)
+      rescue StandardError => e
+        raise ReplicationError, "invalid PostgreSQL #{label} LSN #{value.inspect}: #{e.message}"
+      end
+
+      def safe_auto_create_slot?
+        config.dig("replication", "auto_create_slot") == true && blank?(replication_start_lsn)
+      end
+
+      def missing_slot_message(resume_lsn)
+        slot_name = required_config("replication", "slot")
+        return "PostgreSQL slot #{slot_name} is missing and auto_create_slot is disabled" if blank?(resume_lsn)
+
+        "PostgreSQL slot #{slot_name} is missing; refusing to recreate it while checkpoint #{resume_lsn} requires continuity"
       end
 
       def checkpoint_lsn

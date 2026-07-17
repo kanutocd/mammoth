@@ -5,7 +5,7 @@ PATH
       cdc-concurrent (~> 0.1)
       cdc-core (~> 0.1)
       json-schema (~> 6.2)
-      pgoutput-client (~> 0.2)
+      pgoutput-client (~> 0.3)
       pgoutput-decoder (~> 0.1)
       pgoutput-parser (~> 0.1)
       pgoutput-source-adapter (~> 0.2, >= 0.2.0)
@@ -69,7 +69,7 @@ GEM
       ast (~> 2.4.1)
       racc
     pg (1.6.3-x86_64-linux)
-    pgoutput-client (0.2.4)
+    pgoutput-client (0.3.0)
       pg (~> 1.6)
     pgoutput-decoder (0.1.1)
       bigdecimal (~> 4.1)
@@ -211,7 +211,7 @@ CHECKSUMS
   parallel (2.1.0) sha256=b35258865c2e31134c5ecb708beaaf6772adf9d5efae28e93e99260877b09356
   parser (3.3.11.1) sha256=d17ace7aabe3e72c3cc94043714be27cc6f852f104d81aa284c2281aecc65d54
   pg (1.6.3-x86_64-linux) sha256=5d9e188c8f7a0295d162b7b88a768d8452a899977d44f3274d1946d67920ae8d
-  pgoutput-client (0.2.4) sha256=4d8915e692657f73f871d365410291c65eaf4150f9ffe7d7df4f7f45032ab87c
+  pgoutput-client (0.3.0) sha256=71683e543113c09ee29c32a093704e4128e3650901e64dc80ab920b8d18e0b5f
   pgoutput-decoder (0.1.1) sha256=a1ee34cb9be276c5b9de445feca5f298cb007344e4eb34a3cf34d60792cddba5
   pgoutput-parser (0.2.0) sha256=0214dfdfe9651e29fccca0e879da069f3a2d253f73616bff2774f1e1b804445e
   pgoutput-source-adapter (0.2.0) sha256=0155a7becb073bee8908714a0c6c42006eb2f98330c450b36e5cd33d6b774f66

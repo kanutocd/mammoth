@@ -57,6 +57,7 @@ Mammoth 0.8.x focuses on:
 - retry handling
 - contiguous durable-delivery watermark and PostgreSQL acknowledgement
 - source-owned transport LSN preservation independent of payload `commit_lsn`
+- fail-closed PostgreSQL slot and checkpoint continuity preflight
 - SQLite checkpoint storage
 - SQLite dead-letter storage
 - SQLite delivered-envelope ledger storage

@@ -152,7 +152,7 @@
         },
         "auto_create_slot": {
           "type": "boolean",
-          "description": "When true, Mammoth creates the replication slot if it does not exist. Convenient for development; DBA-managed slots are recommended for production."
+          "description": "When true, Mammoth creates a missing replication slot only for a fresh stream with no configured or persisted resume LSN. Mammoth never recreates a missing slot while checkpoint continuity is required."
         },
         "temporary_slot": {
           "type": "boolean",

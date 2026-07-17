@@ -139,12 +139,18 @@ replication:
 
 - `slot` is the logical replication slot name.
 - `publications` is the list of PostgreSQL publications to subscribe to.
-- `auto_create_slot` controls whether Mammoth attempts to create the slot.
-- `temporary_slot` controls whether the replication slot is temporary.
+- `auto_create_slot` permits first-time slot creation only when no configured
+  or persisted resume LSN exists. A missing slot with a checkpoint always fails
+  closed instead of being recreated.
+- `temporary_slot` controls whether a newly created slot is temporary.
+  Temporary slots cannot resume durable Mammoth checkpoints.
 - `feedback_interval` controls standby feedback cadence in seconds.
 
 Feedback cadence does not determine the acknowledged position. Mammoth advances
 that position only after persisting the contiguous durable-delivery watermark.
+Before streaming, Mammoth inspects the configured slot through pgoutput-client
+and rejects missing, active, lost, invalidated, incompatible, or
+checkpoint-unreachable slots.
 
 ### `webhook`
 

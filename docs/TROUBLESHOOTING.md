@@ -109,6 +109,35 @@ kubectl logs deploy/mammoth --tail=200
 helm get values mammoth --all
 ```
 
+## PostgreSQL slot preflight fails
+
+Mammoth fails closed when the configured slot is missing, active elsewhere,
+lost, invalidated, incompatible, or unable to serve the durable checkpoint.
+Inspect the complete slot state:
+
+```sql
+SELECT
+  slot_name,
+  plugin,
+  slot_type,
+  database,
+  active,
+  restart_lsn,
+  confirmed_flush_lsn,
+  wal_status,
+  safe_wal_size,
+  inactive_since,
+  invalidation_reason
+FROM pg_replication_slots
+WHERE slot_name = 'mammoth_prod';
+```
+
+Do not solve a missing or invalidated slot by recreating it while retaining
+Mammoth's old checkpoint. The lost interval requires external backfill or
+reconciliation. After that process, establish new safe operational state and
+restart Mammoth. For a first-time deployment with no checkpoint,
+`auto_create_slot: true` may create the missing slot.
+
 ## Docker Compose example shows duplicate dead-letter rows
 
 Cause:

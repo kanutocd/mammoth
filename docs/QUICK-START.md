@@ -102,6 +102,9 @@ logging:
 Mammoth checkpoints only contiguous durable delivery outcomes and then
 acknowledges the same progress through pgoutput-client. The feedback interval
 controls transport cadence, not which position is safe.
+`auto_create_slot: true` creates a missing slot only for first-time bootstrap
+while no resume LSN or checkpoint exists. Later restarts preflight the retained
+slot and fail closed if checkpoint continuity is unavailable.
 
 Export the password referenced by `postgres.password_env`:
 

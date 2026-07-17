@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- Added PostgreSQL slot preflight before streaming and fail-closed handling for
+  missing, active, lost, invalidated, incompatible, and
+  checkpoint-unreachable slots.
+- Disabled automatic slot recreation whenever a configured or persisted resume
+  LSN requires WAL continuity.
+- Rejected temporary-slot recovery from durable checkpoints.
 - Preserved pgoutput-client's acknowledgement-compatible transport LSN
   separately from normalized CDC-core `commit_lsn` payload context.
 - Checkpoints and PostgreSQL feedback now use the source-owned transport
@@ -14,6 +20,8 @@
 
 ### Quality
 
+- Upgraded pgoutput-client to 0.3.0 and covered slot identity, health,
+  continuity boundaries, and safe first-time creation.
 - Added end-to-end source/coordinator coverage proving that a transaction with
   decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
 - Strengthened boundary coverage for source-owned position resolution and

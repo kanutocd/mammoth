@@ -101,6 +101,12 @@ later transactions continue to be delivered. Mammoth writes each contiguous
 watermark to SQLite before acknowledging the same position through
 pgoutput-client.
 
+On restart, Mammoth preflights the permanent slot before using the SQLite
+checkpoint. If PostgreSQL slot state is removed while the SQLite volume is
+retained, the example fails closed instead of silently creating a replacement
+slot and skipping the lost WAL interval. Reset or reconcile PostgreSQL and
+Mammoth operational state together.
+
 ## Reset
 
 To remove all PostgreSQL, Mammoth, and receiver state:

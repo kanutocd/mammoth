@@ -58,7 +58,8 @@ You must provide:
 * PostgreSQL reachable from the cluster
 * PostgreSQL logical replication settings
 * publication
-* replication slot or `auto_create_slot: true`
+* replication slot or `auto_create_slot: true` for first-time bootstrap without
+  an existing Mammoth checkpoint
 * Kubernetes Secret for the PostgreSQL password
 * webhook destination reachable from the cluster
 

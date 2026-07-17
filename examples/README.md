@@ -43,4 +43,6 @@ built-in SQLite operational-state adapter and a permanent PostgreSQL replication
 slot. It validates that persisted checkpoints and delivered-envelope ledger
 entries suppress replay after Mammoth restarts while later transactions continue
 to flow. Contiguous progress is checkpointed before the same position is
-acknowledged through pgoutput-client.
+acknowledged through pgoutput-client. The retained slot is preflighted on
+restart, and a missing or checkpoint-unreachable slot fails closed rather than
+being silently recreated.

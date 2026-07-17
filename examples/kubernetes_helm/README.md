@@ -31,3 +31,6 @@ delivered-envelope ledger.
 Run one active Mammoth replica per logical replication slot. PostgreSQL logical
 replication slots are consumed by one active subscriber at a time, so the chart
 uses a single replica by default.
+Because the PVC retains Mammoth checkpoints, a missing, invalidated, or
+checkpoint-unreachable PostgreSQL slot fails startup preflight instead of being
+silently recreated.

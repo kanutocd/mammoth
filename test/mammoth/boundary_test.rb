@@ -5,6 +5,11 @@ require "pgoutput/decoder/events"
 require "pgoutput/source_adapter"
 
 module Mammoth
+  BOUNDARY_SLOT_STATUS = {
+    slot_name: "mammoth_prod", plugin: "pgoutput", slot_type: "logical",
+    database: "app_development", active: false, restart_lsn: "0/0"
+  }.freeze
+
   class BoundaryTest < Minitest::Test
     PROJECT_ROOT = File.expand_path("../..", __dir__)
     LIB_ROOT = File.expand_path("../../lib", __dir__)
@@ -50,6 +55,8 @@ module Mammoth
       assert_match(/Pgoutput::RelationTracker/, body)
       assert_match(/Pgoutput::Decoder/, body)
       assert_match(/Pgoutput::SourceAdapter::Cdc/, body)
+      assert_match(/\.slot_status/, body)
+      refute_match(/pg_replication_slots|PG\.connect|exec_params/, body)
     end
 
     def test_postgres_source_delegates_streaming_normalization_to_source_adapter
@@ -157,7 +164,7 @@ module Mammoth
 
     private
 
-    BoundaryRunner = Data.define(:messages) do
+    BoundaryRunner = Data.define(:messages, :slot_status) do
       def start
         messages.each.with_index do |message, index|
           yield message, { lsn: "0/#{index + 1}" }
@@ -182,7 +189,7 @@ module Mammoth
     def postgres_source(messages)
       Sources::Postgres.new(
         Configuration.load(fixture_config_path),
-        runner: BoundaryRunner.new(messages),
+        runner: BoundaryRunner.new(messages, BOUNDARY_SLOT_STATUS),
         parser: ->(payload) { payload },
         decoder: ->(message, _metadata) { message },
         adapter: Pgoutput::SourceAdapter::Cdc.new

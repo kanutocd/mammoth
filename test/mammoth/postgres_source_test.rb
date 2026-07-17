@@ -461,6 +461,172 @@ module Mammoth
       assert_nil source.send(:runner_options).fetch(:start_lsn)
     end
 
+    def test_preflight_rejects_missing_slot_when_auto_creation_is_disabled
+      runner = PreflightRunner.new(nil)
+      source = preflight_source(runner)
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/slot mammoth_prod is missing/, error.message)
+      refute runner.started
+    end
+
+    def test_preflight_allows_missing_slot_for_fresh_auto_created_stream
+      config = Configuration.load(fixture_config_path)
+      config.data.fetch("replication")["auto_create_slot"] = true
+      runner = PreflightRunner.new(nil)
+
+      preflight_source(runner, config: config).each.to_a
+
+      assert runner.started
+    end
+
+    def test_preflight_refuses_to_recreate_missing_slot_for_persisted_checkpoint
+      with_temp_dir do |dir|
+        config = Configuration.load(fixture_config_path)
+        config.data.fetch("replication")["auto_create_slot"] = true
+        checkpoint_store = CheckpointStore.new(SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!)
+        checkpoint_store.write(
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod",
+          publication_name: "mammoth_publication",
+          last_lsn: "0/10"
+        )
+        runner = PreflightRunner.new(nil)
+        source = preflight_source(runner, config: config, checkpoint_store: checkpoint_store)
+
+        error = assert_raises(ReplicationError) { source.each.to_a }
+
+        assert_match(%r{refusing to recreate.*checkpoint 0/10}, error.message)
+        refute source.send(:runner_options).fetch(:auto_create_slot)
+        refute runner.started
+      end
+    end
+
+    def test_preflight_rejects_temporary_slot_checkpoint_resume
+      config = config_with_start_lsn("0/10")
+      config.data.fetch("replication")["temporary_slot"] = true
+      runner = PreflightRunner.new(healthy_slot_status)
+
+      error = assert_raises(ReplicationError) { preflight_source(runner, config: config).each.to_a }
+
+      assert_match(/cannot resume.*temporary slot/, error.message)
+      assert_equal 0, runner.inspections
+    end
+
+    def test_preflight_requires_pgoutput_client_slot_inspection
+      runner = Object.new
+      def runner.start = nil
+
+      error = assert_raises(ReplicationError) { preflight_source(runner).each.to_a }
+
+      assert_match(/pgoutput-client 0\.3\+/, error.message)
+    end
+
+    def test_preflight_wraps_slot_inspection_failure
+      runner = PreflightRunner.new(RuntimeError.new("catalog unavailable"))
+
+      error = assert_raises(ReplicationError) { preflight_source(runner).each.to_a }
+
+      assert_match(/slot preflight failed: catalog unavailable/, error.message)
+    end
+
+    def test_preflight_rejects_wrong_slot_identity
+      invalid_statuses = [
+        healthy_slot_status(slot_name: "other"),
+        healthy_slot_status(slot_type: "physical"),
+        healthy_slot_status(plugin: "test_decoding"),
+        healthy_slot_status(database: "other")
+      ]
+
+      errors = invalid_statuses.map do |status|
+        assert_raises(ReplicationError) { preflight_source(PreflightRunner.new(status)).each.to_a }
+      end
+
+      assert_match(/wrong slot/, errors.fetch(0).message)
+      assert_match(/logical pgoutput/, errors.fetch(1).message)
+      assert_match(/logical pgoutput/, errors.fetch(2).message)
+      assert_match(/different database/, errors.fetch(3).message)
+    end
+
+    def test_preflight_rejects_active_lost_and_unreserved_slots
+      statuses = [
+        healthy_slot_status(active: true),
+        healthy_slot_status(wal_status: "lost"),
+        healthy_slot_status(wal_status: "unreserved")
+      ]
+
+      errors = statuses.map do |status|
+        assert_raises(ReplicationError) { preflight_source(PreflightRunner.new(status)).each.to_a }
+      end
+
+      assert_match(/already active/, errors.fetch(0).message)
+      assert_match(/wal_status=lost/, errors.fetch(1).message)
+      assert_match(/wal_status=unreserved/, errors.fetch(2).message)
+    end
+
+    def test_preflight_rejects_conflicted_invalidated_and_restartless_slots
+      statuses = [
+        healthy_slot_status(conflicting: true),
+        healthy_slot_status(invalidation_reason: "wal_removed"),
+        healthy_slot_status(restart_lsn: nil)
+      ]
+
+      errors = statuses.map do |status|
+        assert_raises(ReplicationError) { preflight_source(PreflightRunner.new(status)).each.to_a }
+      end
+
+      assert_match(/is invalidated/, errors.fetch(0).message)
+      assert_match(/invalidated: wal_removed/, errors.fetch(1).message)
+      assert_match(/no reachable restart LSN/, errors.fetch(2).message)
+    end
+
+    def test_preflight_rejects_checkpoint_older_than_slot_wal_boundaries
+      config = config_with_start_lsn("0/10")
+      statuses = [
+        healthy_slot_status(restart_lsn: "0/11"),
+        healthy_slot_status(confirmed_flush_lsn: "0/12")
+      ]
+
+      errors = statuses.map do |status|
+        assert_raises(ReplicationError) do
+          preflight_source(PreflightRunner.new(status), config: config).each.to_a
+        end
+      end
+
+      assert_match(%r{restart_lsn=0/11.*advanced past}, errors.fetch(0).message)
+      assert_match(%r{confirmed_flush_lsn=0/12.*advanced past}, errors.fetch(1).message)
+    end
+
+    def test_preflight_accepts_reachable_checkpoint_and_optional_flush_boundary
+      config = config_with_start_lsn("0/10")
+      runner = PreflightRunner.new(
+        healthy_slot_status(restart_lsn: "0/F", confirmed_flush_lsn: nil)
+      )
+
+      preflight_source(runner, config: config).each.to_a
+
+      assert runner.started
+    end
+
+    def test_preflight_rejects_invalid_checkpoint_and_catalog_lsns
+      invalid_checkpoint = assert_raises(ReplicationError) do
+        preflight_source(
+          PreflightRunner.new(healthy_slot_status),
+          config: config_with_start_lsn("not-an-lsn")
+        ).each.to_a
+      end
+      invalid_catalog = assert_raises(ReplicationError) do
+        preflight_source(
+          PreflightRunner.new(healthy_slot_status(restart_lsn: "not-an-lsn")),
+          config: config_with_start_lsn("0/10")
+        ).each.to_a
+      end
+
+      assert_match(/invalid PostgreSQL resume checkpoint LSN/, invalid_checkpoint.message)
+      assert_match(/invalid PostgreSQL restart_lsn LSN/, invalid_catalog.message)
+    end
+
     def test_rejects_empty_publications
       config = Configuration.load(fixture_config_path)
       config.data.fetch("replication")["publications"] = []
@@ -500,6 +666,7 @@ module Mammoth
 
     def test_wraps_unexpected_source_errors
       broken_runner = Object.new
+      broken_runner.extend(HealthySlotRunner)
       def broken_runner.start
         raise "stream exploded"
       end
@@ -518,6 +685,20 @@ module Mammoth
 
     StreamInput = Data.define(:event, :source_position)
     WalMetadata = Data.define(:wal_end_lsn)
+
+    module HealthySlotRunner
+      def slot_status
+        {
+          slot_name: "mammoth_prod",
+          plugin: "pgoutput",
+          slot_type: "logical",
+          database: "app_development",
+          active: false,
+          restart_lsn: "0/0",
+          confirmed_flush_lsn: "0/0"
+        }
+      end
+    end
 
     class StreamingAdapter
       attr_reader :normalizer, :inputs
@@ -586,18 +767,24 @@ module Mammoth
     end
 
     FakeRunner = Data.define(:payloads) do
+      include HealthySlotRunner
+
       def start
         payloads.each { |payload| yield payload, nil }
       end
     end
 
     FakeRunnerWithMetadata = Data.define(:pairs) do
+      include HealthySlotRunner
+
       def start(&block)
         pairs.each(&block)
       end
     end
 
     class RecordingMetadataRunner
+      include HealthySlotRunner
+
       attr_reader :pairs, :acknowledgements
 
       def initialize(pairs)
@@ -627,7 +814,59 @@ module Mammoth
       end
     end
 
+    class PreflightRunner
+      attr_reader :status, :inspections, :started
+
+      def initialize(status)
+        @status = status
+        @inspections = 0
+        @started = false
+      end
+
+      def slot_status
+        @inspections += 1
+        raise status if status.is_a?(Exception)
+
+        status
+      end
+
+      def start
+        @started = true
+      end
+    end
+
     private
+
+    def preflight_source(runner, config: Configuration.load(fixture_config_path), checkpoint_store: nil)
+      Sources::Postgres.new(
+        config,
+        runner: runner,
+        adapter: BareStreamingAdapter.new,
+        checkpoint_store: checkpoint_store
+      )
+    end
+
+    def config_with_start_lsn(lsn)
+      Configuration.load(fixture_config_path).tap do |config|
+        config.data.fetch("replication")["start_lsn"] = lsn
+      end
+    end
+
+    def healthy_slot_status(**overrides)
+      {
+        slot_name: "mammoth_prod",
+        plugin: "pgoutput",
+        slot_type: "logical",
+        database: "app_development",
+        active: false,
+        restart_lsn: "0/0",
+        confirmed_flush_lsn: "0/0",
+        wal_status: "reserved",
+        conflicting: false,
+        invalidation_reason: nil,
+        **overrides
+      }
+    end
 
     def streaming_adapter(&block)
       StreamingAdapter.new(block)

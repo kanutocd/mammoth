@@ -110,10 +110,15 @@ replication:
   # Automatically create the replication slot if it does not exist.
   #
   # true:
-  #   Convenient for development, demos, and first-time bootstrap.
+  #   Convenient for development, demos, and first-time bootstrap. Mammoth
+  #   creates a missing slot only when no configured or persisted resume LSN
+  #   requires continuity.
   #
   # false:
   #   Recommended for production when slots are DBA-managed infrastructure.
+  #
+  # A missing slot is never recreated while a checkpoint exists. Mammoth fails
+  # closed because a replacement slot cannot recover the lost WAL interval.
   auto_create_slot: false
 
   # Use a temporary replication slot.

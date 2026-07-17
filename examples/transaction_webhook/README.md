@@ -102,6 +102,8 @@ Logical replication slots allow one active subscriber per slot. This example
 uses one Mammoth process and one replication slot named `mammoth_transaction`.
 Downstream delivery concurrency does not create additional replication slots or
 replication connections.
+Before streaming, Mammoth preflights the retained slot and refuses replacement
+or checkpoint-unreachable slot state.
 
 ## Clean up
 

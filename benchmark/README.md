@@ -97,7 +97,7 @@ CDC::Core::ProcessorResult + observer notification
 The benchmark generates exact `CDC::Core::ChangeEvent` and
 `CDC::Core::TransactionEnvelope` objects representing work already normalized
 by `pgoutput-source-adapter`. It intentionally excludes PostgreSQL transport,
-decoding, and transaction buffering.
+slot/checkpoint continuity preflight, decoding, and transaction buffering.
 The runtime uses the core processor/result and observer contracts; its default
 no-op observer keeps this benchmark focused on scheduling and delivery cost.
 It intentionally omits the progress coordinator, checkpoint writes, and

@@ -52,7 +52,10 @@ replication:
   feedback_interval: 10.0
 ```
 
-If `auto_create_slot` is `true`, Mammoth attempts to create the slot. If it is `false`, create the slot yourself.
+If `auto_create_slot` is `true`, Mammoth may create a missing slot for a fresh
+stream. If a configured `start_lsn` or persisted checkpoint exists, automatic
+creation is disabled and a missing slot fails closed. If `auto_create_slot` is
+`false`, create the slot yourself.
 
 Inspect slots:
 
@@ -73,6 +76,25 @@ Expected plugin:
 ```text
 pgoutput
 ```
+
+## Slot and checkpoint preflight
+
+Mammoth inspects the configured slot through pgoutput-client before opening the
+replication stream. Startup fails before decoding or delivery when:
+
+- the slot is missing and first-time automatic creation is not safe;
+- the slot is active in another process;
+- the slot is not a logical `pgoutput` slot for the configured database;
+- `wal_status` is `lost` or `unreserved`;
+- PostgreSQL reports a conflict or invalidation reason;
+- the slot has no reachable `restart_lsn`; or
+- `restart_lsn` or `confirmed_flush_lsn` has advanced beyond Mammoth's
+  configured or persisted resume LSN.
+
+Mammoth never treats a replacement slot as continuation of a durable
+checkpoint. Lost continuity requires an external backfill or reconciliation,
+followed by establishment of new safe operational state. Temporary slots are
+rejected when durable checkpoint recovery is requested.
 
 ## One slot, one active subscriber
 
