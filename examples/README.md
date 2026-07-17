@@ -10,6 +10,7 @@ unit tests Docker-free.
 | --- | --- | --- |
 | [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered with SQLite checkpoints and duplicate-suppression ledger. | No |
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
+| [`composite_replica_identity`](./composite_replica_identity) | Proves catalog-derived composite identity preservation across live `INSERT`, `UPDATE`, and `DELETE` events. | Yes |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
 | [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
@@ -36,7 +37,9 @@ separately for checkpoints and acknowledgement; a normalized payload
 `commit_lsn` is not used as the feedback position.
 
 The live examples define primary keys on every published table, satisfying
-Mammoth's startup replica-identity preflight for `UPDATE` and `DELETE`.
+Mammoth's startup replica-identity preflight for `UPDATE` and `DELETE`. The
+composite replica identity example additionally proves that identity extraction
+does not depend on a conventional `id` column.
 
 They do not demonstrate DDL delivery, sequence synchronization, or automatic
 destination conflict resolution. PostgreSQL does not replicate DDL or sequence

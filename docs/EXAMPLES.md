@@ -43,6 +43,43 @@ This example exercises:
 - webhook delivery
 - idle replication behavior
 
+## `examples/composite_replica_identity`
+
+Purpose:
+
+```text
+composite-key INSERT + UPDATE + DELETE
+    ↓
+publication catalog inspection
+    ↓
+ReplicaIdentityResolver
+    ↓
+TransactionEnvelope webhook
+```
+
+Use this when you want to verify live identity normalization for a table with no
+`id` column. The `memberships` table uses `(tenant_id, member_uuid)` as its
+primary key, and the receiver rejects the payload unless all three operations
+contain both identity fields.
+
+This example exercises:
+
+- ordered, catalog-derived replica identity mappings
+- composite and non-`id` keys
+- key-only `DELETE` old tuples
+- transaction-level webhook delivery
+- startup publication and replica-identity preflight
+
+Run it with:
+
+```bash
+cd examples/composite_replica_identity
+docker compose up --build
+```
+
+The receiver should report that the composite identity was verified for
+`INSERT`, `UPDATE`, and `DELETE`.
+
 
 ## `examples/transaction_webhook`
 

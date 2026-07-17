@@ -14,6 +14,8 @@
   index, or `REPLICA IDENTITY FULL` and reporting all invalid tables together.
 - Added catalog-derived, ordered replica-identity mappings for relation OIDs and
   schema-qualified tables.
+- Added a self-verifying live PostgreSQL example for composite, non-`id`
+  replica identities across `INSERT`, `UPDATE`, and `DELETE`.
 
 ### Fixed
 
