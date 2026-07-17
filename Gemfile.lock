@@ -7,7 +7,7 @@ PATH
       json-schema (~> 6.2)
       pg (~> 1.6)
       pgoutput-client (~> 0.4)
-      pgoutput-decoder (~> 0.1)
+      pgoutput-decoder (~> 0.2, >= 0.2.0)
       pgoutput-parser (~> 0.1)
       pgoutput-source-adapter (~> 0.3, >= 0.3.0)
       sqlite3 (~> 2.9)
@@ -72,7 +72,7 @@ GEM
     pg (1.6.3-x86_64-linux)
     pgoutput-client (0.4.0)
       pg (~> 1.6)
-    pgoutput-decoder (0.1.1)
+    pgoutput-decoder (0.2.0)
       bigdecimal (~> 4.1)
       pgoutput-parser (~> 0.1)
     pgoutput-parser (0.2.0)
@@ -213,7 +213,7 @@ CHECKSUMS
   parser (3.3.11.1) sha256=d17ace7aabe3e72c3cc94043714be27cc6f852f104d81aa284c2281aecc65d54
   pg (1.6.3-x86_64-linux) sha256=5d9e188c8f7a0295d162b7b88a768d8452a899977d44f3274d1946d67920ae8d
   pgoutput-client (0.4.0) sha256=31f49be53acfd5c6704a29dcb18a9aac8fc6e2c26d70aa9d55461eef66ef9a0d
-  pgoutput-decoder (0.1.1) sha256=a1ee34cb9be276c5b9de445feca5f298cb007344e4eb34a3cf34d60792cddba5
+  pgoutput-decoder (0.2.0) sha256=ff4e145fb098457fa1316ae0a1f622b5181c204c56308201d22a59019cf8a04a
   pgoutput-parser (0.2.0) sha256=0214dfdfe9651e29fccca0e879da069f3a2d253f73616bff2774f1e1b804445e
   pgoutput-source-adapter (0.3.0) sha256=df405db7b251dd8c0458c0258e36980901e124e86bbbbced904b7b1a12ca000c
   pp (0.6.3) sha256=2951d514450b93ccfeb1df7d021cae0da16e0a7f95ee1e2273719669d0ab9df6

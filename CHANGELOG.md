@@ -40,8 +40,15 @@
   retained-WAL reporting, continuity boundaries, and safe first-time creation.
 - Upgraded pgoutput-source-adapter to 0.3.0 and covered catalog-to-resolver
   composition for composite replica identities.
+- Upgraded pgoutput-decoder to 0.2.0 so key-only old tuples preserve their
+  exact decoded columns instead of synthesizing absent non-key values.
 - Added end-to-end source/coordinator coverage proving that a transaction with
   decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
+- Added opt-in PostgreSQL 17 integration coverage for transactional `INSERT`,
+  `UPDATE`, and `DELETE` with composite identity, replication reconnects,
+  concurrent out-of-order completion, contiguous slot acknowledgement, and
+  fail-closed slot invalidation; CI and release gates run the suite against a
+  logical-replication service.
 - Strengthened boundary coverage for source-owned position resolution and
   publication-catalog inspection, and synchronized PostgreSQL, runtime,
   operational-state, configuration, and transaction-example documentation.

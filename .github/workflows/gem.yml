@@ -16,6 +16,20 @@ jobs:
     environment:
       name: release
       url: https://rubygems.org/gems/mammoth
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mammoth_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mammoth_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,7 +53,14 @@ jobs:
           fi
       - name: Run quality gates
         run: bundle exec rake
+      - name: Enable PostgreSQL logical replication
+        run: |
+          docker exec "${{ job.services.postgres.id }}" psql -U postgres -d mammoth_e2e -c "ALTER SYSTEM SET wal_level = 'logical'"
+          docker restart "${{ job.services.postgres.id }}"
+          until docker exec "${{ job.services.postgres.id }}" pg_isready -U postgres -d mammoth_e2e; do sleep 1; done
       - name: Run E2E tests
         run: bundle exec rake test:e2e
+        env:
+          MAMMOTH_E2E_POSTGRES_URL: postgres://postgres:postgres@127.0.0.1:5432/mammoth_e2e
       - name: Release gem to RubyGems.org
         uses: rubygems/release-gem@v1

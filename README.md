@@ -212,7 +212,17 @@ script/test-e2e
 ```
 
 The e2e task uses a real HTTP receiver, real SQLite database, and real
-filesystem paths.
+filesystem paths. Set `MAMMOTH_E2E_POSTGRES_URL` to include the real PostgreSQL
+logical-replication scenarios:
+
+```bash
+MAMMOTH_E2E_POSTGRES_URL=postgres://postgres:postgres@127.0.0.1:5432/mammoth_e2e \
+  bundle exec rake test:e2e
+```
+
+The PostgreSQL fixture must have `wal_level=logical`; its test role must be able
+to create publications and logical replication slots, terminate replication
+backends, and change `max_slot_wal_keep_size`.
 
 ## Kubernetes
 

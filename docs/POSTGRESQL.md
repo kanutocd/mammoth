@@ -190,3 +190,25 @@ replication:
 ```
 
 Use a value appropriate for your PostgreSQL timeout and operational needs.
+
+## Real integration tests
+
+The E2E task always exercises the HTTP, SQLite, and filesystem delivery path.
+Set `MAMMOTH_E2E_POSTGRES_URL` to also exercise Mammoth against a disposable
+PostgreSQL instance:
+
+```bash
+MAMMOTH_E2E_POSTGRES_URL=postgres://postgres:postgres@127.0.0.1:5432/mammoth_e2e \
+  bundle exec rake test:e2e
+```
+
+The real PostgreSQL suite covers `INSERT`, `UPDATE`, and `DELETE` in one
+transaction with a composite replica identity, replication-connection
+recovery, contiguous checkpoint and acknowledgement advancement after
+out-of-order completion, and fail-closed slot invalidation.
+
+Configure the fixture with `wal_level=logical`. The test role must be able to
+create publications and logical replication slots, terminate replication
+backends, and change `max_slot_wal_keep_size`. Use an isolated, disposable
+database because the suite intentionally creates and invalidates slots and
+generates WAL pressure.
