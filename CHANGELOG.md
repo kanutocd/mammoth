@@ -52,6 +52,9 @@
 - Strengthened boundary coverage for source-owned position resolution and
   publication-catalog inspection, and synchronized PostgreSQL, runtime,
   operational-state, configuration, and transaction-example documentation.
+- Documented PostgreSQL WAL guardrails, slot/catalog monitoring, DDL and
+  sequence limitations, destination conflict ownership, upgrade recovery,
+  troubleshooting, example caveats, and Kubernetes deployment policy.
 
 ## 0.9.0
 

@@ -241,6 +241,14 @@ helm install mammoth charts/mammoth
 The chart uses one replica and `Recreate` strategy to respect PostgreSQL's
 logical replication slot constraint: one slot, one active subscriber.
 
+Production operators should also monitor retained WAL and slot readiness,
+configure PostgreSQL retention guardrails, and alert on database disk and
+catalog health. DDL and sequence state are not replicated; coordinate schema
+changes with webhook consumers and synchronize sequences externally when
+building a writable database copy. See
+[`docs/POSTGRESQL.md`](docs/POSTGRESQL.md) and
+[`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
+
 ## License
 
 Mammoth OSS is licensed under the [MIT License](LICENSE.txt).

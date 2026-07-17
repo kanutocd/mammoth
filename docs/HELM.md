@@ -63,6 +63,12 @@ You must provide:
 * Kubernetes Secret for the PostgreSQL password
 * webhook destination reachable from the cluster
 
+For production, manage publications and permanent replication slots as database
+infrastructure and set `replication.auto_create_slot: false` after bootstrap.
+Do not couple a retained Mammoth PVC to an automatically replaced PostgreSQL
+slot: the SQLite checkpoint and the slot's retained WAL describe one continuity
+history and must be recovered or reset together.
+
 ## PostgreSQL Password Secret
 
 Default chart values expect:
@@ -293,6 +299,40 @@ PostgreSQL logical replication slots are consumed by one active subscriber at a 
 ```yaml
 replicaCount: 1
 ```
+
+The `Recreate` deployment strategy releases the slot before starting the
+replacement pod. Do not change the strategy or replica count without assigning
+an independent slot and independent operational-state store to each active
+relay.
+
+## PostgreSQL operational guardrails
+
+Monitor retained WAL, slot readiness, PostgreSQL disk capacity, archive health,
+and catalog-XID age. Mammoth's `/readyz` and `mammoth_postgres_slot_*` metrics
+cover slot state; database and infrastructure tooling must cover storage and
+catalog health.
+
+The OSS chart currently starts the relay process only. To expose `/readyz` and
+`/metrics`, deploy a separate process with the same ConfigMap, PostgreSQL
+Secret, and operational-state PVC:
+
+```bash
+mammoth observability /app/config/mammoth.config.yaml
+```
+
+That process performs read-only slot and state inspection; it must not run
+`mammoth start` or open a second replication connection.
+
+Configure `max_slot_wal_keep_size` and, where supported,
+`idle_replication_slot_timeout` according to the environment's recovery budget.
+These settings can invalidate an unhealthy slot to protect PostgreSQL. They do
+not provide a safe Mammoth resume point; an invalidated slot requires external
+backfill or reconciliation.
+
+Coordinate PostgreSQL schema migrations with webhook consumers because DDL is
+not replicated. Database upgrades must preserve and verify the existing logical
+slot or establish explicitly reconciled new operational state before Mammoth
+starts.
 
 ## Useful Commands
 

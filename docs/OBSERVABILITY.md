@@ -127,6 +127,9 @@ mammoth_postgres_slot_safe_wal_size_bytes{mammoth_name="local_mammoth",slot_name
 mammoth_postgres_slot_wal_status{mammoth_name="local_mammoth",slot_name="mammoth_prod",wal_status="reserved"} 1
 ```
 
+PostgreSQL slot metrics are omitted when their source catalog value is null or
+unavailable on the running PostgreSQL version.
+
 The dispatch counters come from `Mammoth::MetricsObserver`, which implements
 the canonical `CDC::Core::Observer` hooks. Mammoth maps the core metric
 vocabulary to these Prometheus counters:
@@ -163,3 +166,27 @@ does not inherit another process's in-memory dispatch counters.
 
 The endpoints inspect PostgreSQL replication slots read-only. They do not send
 feedback, create or drop slots, replay dead letters, or mutate delivery state.
+
+## Alerting guidance
+
+At minimum, alert when:
+
+- `mammoth_postgres_slot_inspection_up` is `0`;
+- `mammoth_postgres_slot_present`, `mammoth_postgres_slot_ready`, or
+  `mammoth_postgres_slot_active` is `0` outside an expected maintenance window;
+- `mammoth_postgres_slot_invalidated` is `1`;
+- `mammoth_postgres_slot_wal_status` reports `lost` or `unreserved`;
+- `mammoth_postgres_slot_retained_wal_bytes` grows continuously or exceeds the
+  environment's recovery budget; or
+- `mammoth_postgres_slot_safe_wal_size_bytes` approaches zero.
+
+Use `mammoth_postgres_slot_inactive_since_timestamp_seconds` to measure
+unexpected inactivity. The numeric restart and confirmed-flush LSN gauges help
+correlate retained WAL with durable acknowledgement progress; they are
+positions, not byte-rate counters.
+
+Mammoth does not expose PostgreSQL filesystem capacity, archive health, or
+`catalog_xmin` age. Monitor those through the database and infrastructure
+tooling. Server settings such as `max_slot_wal_keep_size` and, where supported,
+`idle_replication_slot_timeout` are last-resort database protections: crossing
+them can invalidate the slot and force external reconciliation.

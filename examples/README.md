@@ -38,6 +38,12 @@ separately for checkpoints and acknowledgement; a normalized payload
 The live examples define primary keys on every published table, satisfying
 Mammoth's startup replica-identity preflight for `UPDATE` and `DELETE`.
 
+They do not demonstrate DDL delivery, sequence synchronization, or automatic
+destination conflict resolution. PostgreSQL does not replicate DDL or sequence
+state through this stream, and Mammoth is an HTTP relay rather than a SQL
+subscriber. Coordinate schema changes with receivers, synchronize sequences
+externally when constructing a writable database replica, and use destination
+idempotency plus Mammoth's dead-letter workflow for conflicts.
 
 ## Checkpoint Recovery
 

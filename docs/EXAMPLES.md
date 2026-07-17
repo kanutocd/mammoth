@@ -247,6 +247,12 @@ tables that publish `UPDATE` or `DELETE` must likewise use a primary key, an
 eligible selected replica-identity index, or `REPLICA IDENTITY FULL`; Mammoth
 validates this before streaming.
 
+The live examples intentionally do not model DDL delivery, sequence
+synchronization, or PostgreSQL subscriber conflict repair. Mammoth relays row
+changes to HTTP destinations: coordinate schema changes with those consumers,
+synchronize sequences externally when building a writable database copy, and
+use destination idempotency plus explicit dead-letter replay for delivery
+conflicts.
 
 ## Checkpoint Recovery
 

@@ -156,10 +156,15 @@ SELECT
   wal_status,
   safe_wal_size,
   inactive_since,
-  invalidation_reason
+  conflicting,
+  invalidation_reason,
+  catalog_xmin
 FROM pg_replication_slots
 WHERE slot_name = 'mammoth_prod';
 ```
+
+The available columns vary by PostgreSQL version. Remove fields that the
+running server does not expose.
 
 Do not solve a missing or invalidated slot by recreating it while retaining
 Mammoth's old checkpoint. The lost interval requires external backfill or
@@ -172,6 +177,46 @@ The same state is available through `/readyz` and the
 `mammoth_postgres_slot_inspection_up` is `0`, check PostgreSQL connectivity and
 catalog permissions. If retained WAL grows continuously, investigate stalled
 delivery or acknowledgement before PostgreSQL storage is exhausted.
+
+## Retained WAL keeps growing
+
+Check Mammoth readiness, pending dead letters, destination latency, and the gap
+between `restart_lsn` and `confirmed_flush_lsn`. A slow or failing destination
+can hold the contiguous watermark behind later completed work.
+
+Alert before retained WAL reaches the environment's disk or recovery budget.
+`max_slot_wal_keep_size` and, where supported,
+`idle_replication_slot_timeout` can protect PostgreSQL, but crossing those
+guardrails may invalidate the slot. Increasing a guardrail buys investigation
+time; it does not repair stalled delivery or acknowledgement. Disk-capacity and
+`catalog_xmin` age monitoring belong in the PostgreSQL infrastructure stack.
+
+## Webhook payloads changed after a schema migration
+
+PostgreSQL logical replication does not deliver DDL. Mammoth may receive new
+relation metadata and emit a changed row shape, but it does not migrate or
+version webhook consumers.
+
+Deploy consumers that accept both shapes before applying additive database
+changes. For renames, removals, type changes, or replica-identity changes,
+coordinate a compatibility window and re-run Mammoth startup preflight. If a
+consumer rejects the new shape, correct the consumer or routing policy before
+replaying the resulting dead letters.
+
+## Sequence values diverge in a downstream database
+
+Logical replication delivers generated values stored in rows but does not copy
+the sequence's current state. Webhook consumers normally need no action. A
+downstream database intended to become writable must synchronize sequences
+separately before cutover.
+
+## A destination reports a duplicate-key or semantic conflict
+
+Mammoth is not a PostgreSQL subscriber applying SQL, so PostgreSQL subscription
+conflict-repair procedures do not apply. Destinations must use Mammoth
+idempotency keys and their own conflict policy. Mammoth retries delivery and
+dead-letters exhausted failures; after fixing the destination condition, replay
+the affected dead letter explicitly.
 
 ## Docker Compose example shows duplicate dead-letter rows
 

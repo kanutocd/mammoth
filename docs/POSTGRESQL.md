@@ -14,6 +14,20 @@ max_wal_senders = 10
 
 The exact values depend on your deployment, but `wal_level=logical` is mandatory.
 
+### Server-side WAL retention guardrails
+
+Set `max_slot_wal_keep_size` to a value appropriate for the database volume and
+recovery budget. Where the PostgreSQL version supports it,
+`idle_replication_slot_timeout` can invalidate slots that remain inactive too
+long. These settings protect PostgreSQL from unbounded retention; they do not
+preserve Mammoth delivery continuity. When a guardrail invalidates a slot,
+Mammoth fails closed and requires external backfill or reconciliation before
+new operational state is established.
+
+Mammoth reports retained WAL and slot health, but PostgreSQL disk-capacity,
+archive, and catalog-XID alerts remain deployment-infrastructure
+responsibilities.
+
 ## Publication
 
 Mammoth requires at least one publication listed in configuration.
@@ -105,8 +119,16 @@ SELECT
   database,
   active,
   restart_lsn,
-  confirmed_flush_lsn
-FROM pg_replication_slots;
+  confirmed_flush_lsn,
+  pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS retained_wal_bytes,
+  wal_status,
+  safe_wal_size,
+  inactive_since,
+  conflicting,
+  invalidation_reason,
+  catalog_xmin
+FROM pg_replication_slots
+WHERE slot_type = 'logical';
 ```
 
 Expected plugin:
@@ -147,7 +169,11 @@ activity/readiness gauges, inactivity time, and numeric restart and
 confirmed-flush LSN positions. Alert on inspection failure, missing or unready
 slots, and retained WAL growth appropriate to the PostgreSQL volume. Mammoth
 reports these facts; deployment infrastructure remains responsible for disk
-capacity alerts.
+capacity and catalog-XID age alerts.
+
+The columns available in `pg_replication_slots` vary by PostgreSQL version.
+Remove unavailable fields from the inspection query rather than assuming that
+an older server exposes current catalog columns.
 
 ## One slot, one active subscriber
 
@@ -190,6 +216,61 @@ replication:
 ```
 
 Use a value appropriate for your PostgreSQL timeout and operational needs.
+
+## DDL and schema evolution
+
+PostgreSQL logical replication does not emit DDL or replicate schema
+definitions. Relation metadata may refresh after a table change, but Mammoth
+does not deliver the migration itself, negotiate a schema version, update a
+downstream schema, or guarantee that a payload-shape change is compatible with
+existing webhook consumers.
+
+Coordinate migrations with every destination. Prefer additive,
+backward-compatible rollouts:
+
+1. make consumers accept both old and new payload shapes;
+2. apply the PostgreSQL migration;
+3. deploy producers that rely on the new shape; and
+4. remove old-shape support only after the retained WAL and retry windows have
+   passed.
+
+Renaming or removing columns, changing types, or changing replica identity
+requires an explicit compatibility and recovery plan. Re-run configuration and
+startup preflight after publication or replica-identity changes.
+
+## Sequences
+
+Logical replication does not replicate sequence state. Generated values that
+are stored in inserted rows are delivered as ordinary row values, which is
+sufficient for normal webhook consumers. A destination being built as a
+writable database replica or failover target must synchronize its sequences
+separately before accepting writes.
+
+## Destination conflicts and idempotency
+
+Mammoth is not a PostgreSQL subscription that applies SQL to a subscriber, so
+native subscriber conflicts such as duplicate-key apply failures do not map
+directly to Mammoth. Mammoth sends HTTP payloads, retries unsuccessful
+deliveries, records exhausted failures in the dead-letter store, and uses its
+delivered-envelope ledger to suppress duplicate delivery.
+
+Destinations must enforce their own idempotency and interpret semantic
+conflicts. Inspect and replay dead letters only after correcting the
+destination-side condition; Mammoth does not merge rows or choose a conflict
+winner.
+
+## PostgreSQL upgrades and slot lifecycle
+
+Treat database upgrades, slot renames, slot drops, and changes to
+`replication.slot` as continuity-sensitive operations. Some PostgreSQL versions
+can migrate eligible logical slots through `pg_upgrade`, subject to PostgreSQL
+version and configuration restrictions; do not assume either that every
+upgrade preserves a slot or that every upgrade drops it.
+
+After an upgrade, verify the slot plugin, database, restart LSN, confirmed flush
+LSN, WAL status, invalidation state, and Mammoth checkpoint before starting the
+relay. Never create a replacement slot and reuse an older Mammoth checkpoint as
+though it represented the same retained WAL history.
 
 ## Real integration tests
 

@@ -141,6 +141,9 @@ replication:
 - `publications` is the list of PostgreSQL publications to subscribe to.
   Before streaming, Mammoth validates replica identity for every included table
   whose publication enables `UPDATE` or `DELETE`.
+- `start_lsn` is an advanced recovery or controlled-replay override. Leave it
+  unset for normal checkpoint-based operation. It cannot restore WAL that the
+  configured slot no longer retains.
 - `auto_create_slot` permits first-time slot creation only when no configured
   or persisted resume LSN exists. A missing slot with a checkpoint always fails
   closed instead of being recreated.
@@ -157,6 +160,11 @@ It also rejects published `UPDATE`/`DELETE` tables without a usable primary
 key, selected replica-identity index, or `REPLICA IDENTITY FULL`. The inspected
 column order is passed to `pgoutput-source-adapter` for complete composite and
 non-`id` key normalization.
+
+Publication creation, PostgreSQL retention limits, schema migrations, sequence
+synchronization, backfills, and disk-capacity alerts are external operational
+responsibilities. They are intentionally not configuration-driven Mammoth
+lifecycle actions.
 
 ### `webhook`
 

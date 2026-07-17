@@ -182,3 +182,16 @@ mammoth status config/mammoth.yml
 ```
 
 This reports operational state from the SQLite database.
+
+## Before production
+
+- Run `mammoth observability CONFIG` and alert on slot readiness, invalidation,
+  retained WAL, and safe WAL size.
+- Monitor PostgreSQL disk capacity and catalog-XID age with infrastructure
+  tooling.
+- Use a permanent, DBA-managed slot after bootstrap and recover the slot and
+  Mammoth operational state as one continuity boundary.
+- Coordinate schema migrations with webhook consumers; DDL and sequence state
+  are not replicated.
+- Require destination-side idempotency and use Mammoth's dead-letter workflow
+  for failed or conflicting deliveries.
