@@ -73,6 +73,12 @@ Mammoth does not own pgoutput protocol parsing, value decoding, source
 normalization, ordering policy, or runtime execution. Those belong to the
 upstream CDC Ecosystem components.
 
+For the live PostgreSQL stream, `pgoutput-source-adapter` incrementally owns
+`Begin`/`Commit` buffering and emits exact `CDC::Core::ChangeEvent` or
+`CDC::Core::TransactionEnvelope` work items. Mammoth only composes the
+transport, parser, decoder, and source adapter and forwards the resulting core
+work to delivery.
+
 ## Extensions
 
 Mammoth OSS exposes small adapter registries for future extensions:

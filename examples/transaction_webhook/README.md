@@ -69,7 +69,7 @@ Transaction delivery gives Mammoth a safer correctness boundary:
 ```text
 receive WAL
   ↓
-group committed work as a TransactionEnvelope
+pgoutput-source-adapter emits the committed TransactionEnvelope
   ↓
 deliver the whole transaction
   ↓
@@ -78,6 +78,10 @@ checkpoint only after successful delivery
 
 That is the foundation for concurrent delivery without advancing checkpoints
 past earlier incomplete committed work.
+
+Mammoth does not buffer `Begin`/`Commit` messages in this path. The
+`pgoutput-source-adapter` streaming API owns transaction state and yields an
+exact `CDC::Core::TransactionEnvelope` to Mammoth.
 
 ## Operational note
 

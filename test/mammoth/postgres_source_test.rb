@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "cdc/core"
+require "pgoutput/decoder/events"
+require "pgoutput/source_adapter"
 
 module Mammoth
   # rubocop:disable Metrics/ClassLength
@@ -11,7 +14,7 @@ module Mammoth
         runner: FakeRunner.new(["payload-1"]),
         parser: ->(payload) { "parsed-#{payload}" },
         decoder: ->(message) { "decoded-#{message}" },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal [sample_event("decoded-parsed-payload-1")], source.each.to_a
@@ -23,7 +26,7 @@ module Mammoth
         runner: FakeRunner.new([]),
         parser: ->(payload) { payload },
         decoder: ->(message) { message },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_instance_of Enumerator, source.each
@@ -37,7 +40,7 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: parser,
         decoder: ->(message) { message },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal "parsed-payload", source.each.first.fetch("source_position")
@@ -51,15 +54,14 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: ->(payload) { payload },
         decoder: decoder,
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal "decoded-payload", source.each.first.fetch("source_position")
     end
 
-    def test_adapter_can_use_normalize_interface
-      adapter = Object.new
-      def adapter.normalize(decoded) = { "operation" => "insert", "source_position" => decoded }
+    def test_adapter_can_use_streaming_normalization_interface
+      adapter = streaming_adapter { |decoded| { "operation" => "insert", "source_position" => decoded } }
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
         runner: FakeRunner.new(["payload"]),
@@ -77,7 +79,7 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: ->(payload) { payload },
         decoder: ->(_message) { nil },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal [], source.each.to_a
@@ -91,7 +93,7 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: parser,
         decoder: ->(message) { message },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal "processed-payload", source.each.first.fetch("source_position")
@@ -105,7 +107,7 @@ module Mammoth
         runner: FakeRunnerWithMetadata.new([["payload", { lsn: "0/42" }]]),
         parser: ->(payload) { payload },
         decoder: decoder,
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal "payload-0/42", source.each.first.fetch("source_position")
@@ -118,7 +120,7 @@ module Mammoth
         runner: FakeRunnerWithMetadata.new([["payload", { lsn: "0/43" }]]),
         parser: ->(payload) { payload },
         decoder: decoder,
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal "payload-0/43", source.each.first.fetch("source_position")
@@ -130,7 +132,7 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: ->(payload) { payload },
         decoder: ->(message) { message },
-        adapter: ->(decoded) { [nil, sample_event(decoded)] }
+        adapter: streaming_adapter { |decoded| [nil, sample_event(decoded)] }
       )
 
       assert_equal [sample_event("payload")], source.each.to_a
@@ -150,56 +152,69 @@ module Mammoth
       assert_match(/source adapter must respond/, error.message)
     end
 
-    # rubocop:disable Metrics/AbcSize
-    def test_buffers_pgoutput_transaction_until_commit
-      decoded_messages = {
-        "begin" => FakeBegin.new("tx-1"),
-        "row-1" => "row-1",
-        "row-2" => "row-2",
-        "commit" => FakeCommit.new("0/99")
-      }
+    def test_delegates_transaction_normalization_to_source_adapter
+      decoded_messages = %w[begin row-1 row-2 commit]
+      event = CDC::Core::ChangeEvent.new(operation: :insert, schema: "public", table: "orders")
+      envelope = CDC::Core::TransactionEnvelope.new(
+        transaction_id: "tx-1", events: [event], commit_lsn: "0/99"
+      )
+      adapter = RecordingStreamingAdapter.new(envelope)
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
-        runner: FakeRunner.new(%w[begin row-1 row-2 commit]),
+        runner: FakeRunner.new(decoded_messages),
         parser: ->(payload) { payload },
-        decoder: ->(message) { decoded_messages.fetch(message) },
-        adapter: ->(decoded) { sample_event(decoded) }
+        decoder: ->(message) { message },
+        adapter: adapter
       )
 
-      emitted = source.each.to_a
-
-      assert_equal 1, emitted.length
-      envelope = emitted.fetch(0)
-      assert_equal "tx-1", envelope.transaction_id
-      assert_equal "0/99", envelope.commit_lsn
-      assert_equal 2, envelope.events.length
-      assert_equal(%w[row-1 row-2], envelope.events.map { |event| event.fetch("source_position") })
+      assert_same envelope, source.each.first
+      assert_equal decoded_messages, adapter.inputs.map(&:event)
     end
-    # rubocop:enable Metrics/AbcSize
 
-    def test_commit_metadata_supplies_transaction_commit_lsn
+    # rubocop:disable Metrics/MethodLength
+    def test_streams_exact_core_transaction_envelope_from_pgoutput_adapter
+      events = Pgoutput::Decoder::Events
       decoded_messages = {
-        "begin" => FakeBegin.new("tx-2"),
-        "row" => { "operation" => "insert" },
-        "commit" => FakeCommit.new(nil)
+        "begin" => events::Begin.new(42, 10, 123_456),
+        "row" => events::Insert.new(42, 7, "public", "orders", { "id" => 1 }),
+        "commit" => events::Commit.new(42, 0, 11, 12, 123_789)
       }
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
         runner: FakeRunnerWithMetadata.new([
-                                             ["begin", { lsn: "0/1" }],
-                                             ["row", { lsn: "0/2" }],
-                                             ["commit", { lsn: "0/3" }]
+                                             ["begin", { lsn: "0/begin" }],
+                                             ["row", { lsn: "0/row" }],
+                                             ["commit", { lsn: "0/commit" }]
                                            ]),
         parser: ->(payload) { payload },
         decoder: ->(message, _metadata) { decoded_messages.fetch(message) },
-        adapter: ->(decoded) { decoded }
+        adapter: Pgoutput::SourceAdapter::Cdc.new
       )
 
       envelope = source.each.first
 
-      assert_equal "tx-2", envelope.transaction_id
-      assert_equal "0/3", envelope.commit_lsn
-      assert_equal "0/2", envelope.events.first.fetch("source_position")
+      assert_instance_of CDC::Core::TransactionEnvelope, envelope
+      assert_equal "11", envelope.commit_lsn
+      assert_instance_of CDC::Core::ChangeEvent, envelope.events.first
+      assert_equal "0/row", envelope.events.first.commit_lsn
+    end
+    # rubocop:enable Metrics/MethodLength
+
+    def test_forwards_transport_positions_to_source_adapter
+      adapter = streaming_adapter { |_decoded, position| sample_event(position) }
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([
+                                             ["row-1", { lsn: "0/1" }],
+                                             ["row-2", WalMetadata.new("0/2")]
+                                           ]),
+        parser: ->(payload) { payload },
+        decoder: ->(message, _metadata) { message },
+        adapter: adapter
+      )
+
+      assert_equal(%w[0/1 0/2], source.each.map { |event_payload| event_payload.fetch("source_position") })
+      assert_equal %w[0/1 0/2], adapter.inputs.map(&:source_position)
     end
 
     def test_decoder_can_emit_array_of_decoded_messages
@@ -208,79 +223,23 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: ->(payload) { payload },
         decoder: ->(_message) { ["row-1", nil, "row-2"] },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       assert_equal(%w[row-1 row-2], source.each.map { |event| event.fetch("source_position") })
     end
 
-    def test_commit_message_without_active_transaction_buffer_is_ignored
+    def test_adapter_without_stream_event_receives_decoded_values
+      adapter = BareStreamingAdapter.new
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
-        runner: FakeRunner.new(["commit"]),
+        runner: FakeRunner.new(["row"]),
         parser: ->(payload) { payload },
-        decoder: ->(_message) { FakeCommit.new("0/commit") },
-        adapter: ->(decoded) { sample_event(decoded) }
+        decoder: ->(message) { message },
+        adapter: adapter
       )
 
-      assert_equal [], source.each.to_a
-    end
-
-    def test_transaction_buffer_ignores_nil_normalized_work
-      decoded_messages = {
-        "begin" => FakeBegin.new("tx-empty"),
-        "row" => "row",
-        "commit" => FakeCommit.new("0/empty")
-      }
-      source = Sources::Postgres.new(
-        Configuration.load(fixture_config_path),
-        runner: FakeRunner.new(%w[begin row commit]),
-        parser: ->(payload) { payload },
-        decoder: ->(message) { decoded_messages.fetch(message) },
-        adapter: ->(_decoded) { nil }
-      )
-
-      envelope = source.each.first
-
-      assert_equal "tx-empty", envelope.transaction_id
-      assert_equal [], envelope.events
-      assert_equal "0/empty", envelope.commit_lsn
-    end
-
-    def test_commit_lsn_falls_back_to_first_event_position
-      decoded_messages = {
-        "begin" => FakeBegin.new("tx-event-position"),
-        "row" => { "operation" => "insert", "source_position" => "0/event" },
-        "commit" => FakeCommit.new(nil)
-      }
-      source = Sources::Postgres.new(
-        Configuration.load(fixture_config_path),
-        runner: FakeRunner.new(%w[begin row commit]),
-        parser: ->(payload) { payload },
-        decoder: ->(message) { decoded_messages.fetch(message) },
-        adapter: ->(decoded) { decoded }
-      )
-
-      envelope = source.each.first
-
-      assert_equal "0/event", envelope.commit_lsn
-    end
-
-    def test_metadata_hash_must_be_hash_like
-      decoded_messages = {
-        "begin" => FakeBeginWithMetadata.new("tx-metadata", "not-a-hash"),
-        "row" => { "operation" => "insert", "source_position" => "0/row" },
-        "commit" => FakeCommit.new("0/commit")
-      }
-      source = Sources::Postgres.new(
-        Configuration.load(fixture_config_path),
-        runner: FakeRunner.new(%w[begin row commit]),
-        parser: ->(payload) { payload },
-        decoder: ->(message) { decoded_messages.fetch(message) },
-        adapter: ->(decoded) { decoded }
-      )
-
-      assert_equal({}, source.each.first.metadata)
+      assert_equal ["row"], source.each.to_a
     end
 
     def test_database_url_includes_password_when_present
@@ -406,7 +365,7 @@ module Mammoth
         runner: FakeRunner.new(["payload"]),
         parser: Object.new,
         decoder: ->(message) { message },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       error = assert_raises(ReplicationError) { source.each.to_a }
@@ -415,7 +374,10 @@ module Mammoth
     end
 
     def test_reports_missing_default_pgoutput_client
-      source = Sources::Postgres.new(Configuration.load(fixture_config_path))
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
+      )
 
       source.stub(:require_optional!, ->(_feature, gem_name) { raise ReplicationError, "#{gem_name} missing" }) do
         error = assert_raises(ReplicationError) { source.each.to_a }
@@ -434,7 +396,7 @@ module Mammoth
         runner: broken_runner,
         parser: ->(payload) { payload },
         decoder: ->(message) { message },
-        adapter: ->(decoded) { sample_event(decoded) }
+        adapter: streaming_adapter { |decoded| sample_event(decoded) }
       )
 
       error = assert_raises(ReplicationError) { source.each.to_a }
@@ -442,9 +404,61 @@ module Mammoth
       assert_match(/PostgreSQL CDC source failed: stream exploded/, error.message)
     end
 
-    FakeBegin = Data.define(:transaction_id)
-    FakeBeginWithMetadata = Data.define(:transaction_id, :metadata)
-    FakeCommit = Data.define(:commit_lsn)
+    StreamInput = Data.define(:event, :source_position)
+    WalMetadata = Data.define(:wal_end_lsn)
+
+    class StreamingAdapter
+      attr_reader :normalizer, :inputs
+
+      def initialize(normalizer)
+        @normalizer = normalizer
+        @inputs = []
+      end
+
+      def stream_event(event, source_position: nil)
+        StreamInput.new(event, source_position)
+      end
+
+      def each_normalized(events, &block)
+        return enum_for(:each_normalized, events) unless block_given?
+
+        events.each do |input|
+          inputs << input
+          result = if normalizer.arity == 1
+                     normalizer.call(input.event)
+                   else
+                     normalizer.call(input.event, input.source_position)
+                   end
+          works = result.is_a?(Array) ? result : [result]
+          works.compact.each(&block)
+        end
+        nil
+      end
+    end
+
+    class RecordingStreamingAdapter
+      attr_reader :output, :inputs
+
+      def initialize(output)
+        @output = output
+        @inputs = []
+      end
+
+      def stream_event(event, source_position: nil)
+        StreamInput.new(event, source_position)
+      end
+
+      def each_normalized(events)
+        @inputs = events.to_a
+        yield output
+      end
+    end
+
+    class BareStreamingAdapter
+      def each_normalized(events, &block)
+        events.each(&block)
+      end
+    end
 
     FakeRunner = Data.define(:payloads) do
       def start
@@ -459,6 +473,10 @@ module Mammoth
     end
 
     private
+
+    def streaming_adapter(&block)
+      StreamingAdapter.new(block)
+    end
 
     def sample_event(position)
       { "operation" => "insert", "source_position" => position }

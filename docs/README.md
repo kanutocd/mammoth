@@ -14,9 +14,7 @@ pgoutput-client
     ↓
 pgoutput-source-adapter
     ↓
-CDC::Core::ChangeEvent
-    ↓
-CDC::Core::TransactionEnvelope
+CDC::Core::ChangeEvent / TransactionEnvelope
     ↓
 Mammoth
     ↓
@@ -24,6 +22,10 @@ Webhook fanout
 ```
 
 Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON Schema validation, SQLite-backed operational memory, retries, checkpoints, and dead letters so operators can inspect and recover delivery state.
+
+The source adapter owns incremental PostgreSQL transaction normalization.
+Mammoth consumes exact CDC-core work items and does not rebuild transaction
+envelopes inside its PostgreSQL composition layer.
 
 ## Start here
 

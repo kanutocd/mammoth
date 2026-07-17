@@ -63,7 +63,7 @@ Use this when you want to validate Mammoth transaction-level delivery.
 This example exercises:
 
 - PostgreSQL logical replication
-- transaction envelope preservation
+- source-adapter-owned transaction envelope normalization and preservation
 - `delivery.unit: transaction`
 - `runtime.adapter: concurrent`
 - webhook transaction payloads

@@ -25,6 +25,9 @@ suite. The live replication examples are the place where PostgreSQL, logical
 replication, TransactionEnvelope delivery, and the CDC Ecosystem source adapter
 are intentionally exercised together.
 
+In those live examples, `pgoutput-source-adapter` owns incremental transaction
+buffering and yields CDC-core events or transaction envelopes to Mammoth.
+
 
 ## Checkpoint Recovery
 

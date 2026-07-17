@@ -8,7 +8,7 @@ module Mammoth
     # Postgres realizes the CDC Ecosystem libraries for Mammoth's product
     # boundary. It composes pgoutput-client, pgoutput-parser,
     # pgoutput-decoder, and pgoutput-source-adapter into a single source that
-    # yields CDC::Core-shaped work to the delivery runtime.
+    # yields CDC::Core work to the delivery runtime.
     #
     # This class may mention pgoutput implementation details because it is the
     # concrete PostgreSQL source adapter used by Mammoth. The rest of Mammoth
@@ -45,22 +45,26 @@ module Mammoth
         @checkpoint_store = checkpoint_store
       end
 
-      # Stream CDC::Core-shaped work from PostgreSQL logical replication.
+      # Stream CDC::Core work from PostgreSQL logical replication.
       #
       # Calling this method starts the injected or configured pgoutput-client
       # runner. The runner owns the PostgreSQL replication connection and slot
-      # lifecycle; this class only composes the parser, decoder, and adapter
-      # libraries around the stream.
+      # lifecycle, while pgoutput-source-adapter owns transaction buffering and
+      # normalization into CDC::Core work items. This class only composes those
+      # layers and forwards transport source positions to the adapter.
       #
-      # @yieldparam work [Object] CDC::Core::ChangeEvent or TransactionEnvelope
+      # @yieldparam work [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope]
       # @return [Enumerator, nil]
       # @raise [Mammoth::ReplicationError] when the source cannot stream CDC work
       def each(&block)
         return enum_for(:each) unless block_given?
 
-        effective_runner.start do |payload, metadata = nil|
-          process_payload(payload, metadata, &block)
+        normalizer = effective_adapter
+        unless normalizer.respond_to?(:each_normalized)
+          raise ReplicationError, "pgoutput source adapter must respond to #each_normalized"
         end
+
+        normalizer.each_normalized(decoded_stream, &block)
         nil
       rescue StandardError => e
         raise e if e.is_a?(ReplicationError)
@@ -70,41 +74,37 @@ module Mammoth
 
       private
 
-      def process_payload(payload, metadata, &block)
-        parsed = parse_payload(payload)
-        decoded = decode_message(parsed, metadata)
-        process_decoded(decoded, metadata, &block)
-      end
-
-      # rubocop:disable Metrics/MethodLength
-      def process_decoded(decoded, metadata, &block)
-        return if decoded.nil?
-
-        if decoded.is_a?(Array)
-          decoded.each { |item| process_decoded(item, metadata, &block) }
-          return
-        end
-
-        if begin_message?(decoded)
-          start_transaction_buffer(decoded)
-          return
-        end
-
-        if commit_message?(decoded)
-          emit_transaction_buffer(decoded, metadata, &block)
-          return
-        end
-
-        normalize_decoded(decoded).each do |work|
-          work = enrich_work_position(work, metadata, decoded)
-          if transaction_buffer_active?
-            Array(@transaction_events) << work
-          else
-            block.call(work)
+      def decoded_stream
+        Enumerator.new do |stream|
+          effective_runner.start do |payload, metadata = nil|
+            process_payload(payload, metadata) { |decoded| stream << stream_event(decoded, metadata) }
           end
         end
       end
-      # rubocop:enable Metrics/MethodLength
+
+      def process_payload(payload, metadata, &block)
+        parsed = parse_payload(payload)
+        decoded = decode_message(parsed, metadata)
+        each_decoded(decoded, &block)
+      end
+
+      def each_decoded(decoded, &block)
+        return if decoded.nil?
+
+        if decoded.is_a?(Array)
+          decoded.each { |item| each_decoded(item, &block) }
+          return
+        end
+
+        block.call(decoded)
+      end
+
+      def stream_event(decoded, metadata)
+        normalizer = effective_adapter
+        return decoded unless normalizer.respond_to?(:stream_event)
+
+        normalizer.stream_event(decoded, source_position: source_position(metadata))
+      end
 
       def parse_payload(payload)
         parser = effective_parser
@@ -127,102 +127,6 @@ module Mammoth
         raise ReplicationError, "pgoutput decoder must respond to #decode or #call"
       end
 
-      def normalize_decoded(decoded)
-        return [] if decoded.nil?
-        return decoded.flat_map { |item| normalize_decoded(item) } if decoded.is_a?(Array)
-
-        adapter = effective_adapter
-        result = if adapter.respond_to?(:normalize)
-                   adapter.normalize(decoded)
-                 elsif adapter.respond_to?(:call)
-                   adapter.call(decoded)
-                 else
-                   raise ReplicationError, "pgoutput source adapter must respond to #normalize or #call"
-                 end
-
-        result.is_a?(Array) ? result.compact : [result].compact
-      end
-
-      def begin_message?(decoded)
-        message_kind(decoded).include?("begin")
-      end
-
-      def commit_message?(decoded)
-        message_kind(decoded).include?("commit")
-      end
-
-      def message_kind(decoded)
-        (value_from(decoded, :message_type, :type, :kind) || decoded.class.name.to_s.split("::").last).to_s.downcase
-      end
-
-      def start_transaction_buffer(decoded)
-        @transaction_events = []
-        @transaction_id = value_from(decoded, :transaction_id, :xid, :final_lsn)
-        @transaction_metadata = value_hash(decoded, :metadata) || {}
-      end
-
-      def emit_transaction_buffer(decoded, metadata, &block)
-        return unless transaction_buffer_active?
-
-        block.call(
-          TransactionEnvelope.new(
-            @transaction_events,
-            transaction_id_for(decoded),
-            commit_lsn_for(decoded, metadata),
-            value_from(decoded, :commit_time, :committed_at, :timestamp),
-            @transaction_metadata
-          )
-        )
-      ensure
-        clear_transaction_buffer
-      end
-
-      def transaction_id_for(decoded)
-        value_from(decoded, :transaction_id, :xid) || @transaction_id || first_event_value(:transaction_id, :xid)
-      end
-
-      def commit_lsn_for(decoded, metadata)
-        value_from(decoded, :commit_lsn, :source_position, :lsn, :end_lsn, :final_lsn) ||
-          value_from(metadata, :commit_lsn, :source_position, :lsn, :end_lsn, :final_lsn) ||
-          first_event_value(:commit_lsn, :source_position, :lsn)
-      end
-
-      def transaction_buffer_active?
-        !@transaction_events.nil?
-      end
-
-      def clear_transaction_buffer
-        @transaction_events = nil
-        @transaction_id = nil
-        @transaction_metadata = nil
-      end
-
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-      def enrich_work_position(work, metadata, decoded)
-        position = value_from(work, :source_position, :commit_lsn) ||
-                   value_from(metadata, :source_position, :commit_lsn, :lsn) ||
-                   value_from(decoded, :source_position, :commit_lsn, :lsn)
-        return work unless position
-
-        work_hash = work.respond_to?(:to_h) ? work.to_h : work
-        return work unless work_hash.is_a?(Hash)
-
-        key_style = work_hash.key?("operation") ? :string : :symbol
-        source_position_key = key_style == :string ? "source_position" : :source_position
-        commit_lsn_key = key_style == :string ? "commit_lsn" : :commit_lsn
-        return work if work_hash[source_position_key] || work_hash[commit_lsn_key]
-
-        work_hash.merge(source_position_key => position, commit_lsn_key => position)
-      end
-      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-
-      def first_event_value(*keys)
-        event = Array(@transaction_events).find do |event|
-          keys.any? { |key| value_from(event, key) }
-        end
-        value_from(event, *keys) if event
-      end
-
       def value_from(object, *keys)
         return nil if object.nil?
 
@@ -239,9 +143,8 @@ module Mammoth
         nil
       end
 
-      def value_hash(object, key)
-        value = value_from(object, key)
-        value.is_a?(Hash) ? value : nil
+      def source_position(metadata)
+        value_from(metadata, :source_position, :commit_lsn, :lsn, :wal_end_lsn, :end_lsn, :final_lsn)
       end
 
       def effective_runner
@@ -375,8 +278,6 @@ module Mammoth
       rescue LoadError => e
         raise ReplicationError, "#{gem_name} is required for PostgreSQL CDC source integration: #{e.message}"
       end
-      TransactionEnvelope = Data.define(:events, :transaction_id, :commit_lsn, :commit_time, :metadata)
-      private_constant :TransactionEnvelope
     end
     # rubocop:enable Metrics/ClassLength
   end

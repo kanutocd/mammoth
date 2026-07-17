@@ -12,10 +12,6 @@ module Mammoth
       @effective_parser: untyped
       @effective_decoder: untyped
       @effective_adapter: untyped
-      @transaction_events: Array[untyped]?
-      @transaction_id: untyped
-      @transaction_metadata: Hash[untyped, untyped]?
-
       attr_reader config: Mammoth::Configuration
       attr_reader runner: untyped
       attr_reader parser: untyped
@@ -29,24 +25,14 @@ module Mammoth
 
       private
 
+      def decoded_stream: () -> Enumerator[untyped, nil]
       def process_payload: (untyped payload, untyped metadata) { (untyped work) -> untyped } -> untyped
-      def process_decoded: (untyped decoded, untyped metadata) { (untyped work) -> untyped } -> untyped
+      def each_decoded: (untyped decoded) { (untyped work) -> untyped } -> untyped
+      def stream_event: (untyped decoded, untyped metadata) -> untyped
       def parse_payload: (untyped payload) -> untyped
       def decode_message: (untyped message, untyped metadata) -> untyped
-      def normalize_decoded: (untyped decoded) -> Array[untyped]
-      def begin_message?: (untyped decoded) -> bool
-      def commit_message?: (untyped decoded) -> bool
-      def message_kind: (untyped decoded) -> String
-      def start_transaction_buffer: (untyped decoded) -> void
-      def emit_transaction_buffer: (untyped decoded, untyped metadata) { (untyped work) -> untyped } -> void
-      def transaction_id_for: (untyped decoded) -> untyped
-      def commit_lsn_for: (untyped decoded, untyped metadata) -> untyped
-      def transaction_buffer_active?: () -> bool
-      def clear_transaction_buffer: () -> void
-      def enrich_work_position: (untyped work, untyped metadata, untyped decoded) -> untyped
-      def first_event_value: (*Symbol keys) -> untyped
       def value_from: (untyped object, *Symbol keys) -> untyped
-      def value_hash: (untyped object, Symbol key) -> Hash[untyped, untyped]?
+      def source_position: (untyped metadata) -> untyped
       def effective_runner: () -> untyped
       def effective_parser: () -> untyped
       def effective_decoder: () -> untyped
@@ -66,8 +52,6 @@ module Mammoth
       def callable_accepts_metadata?: (untyped object, Symbol method_name) -> bool
       def required_config: (*String keys) -> untyped
       def require_optional!: (String feature, String gem_name) -> bool
-
-      TransactionEnvelope: untyped
     end
   end
 end

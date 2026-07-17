@@ -36,6 +36,15 @@ module Mammoth
       assert_match(/Pgoutput::SourceAdapter::Cdc/, body)
     end
 
+    def test_postgres_source_delegates_streaming_normalization_to_source_adapter
+      body = File.read(POSTGRES_SOURCE_FILE)
+
+      assert_match(/each_normalized/, body)
+      assert_match(/stream_event/, body)
+      refute_match(/Data\.define|TransactionEnvelope\.new/, body)
+      refute_match(/transaction_buffer|begin_message\?|commit_message\?/, body)
+    end
+
     def test_application_does_not_construct_pgoutput_components_directly
       body = File.read(File.join(LIB_ROOT, "mammoth", "application.rb"))
 

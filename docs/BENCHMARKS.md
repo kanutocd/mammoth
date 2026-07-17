@@ -96,6 +96,10 @@ Mammoth::DeliveryProcessor
 synthetic delivery worker
 ```
 
+The synthetic envelopes represent work already normalized by
+`pgoutput-source-adapter`; source transaction buffering is outside this
+downstream runtime benchmark.
+
 Useful for tuning:
 
 - `runtime.concurrency`

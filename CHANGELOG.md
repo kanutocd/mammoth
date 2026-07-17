@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Changed
+
+- Delegated incremental PostgreSQL transaction buffering and
+  `CDC::Core::TransactionEnvelope` construction to `pgoutput-source-adapter`.
+- `Mammoth::Sources::Postgres` now streams decoded events and transport WAL
+  positions through the adapter's `each_normalized` API instead of maintaining
+  private transaction state or envelope lookalikes.
+
+### Quality
+
+- Added boundary and source integration coverage for streaming adapter
+  delegation, exact core envelope preservation, and WAL position forwarding.
+- Updated API signatures, examples, benchmark descriptions, and architecture
+  documentation for the corrected source-adapter boundary.
+
 ## 0.7.2
 
 ### Changed

@@ -86,6 +86,10 @@ Mammoth::DeliveryProcessor
 synthetic delivery worker
 ```
 
+The synthetic envelopes represent work already normalized by
+`pgoutput-source-adapter`. This benchmark intentionally excludes PostgreSQL
+transport, decoding, and transaction buffering.
+
 Useful for tuning:
 
 - `runtime.concurrency`
