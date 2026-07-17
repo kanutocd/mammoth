@@ -23,7 +23,8 @@ module Mammoth
       source_name: String,
       slot_name: String,
       publication_name: String,
-      ?acknowledger: untyped
+      ?acknowledger: untyped,
+      ?position_resolver: untyped
     ) -> void
 
     def register: (untyped work, group_end: bool) -> void

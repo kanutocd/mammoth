@@ -56,6 +56,7 @@ Mammoth OSS includes:
 - per-destination enable/disable and retry policy controls
 - delivery worker with retry, delivered-ledger, and DLQ handling
 - contiguous delivery watermark for checkpoint and PostgreSQL acknowledgement
+- source-owned transport LSN preservation independent of payload `commit_lsn`
 - dead-letter inspection and filtered replay commands
 - CDC-core event serialization boundary
 - CDC Ecosystem source-adapter integration boundary

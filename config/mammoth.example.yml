@@ -98,7 +98,9 @@ replication:
   # Optional start LSN for advanced recovery or controlled replay.
   #
   # Leave unset for normal operation. Mammoth will use its checkpoint store and
-  # the replication slot position.
+  # the replication slot position. Persisted PostgreSQL checkpoints use the
+  # acknowledgement-compatible transport LSN, not a normalized transaction's
+  # decimal commit_lsn.
   #
   # Example:
   #   start_lsn: "0/16B6C50"

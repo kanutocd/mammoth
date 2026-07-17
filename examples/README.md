@@ -31,7 +31,9 @@ In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.
 Mammoth's delivery processor returns exact `CDC::Core::ProcessorResult` objects,
 and the selected runtime emits canonical `CDC::Core::Observer` notifications
-for dispatch metrics.
+for dispatch metrics. Mammoth preserves pgoutput-client's transport LSN
+separately for checkpoints and acknowledgement; a normalized payload
+`commit_lsn` is not used as the feedback position.
 
 
 ## Checkpoint Recovery

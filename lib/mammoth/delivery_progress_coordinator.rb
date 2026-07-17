@@ -43,12 +43,15 @@ module Mammoth
     # @param slot_name [String] PostgreSQL replication slot name
     # @param publication_name [String] publication name
     # @param acknowledger [#call, nil] upstream durable-progress acknowledgement
-    def initialize(checkpoint_store:, source_name:, slot_name:, publication_name:, acknowledger: nil)
+    # @param position_resolver [#call, nil] source-owned durable position resolver
+    def initialize(checkpoint_store:, source_name:, slot_name:, publication_name:, acknowledger: nil,
+                   position_resolver: nil)
       @checkpoint_store = checkpoint_store
       @source_name = source_name
       @slot_name = slot_name
       @publication_name = publication_name
       @acknowledger = acknowledger
+      @position_resolver = position_resolver
       # rubocop:disable Layout/LeadingCommentSpace -- Steep inline type syntax requires `#:`.
       @groups = [] #: Array[Group]
       @entries_by_work = {} #: Hash[untyped, Array[Entry]]
@@ -142,6 +145,8 @@ module Mammoth
     end
 
     def source_position(work)
+      return @position_resolver.call(work) if @position_resolver
+
       work.commit_lsn if work.respond_to?(:commit_lsn)
     end
   end

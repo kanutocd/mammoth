@@ -65,7 +65,7 @@ module Mammoth
         end
 
         normalizer.each_normalized(decoded_stream) do |work|
-          block.call(validate_core_work!(work))
+          yield_with_progress_position(validate_core_work!(work), &block)
         end
         nil
       rescue StandardError => e
@@ -84,11 +84,23 @@ module Mammoth
         raise ReplicationError, "PostgreSQL WAL acknowledgement failed: #{e.message}"
       end
 
+      # Resolve the acknowledgement-compatible transport position for work
+      # currently being yielded by this source.
+      #
+      # @param work [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope] yielded work
+      # @return [String, Integer, nil] pgoutput-client compatible WAL position
+      def progress_position_for(work)
+        return nil unless yielded_work_includes?(work)
+
+        @yielded_progress_position
+      end
+
       private
 
       def decoded_stream
         Enumerator.new do |stream|
           effective_runner.start do |payload, metadata = nil|
+            @latest_progress_position = acknowledgement_position(metadata)
             process_payload(payload, metadata) { |decoded| stream << stream_event(decoded, metadata) }
           end
         end
@@ -116,6 +128,15 @@ module Mammoth
         return decoded unless normalizer.respond_to?(:stream_event)
 
         normalizer.stream_event(decoded, source_position: source_position(metadata))
+      end
+
+      def yield_with_progress_position(work)
+        @yielded_work = work
+        @yielded_progress_position = @latest_progress_position
+        yield work
+      ensure
+        @yielded_work = nil
+        @yielded_progress_position = nil
       end
 
       def validate_core_work!(work)
@@ -164,6 +185,22 @@ module Mammoth
 
       def source_position(metadata)
         value_from(metadata, :source_position, :commit_lsn, :lsn, :wal_end_lsn, :end_lsn, :final_lsn)
+      end
+
+      def acknowledgement_position(metadata)
+        value = value_from(metadata, :wal_end_lsn, :wal_end, :lsn)
+        return nil if value.nil?
+        return value if value.is_a?(Integer) && value >= 0
+        return value if value.is_a?(String) && value.match?(%r{\A[0-9A-F]+/[0-9A-F]+\z}i)
+
+        raise ReplicationError, "invalid PostgreSQL transport LSN for acknowledgement: #{value.inspect}"
+      end
+
+      def yielded_work_includes?(work)
+        return true if @yielded_work.equal?(work)
+        return false unless @yielded_work.is_a?(CDC::Core::TransactionEnvelope)
+
+        @yielded_work.events.any? { |event| event.equal?(work) }
       end
 
       def effective_runner

@@ -65,6 +65,7 @@ module Mammoth
     def build_source: () -> untyped
     def build_progress_coordinator: () -> untyped
     def source_acknowledger: () -> untyped
+    def source_position_resolver: () -> untyped
     def build_delivery_worker: (sink: untyped, sleeper: untyped, ?delivery_policy: untyped) -> untyped
     def build_configured_delivery_worker: (sleeper: untyped) -> untyped
     def destination_specs: () -> untyped

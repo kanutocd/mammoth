@@ -116,13 +116,19 @@ module Mammoth
         source_name: config.dig("mammoth", "name"),
         slot_name: config.dig("replication", "slot"),
         publication_name: Array(config.dig("replication", "publications")).join(","),
-        acknowledger: source_acknowledger
+        acknowledger: source_acknowledger,
+        position_resolver: source_position_resolver
       )
     end
 
     def source_acknowledger
       source = consumer.source
       source.method(:acknowledge) if source.respond_to?(:acknowledge)
+    end
+
+    def source_position_resolver
+      source = consumer.source
+      source.method(:progress_position_for) if source.respond_to?(:progress_position_for)
     end
 
     def build_delivery_worker(sink:, sleeper:, delivery_policy: {})

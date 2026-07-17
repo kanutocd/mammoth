@@ -35,7 +35,8 @@ The processor passed to a runtime is `Mammoth::DeliveryProcessor`. It implements
 item. `DeliveryWorker` owns retry, delivered-ledger, and DLQ behavior. After a
 durable result, the processor reports completion to the shared contiguous
 progress coordinator; the coordinator alone advances checkpoints and upstream
-acknowledgements.
+acknowledgements. A source-owned resolver supplies the durable position, keeping
+PostgreSQL transport LSNs out of generic runtime and CDC-core contracts.
 
 Runtime inputs are exact `CDC::Core::ChangeEvent` or
 `CDC::Core::TransactionEnvelope` instances. Runtime adapters should not accept

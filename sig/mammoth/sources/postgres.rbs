@@ -23,6 +23,7 @@ module Mammoth
 
       def each: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) work) -> untyped } -> (Enumerator[(CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope), nil] | nil)
       def acknowledge: (untyped lsn) -> untyped
+      def progress_position_for: (untyped work) -> untyped
 
       private
 
@@ -30,11 +31,14 @@ module Mammoth
       def process_payload: (untyped payload, untyped metadata) { (untyped work) -> untyped } -> untyped
       def each_decoded: (untyped decoded) { (untyped work) -> untyped } -> untyped
       def stream_event: (untyped decoded, untyped metadata) -> untyped
+      def yield_with_progress_position: (untyped work) { (untyped work) -> untyped } -> untyped
       def validate_core_work!: (untyped work) -> (CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope)
       def parse_payload: (untyped payload) -> untyped
       def decode_message: (untyped message, untyped metadata) -> untyped
       def value_from: (untyped object, *Symbol keys) -> untyped
       def source_position: (untyped metadata) -> untyped
+      def acknowledgement_position: (untyped metadata) -> untyped
+      def yielded_work_includes?: (untyped work) -> bool
       def effective_runner: () -> untyped
       def effective_parser: () -> untyped
       def effective_decoder: () -> untyped

@@ -32,12 +32,12 @@ module Mammoth
           sample_event("event-1", "0/2"),
           sample_event("event-2", "0/2")
         ]
-        source = AcknowledgingSource.new([core_envelope(events:, commit_lsn: "0/2")])
+        source = AcknowledgingSource.new([core_envelope(events:, commit_lsn: "11")], progress_position: "0/2A")
         app = Application.new(config, source:, sink: DeliveryWorkerTest::RecordingSink.new)
 
         assert_equal 2, app.start
-        assert_equal ["0/2"], source.acknowledgements
-        assert_equal "0/2", app.checkpoint_store.fetch(
+        assert_equal ["0/2A"], source.acknowledgements
+        assert_equal "0/2A", app.checkpoint_store.fetch(
           source_name: "local_mammoth",
           slot_name: "mammoth_prod"
         ).fetch("last_lsn")
@@ -385,17 +385,36 @@ module Mammoth
     class AcknowledgingSource
       attr_reader :work, :acknowledgements
 
-      def initialize(work)
+      def initialize(work, progress_position: nil)
         @work = work
+        @progress_position = progress_position
         @acknowledgements = []
       end
 
-      def each(&block)
-        work.each(&block)
+      def each
+        work.each do |item|
+          @current_work = item
+          yield item
+        ensure
+          @current_work = nil
+        end
       end
 
       def acknowledge(lsn)
         acknowledgements << lsn
+      end
+
+      def progress_position_for(item)
+        @progress_position if current_work_includes?(item)
+      end
+
+      private
+
+      def current_work_includes?(item)
+        return true if @current_work.equal?(item)
+        return false unless @current_work.is_a?(CDC::Core::TransactionEnvelope)
+
+        @current_work.events.any? { |event| event.equal?(item) }
       end
     end
     FakeConsumer = Data.define(:items) do

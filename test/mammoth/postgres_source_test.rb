@@ -183,7 +183,7 @@ module Mammoth
       assert_equal decoded_messages, adapter.inputs.map(&:event)
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def test_streams_exact_core_transaction_envelope_from_pgoutput_adapter
       events = Pgoutput::Decoder::Events
       decoded_messages = {
@@ -194,23 +194,33 @@ module Mammoth
       source = Sources::Postgres.new(
         Configuration.load(fixture_config_path),
         runner: FakeRunnerWithMetadata.new([
-                                             ["begin", { lsn: "0/begin" }],
-                                             ["row", { lsn: "0/row" }],
-                                             ["commit", { lsn: "0/commit" }]
+                                             ["begin", { lsn: "0/A" }],
+                                             ["row", { lsn: "0/B" }],
+                                             ["commit", { lsn: "0/C" }]
                                            ]),
         parser: ->(payload) { payload },
         decoder: ->(message, _metadata) { decoded_messages.fetch(message) },
         adapter: Pgoutput::SourceAdapter::Cdc.new
       )
 
-      envelope = source.each.first
+      progress_positions = []
+      envelope = nil
+      source.each do |work|
+        envelope = work
+        progress_positions << [
+          source.progress_position_for(work),
+          source.progress_position_for(work.events.first)
+        ]
+      end
 
       assert_instance_of CDC::Core::TransactionEnvelope, envelope
       assert_equal "11", envelope.commit_lsn
       assert_instance_of CDC::Core::ChangeEvent, envelope.events.first
-      assert_equal "0/row", envelope.events.first.commit_lsn
+      assert_equal "0/B", envelope.events.first.commit_lsn
+      assert_equal [["0/C", "0/C"]], progress_positions
+      assert_nil source.progress_position_for(envelope)
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def test_forwards_transport_positions_to_source_adapter
       adapter = streaming_adapter { |_decoded, position| sample_event(position) }
@@ -228,6 +238,79 @@ module Mammoth
       assert_equal(%w[0/1 0/2], source.each.map(&:commit_lsn))
       assert_equal %w[0/1 0/2], adapter.inputs.map(&:source_position)
     end
+
+    def test_rejects_non_lsn_transport_position_for_acknowledgement
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([["row", { lsn: "11" }]]),
+        parser: ->(payload) { payload },
+        decoder: ->(message, _metadata) { message },
+        adapter: BareStreamingAdapter.new
+      )
+
+      error = assert_raises(ReplicationError) { source.each.to_a }
+
+      assert_match(/invalid PostgreSQL transport LSN/, error.message)
+    end
+
+    def test_preserves_integer_transport_position_for_acknowledgement
+      positions = []
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new([["row", { wal_end: 42 }]]),
+        parser: ->(payload) { payload },
+        decoder: ->(message, _metadata) { message },
+        adapter: BareStreamingAdapter.new
+      )
+
+      source.each { |work| positions << source.progress_position_for(work) }
+
+      assert_equal [42], positions
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/BlockLength, Metrics/MethodLength
+    def test_checkpoints_and_acknowledges_transport_lsn_instead_of_decimal_commit_lsn
+      with_temp_dir do |dir|
+        events = Pgoutput::Decoder::Events
+        runner = RecordingMetadataRunner.new([
+                                               ["begin", { lsn: "0/A" }],
+                                               ["row", { lsn: "0/B" }],
+                                               ["commit", { lsn: "0/C" }]
+                                             ])
+        decoded = {
+          "begin" => events::Begin.new(42, 10, 123_456),
+          "row" => events::Insert.new(42, 7, "public", "orders", { "id" => 1 }),
+          "commit" => events::Commit.new(42, 0, 11, 12, 123_789)
+        }
+        source = Sources::Postgres.new(
+          Configuration.load(fixture_config_path),
+          runner: runner,
+          parser: ->(payload) { payload },
+          decoder: ->(message, _metadata) { decoded.fetch(message) },
+          adapter: Pgoutput::SourceAdapter::Cdc.new
+        )
+        checkpoint_store = CheckpointStore.new(SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!)
+        coordinator = DeliveryProgressCoordinator.new(
+          checkpoint_store: checkpoint_store,
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod",
+          publication_name: "mammoth_publication",
+          acknowledger: source.method(:acknowledge),
+          position_resolver: source.method(:progress_position_for)
+        )
+
+        source.each do |work|
+          assert_equal "11", work.commit_lsn
+          coordinator.register(work, group_end: true)
+          coordinator.complete(work)
+        end
+
+        checkpoint = checkpoint_store.fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
+        assert_equal "0/C", checkpoint.fetch("last_lsn")
+        assert_equal ["0/C"], runner.acknowledgements
+      end
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/BlockLength, Metrics/MethodLength
 
     def test_decoder_can_emit_array_of_decoded_messages
       source = Sources::Postgres.new(
@@ -511,6 +594,23 @@ module Mammoth
     FakeRunnerWithMetadata = Data.define(:pairs) do
       def start(&block)
         pairs.each(&block)
+      end
+    end
+
+    class RecordingMetadataRunner
+      attr_reader :pairs, :acknowledgements
+
+      def initialize(pairs)
+        @pairs = pairs
+        @acknowledgements = []
+      end
+
+      def start(&block)
+        pairs.each(&block)
+      end
+
+      def ack(lsn)
+        acknowledgements << lsn
       end
     end
 

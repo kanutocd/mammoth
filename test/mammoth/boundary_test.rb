@@ -208,7 +208,10 @@ module Mammoth
       end
 
       assert_empty offenders, "pgoutput acknowledgement must stay behind Sources::Postgres: #{offenders.join(", ")}"
-      assert_match(/effective_runner\.ack\(lsn\)/, File.read(POSTGRES_SOURCE_FILE))
+      source = File.read(POSTGRES_SOURCE_FILE)
+      assert_match(/effective_runner\.ack\(lsn\)/, source)
+      assert_match(/value_from\(metadata, :wal_end_lsn, :wal_end, :lsn\)/, source)
+      assert_match(/def progress_position_for\(work\)/, source)
     end
 
     def test_delivery_progress_uses_injected_ports_without_transport_dependencies
@@ -216,6 +219,7 @@ module Mammoth
 
       assert_match(/checkpoint_store\.write/, body)
       assert_match(/@acknowledger&\.call/, body)
+      assert_match(/@position_resolver\.call\(work\)/, body)
       refute_match(%r{Pgoutput::|pgoutput[_/-]|effective_runner|Sources::Postgres}, body)
       refute_match(/SQLite3::|SQLiteStore\.connect|CheckpointStore\.new/, body)
       refute_match(/CDC::Core::(?:ChangeEvent|TransactionEnvelope)\.new/, body)

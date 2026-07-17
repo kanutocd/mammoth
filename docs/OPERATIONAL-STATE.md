@@ -53,6 +53,8 @@ The shared progress coordinator writes this row only after every earlier work
 item has a durable outcome. For PostgreSQL sources, Mammoth persists the
 checkpoint before acknowledging the same watermark through pgoutput-client.
 Individual destination workers never advance this table independently.
+The stored PostgreSQL `last_lsn` is the transport watermark in standard
+`HEX/HEX` form, not the decoder's normalized transaction `commit_lsn`.
 
 ### `dead_letters`
 

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Fixed
+
+- Preserved pgoutput-client's acknowledgement-compatible transport LSN
+  separately from normalized CDC-core `commit_lsn` payload context.
+- Checkpoints and PostgreSQL feedback now use the source-owned transport
+  watermark, preventing decimal transaction commit values from reaching
+  `runner.ack`.
+- Event-mode delivery resolves an envelope's transport position for each exact
+  child event without mutating or rebuilding CDC-core work.
+
+### Quality
+
+- Added end-to-end source/coordinator coverage proving that a transaction with
+  decimal `commit_lsn` checkpoints and acknowledges its formatted transport LSN.
+- Strengthened boundary coverage for source-owned position resolution and
+  synchronized PostgreSQL, runtime, operational-state, configuration, and
+  transaction-example documentation.
+
 ## 0.9.0
 
 ### Changed

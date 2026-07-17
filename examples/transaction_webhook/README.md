@@ -62,6 +62,11 @@ event[3]: update orders ...
 The exact transaction id, source position, and identity payload depend on
 PostgreSQL and the source adapter output.
 
+The payload's normalized transaction `source_position` may reflect the
+decoder's commit value. Mammoth separately preserves pgoutput-client's
+`wal_end_lsn` for its checkpoint and PostgreSQL acknowledgement; the payload
+field is not used as the transport feedback position.
+
 ## Why this matters
 
 Transaction delivery gives downstream consumers one committed transaction

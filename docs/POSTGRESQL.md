@@ -90,6 +90,12 @@ advances only the contiguous delivery watermark. It writes that watermark to
 the checkpoint store before acknowledging the same position to pgoutput-client.
 Concurrent completion therefore cannot skip unfinished earlier work.
 
+The progress watermark comes from pgoutput-client's transport metadata
+(`XLogData#wal_end_lsn`). It is preserved separately while
+pgoutput-source-adapter yields exact CDC-core work. A normalized transaction's
+`commit_lsn` remains payload context and may be the decoder's decimal value; it
+is never substituted for the acknowledgement-compatible transport LSN.
+
 The durable outcomes that permit progress are:
 
 - successful delivery recorded in the delivered-envelope ledger;

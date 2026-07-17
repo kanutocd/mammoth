@@ -82,6 +82,28 @@ module Mammoth
       end
     end
 
+    def test_uses_source_owned_position_instead_of_core_commit_lsn
+      with_temp_dir do |dir|
+        checkpoint_store = CheckpointStore.new(SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!)
+        acknowledgements = []
+        work = core_event(source_position: "11")
+        coordinator = DeliveryProgressCoordinator.new(
+          checkpoint_store: checkpoint_store,
+          source_name: "local_mammoth",
+          slot_name: "mammoth_prod",
+          publication_name: "mammoth_publication",
+          acknowledger: acknowledgements.method(:<<),
+          position_resolver: ->(_item) { "0/2A" }
+        )
+        coordinator.register(work, group_end: true)
+
+        coordinator.complete(work)
+
+        assert_equal "0/2A", checkpoint(checkpoint_store).fetch("last_lsn")
+        assert_equal ["0/2A"], acknowledgements
+      end
+    end
+
     def test_rejects_completion_that_was_not_registered
       with_coordinator do |coordinator, _checkpoint_store, _acknowledgements|
         error = assert_raises(ReplicationError) { coordinator.complete(core_event) }
