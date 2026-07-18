@@ -10,6 +10,9 @@
 - Serialize `CDC::Core::ChangeEvent` column differences when complete old and
   new rows are available, while avoiding false differences from key-only old
   rows.
+- Require pgoutput-source-adapter 0.3.1 and use its stable transaction-local
+  event sequence to prevent deterministic ID collisions between otherwise
+  identical changes while preserving replay stability.
 
 ## 1.0.0 - 2026-07-17
 

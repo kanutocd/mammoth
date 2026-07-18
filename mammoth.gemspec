@@ -57,7 +57,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "pgoutput-client", "~> 0.4"
   spec.add_dependency "pgoutput-decoder", "~> 0.2", ">= 0.2.0"
   spec.add_dependency "pgoutput-parser", "~> 0.1"
-  spec.add_dependency "pgoutput-source-adapter", "~> 0.3", ">= 0.3.0"
+  spec.add_dependency "pgoutput-source-adapter", "~> 0.3", ">= 0.3.1"
   spec.add_dependency "sqlite3", "~> 2.9"
   spec.add_dependency "webrick", "~> 1.9"
 end

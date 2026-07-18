@@ -239,6 +239,21 @@ module Mammoth
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
+    def test_pgoutput_sequence_makes_identical_event_ids_distinct_and_replay_stable
+      decoded = identical_pgoutput_update_transaction
+      first = normalize_pgoutput_transaction(decoded)
+      replay = normalize_pgoutput_transaction(decoded)
+      first_payload = TransactionEnvelopeSerializer.call(first)
+      replay_payload = TransactionEnvelopeSerializer.call(replay)
+      first_event_ids = first_payload.fetch("events").map { |event| event.fetch("event_id") }
+      replay_event_ids = replay_payload.fetch("events").map { |event| event.fetch("event_id") }
+
+      assert_equal [0, 1], first.events.map(&:sequence_number)
+      assert_equal 2, first_event_ids.uniq.size
+      assert_equal first_event_ids, replay_event_ids
+      assert_equal first_payload.fetch("event_id"), replay_payload.fetch("event_id")
+    end
+
     def test_forwards_transport_positions_to_source_adapter
       adapter = streaming_adapter { |_decoded, position| sample_event(position) }
       source = Sources::Postgres.new(
@@ -1070,6 +1085,34 @@ module Mammoth
 
     def streaming_adapter(&block)
       StreamingAdapter.new(block)
+    end
+
+    def normalize_pgoutput_transaction(decoded)
+      source = Sources::Postgres.new(
+        Configuration.load(fixture_config_path),
+        runner: FakeRunnerWithMetadata.new(decoded.map { |event| [event, { lsn: "0/B" }] }),
+        parser: ->(payload) { payload },
+        decoder: ->(message, _metadata) { message },
+        adapter: Pgoutput::SourceAdapter::Cdc.new
+      )
+
+      source.each.first
+    end
+
+    def identical_pgoutput_update_transaction
+      events = Pgoutput::Decoder::Events
+      update = events::Update.new(
+        42, 7, "public", "orders",
+        { "id" => 4 },
+        { "id" => 4, "status" => "pending" },
+        { "id" => 4, "status" => "paid" }
+      )
+      [
+        events::Begin.new(42, 10, 123_456),
+        update,
+        update,
+        events::Commit.new(42, 0, 11, 12, 123_789)
+      ]
     end
 
     def sample_event(position)

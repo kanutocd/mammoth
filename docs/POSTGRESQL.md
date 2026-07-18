@@ -66,13 +66,18 @@ all invalid schema-qualified tables and publication actions together, then
 fails before decoding or delivery.
 
 The same catalog snapshot supplies each relation's ordered identity columns to
-`pgoutput-source-adapter` 0.3.0. Default identity uses primary-key column order,
+`pgoutput-source-adapter` 0.3.1. Default identity uses primary-key column order,
 `USING INDEX` uses the selected index order, and `FULL` uses all live table
 columns in PostgreSQL attribute order. Mammoth keys the mapping by relation OID
 and schema-qualified table; the adapter remains responsible for extracting and
 representing complete composite or non-`id` keys. If a configured identity
 column is absent from decoded row values, normalization fails instead of
 emitting a partial key.
+
+The adapter also assigns each row change a stable, zero-based transaction-local
+sequence number. Mammoth includes that discriminator in deterministic event-ID
+generation, so two otherwise identical changes at the same source position
+remain distinct while replaying the transaction reproduces the same IDs.
 
 Preferred remediation is a stable primary key. Existing schemas may select an
 eligible unique, non-partial, non-null index:
