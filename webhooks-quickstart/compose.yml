@@ -87,7 +87,7 @@ services:
       retries: 20
 
   mammoth-init:
-    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.2.0}
     environment:
       MAMMOTH_POSTGRES_PASSWORD: mammoth
       MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
@@ -104,7 +104,7 @@ services:
     restart: "no"
 
   mammoth:
-    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.2.0}
     environment:
       MAMMOTH_POSTGRES_PASSWORD: mammoth
       MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
@@ -124,7 +124,7 @@ services:
       retries: 20
 
   mammoth-observability:
-    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.2.0}
     environment:
       MAMMOTH_POSTGRES_PASSWORD: mammoth
       MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"

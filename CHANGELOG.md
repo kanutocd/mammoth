@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.0 - 2026-07-19
+
 ### Added
 
 - Added an opt-in monitoring profile to `webhooks-quickstart` with provisioned

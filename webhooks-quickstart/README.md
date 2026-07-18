@@ -198,7 +198,7 @@ rm -f data/events/*
 The Compose file defaults to the released image matching this quickstart:
 
 ```text
-ghcr.io/kanutocd/mammoth:v1.1.0
+ghcr.io/kanutocd/mammoth:v1.2.0
 ```
 
 Override it without editing Compose:
