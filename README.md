@@ -54,9 +54,9 @@ Once the flow is visible, follow its
 [`ADAPTING.md`](webhooks-quickstart/ADAPTING.md) guide to connect Mammoth to an
 existing PostgreSQL application.
 
-## v1.0 Release Scope
+## v1 Release Scope
 
-Mammoth 1.0 includes:
+Mammoth 1.x includes:
 
 - operator CLI for validation, bootstrap, status, delivery, observability, and
   dead-letter workflows

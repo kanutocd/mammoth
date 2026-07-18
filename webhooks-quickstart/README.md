@@ -196,6 +196,26 @@ WEBrick serves the Rack applications, while Ruby's standard `ERB` library
 renders the templates. Edit these files directly, then rebuild the affected
 Compose service to see the result.
 
+## TODO: showcase more Mammoth features
+
+The current quickstart keeps the first-run path small, but Mammoth has more
+production behavior worth making equally visible. Future contributions could
+add focused, optional walkthroughs for:
+
+- multi-destination fanout with route filters and independent retry policies;
+- retry exhaustion, dead-letter inspection, repair, and explicit replay;
+- durable checkpoint recovery and duplicate suppression across a Mammoth
+  restart;
+- ordered delivery versus higher-throughput concurrent delivery;
+- composite and non-`id` PostgreSQL replica identities;
+- consumer-first additive schema evolution;
+- a richer readiness and Prometheus slot-metrics dashboard; and
+- fail-closed replication-slot invalidation and operator-led recovery.
+
+The runnable [`examples/`](../examples) directory demonstrates the underlying
+capabilities and provides the best source material for extending the
+quickstart. Contributions are very welcome and appreciated.
+
 ```bash
 bundle exec ./exe/mammoth validate webhooks-quickstart/mammoth/mammoth.yml
 ruby -c webhooks-quickstart/demo_app/app.rb
