@@ -13,7 +13,14 @@ class DemoStore
   ROOT = __dir__
   ORDER_ACTIONS = {
     "pending" => [
-      { label: "Pay", endpoint: "status", status: "paid" },
+      {
+        label: "Pay",
+        endpoint: "pay",
+        confirmation: "Record payment for this pending order?\n\n" \
+                      "This runs one atomic PostgreSQL transaction that marks the order as paid " \
+                      "and inserts a captured payment. Mammoth will emit one transaction webhook " \
+                      "containing both events."
+      },
       {
         label: "Cancel",
         endpoint: "delete",
@@ -61,6 +68,7 @@ class DemoStore
 
   def post(request)
     return create_order(request) if request.path == "/orders"
+    return pay_order(request) if request.path.match?(%r{\A/orders/\d+/pay\z})
     return update_status(request) if request.path.match?(%r{\A/orders/\d+/status\z})
     return delete_order(request) if request.path.match?(%r{\A/orders/\d+/delete\z})
 
@@ -84,6 +92,28 @@ class DemoStore
     redirect("/#order-#{order.fetch("id")}")
   rescue ArgumentError, KeyError
     render_error(422, "Invalid order", "Enter a valid email and positive total.")
+  end
+
+  def pay_order(request)
+    id = request.path.split("/")[2]
+    paid = connection do |db|
+      db.transaction do |transaction|
+        order = transaction.exec_params(
+          "UPDATE orders SET status = 'paid' WHERE id = $1 AND status = 'pending' RETURNING total_cents",
+          [id]
+        ).first
+        next false unless order
+
+        transaction.exec_params(
+          "INSERT INTO payments (order_id, amount_cents) VALUES ($1, $2)",
+          [id, order.fetch("total_cents")]
+        )
+        true
+      end
+    end
+    return render_error(409, "Cannot pay order", "Only pending orders can be paid.") unless paid
+
+    redirect("/")
   end
 
   def update_status(request)

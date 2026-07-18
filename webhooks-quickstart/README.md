@@ -20,11 +20,15 @@ Create, update, or cancel a pending order. The Event Console will show the
 committed `INSERT`, `UPDATE`, or `DELETE` transaction, its before/after column
 changes, its verified signature, and every HTTP delivery attempt.
 
+Paying an order demonstrates a multi-event commit. The Demo Store atomically
+updates the order and inserts a captured payment; Mammoth delivers both changes
+in one transaction envelope with `event_count: 2`.
+
 ## What this demonstrates
 
-The Demo Store performs ordinary `INSERT`, `UPDATE`, and `DELETE` statements
-against PostgreSQL. It contains no Mammoth client, callbacks, publisher, or
-webhook worker.
+The Demo Store performs ordinary transactional `INSERT`, `UPDATE`, and `DELETE`
+statements against PostgreSQL. It contains no Mammoth client, callbacks,
+publisher, or webhook worker.
 
 ```text
 Browser → Demo Store → PostgreSQL
@@ -86,8 +90,9 @@ purpose is to make retries visible.
 
 ## Automated verification
 
-The smoke test creates, deletes, and updates real orders, then waits for the
-corresponding Mammoth webhooks:
+The smoke test creates, deletes, and pays real orders, then waits for the
+corresponding Mammoth webhooks. The payment assertion verifies an order update
+and payment insert in one two-event transaction:
 
 ```bash
 ./scripts/smoke-test.sh
@@ -187,6 +192,7 @@ Compose service to see the result.
 bundle exec ./exe/mammoth validate webhooks-quickstart/mammoth/mammoth.yml
 ruby -c webhooks-quickstart/demo_app/app.rb
 ruby -c webhooks-quickstart/event_console/app.rb
+node --check webhooks-quickstart/demo_app/public/app.js
 node --check webhooks-quickstart/event_console/public/app.js
 sh -n webhooks-quickstart/scripts/smoke-test.sh
 docker compose -f webhooks-quickstart/compose.yml config

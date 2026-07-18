@@ -42,15 +42,20 @@ wait_for_event "$unique_email" "the Mammoth INSERT webhook"
 curl -fsS -o /dev/null -X POST "$base_app/orders/$created_order_id/delete"
 wait_for_event '"operation":"delete"' "the Mammoth DELETE webhook"
 
-curl -fsS -o /dev/null -X POST \
-  --data-urlencode "status=pending" \
-  "$base_app/orders/1/status"
-wait_for_event '"operation":"update"' "the Mammoth UPDATE webhook"
+payment_email="payment-$unique_email"
+payment_order_url="$(curl -fsS -o /dev/null -w '%{redirect_url}' -X POST \
+  --data-urlencode "customer_email=$payment_email" \
+  --data-urlencode "total=88.00" \
+  "$base_app/orders")"
+payment_order_id="${payment_order_url##*#order-}"
+test -n "$payment_order_id"
+wait_for_event "$payment_email" "the payment scenario INSERT webhook"
 curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
 
-curl -fsS -o /dev/null -X POST \
-  --data-urlencode "status=paid" \
-  "$base_app/orders/1/status"
+curl -fsS -o /dev/null -X POST "$base_app/orders/$payment_order_id/pay"
+wait_for_event '"event_count":2' "a two-event committed transaction"
+wait_for_event '"operation":"update","namespace":"public","entity":"orders"' "the order UPDATE"
+wait_for_event '"operation":"insert","namespace":"public","entity":"payments"' "the payment INSERT"
 wait_for_event '"name":"status","old_value":"pending","new_value":"paid"' "the pending-to-paid column change"
 
 if [ "${TEST_RETRY:-0}" = "1" ]; then
@@ -59,7 +64,7 @@ if [ "${TEST_RETRY:-0}" = "1" ]; then
   curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
   curl -fsS -o /dev/null -X POST \
     --data-urlencode "status=shipped" \
-    "$base_app/orders/1/status"
+    "$base_app/orders/$payment_order_id/status"
   wait_for_event '"response_status":500' "a simulated failed delivery"
 
   curl -fsS -X POST -H "content-type: application/json" \
