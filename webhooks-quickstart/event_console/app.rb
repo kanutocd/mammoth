@@ -16,7 +16,11 @@ class EventConsole
   TEMPLATE_ROOT = File.join(ROOT, "views")
   ASSETS = {
     "/assets/app.css" => [File.join(ROOT, "public", "app.css"), "text/css; charset=utf-8"],
-    "/assets/app.js" => [File.join(ROOT, "public", "app.js"), "application/javascript; charset=utf-8"]
+    "/assets/app.js" => [File.join(ROOT, "public", "app.js"), "application/javascript; charset=utf-8"],
+    "/assets/vendor/renderjson.js" => [
+      File.join(ROOT, "public", "vendor", "renderjson.js"),
+      "application/javascript; charset=utf-8"
+    ]
   }.freeze
 
   def initialize

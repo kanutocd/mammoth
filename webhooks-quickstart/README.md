@@ -188,7 +188,9 @@ The example UIs are intentionally split into ordinary source files:
   `demo_app/views/` contains the ERB templates, and `demo_app/public/` contains
   the Demo Store styles and JavaScript.
 - `event_console/views/` contains the Event Console ERB template, and
-  `event_console/public/` contains its styles and JavaScript.
+  `event_console/public/` contains its styles and JavaScript. The console
+  vendors the minified ISC-licensed `renderjson` 1.4.0 distribution for
+  offline, collapsible payload inspection.
 
 WEBrick serves the Rack applications, while Ruby's standard `ERB` library
 renders the templates. Edit these files directly, then rebuild the affected

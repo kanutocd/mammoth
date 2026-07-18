@@ -11,6 +11,13 @@ const escapeHTML = (value) =>
       })[character],
   );
 
+renderjson
+  .set_icons("▶", "▼")
+  .set_show_to_level(2)
+  .set_max_string_length(160);
+
+let renderedEventsKey;
+
 function eventName(payload) {
   return (
     payload.type ||
@@ -108,9 +115,12 @@ function eventArticle(attempts, expanded) {
     <ol class="timeline">${attemptTimeline(attempts)}</ol>
     <details>
       <summary>Inspect JSON payload</summary>
-      <pre>${escapeHTML(JSON.stringify(event.payload, null, 2))}</pre>
+      <div class="json-payload"></div>
     </details>
   `;
+  article
+    .querySelector(".json-payload")
+    .append(renderjson(event.payload));
 
   if (expanded.has(event.delivery_key)) {
     article.querySelector("details").open = true;
@@ -123,20 +133,26 @@ async function refresh() {
   const response = await fetch("/api/events");
   const data = await response.json();
   const root = document.querySelector("#events");
-  const expanded = expandedDeliveries(root);
   const groups = groupByDelivery(data.events);
+  const eventsKey = JSON.stringify(data.events);
 
   document.querySelector("#failure-toggle").checked = data.failures_enabled;
   document.querySelector("#count").textContent =
     `${data.events.length} requests · ${groups.length} deliveries`;
-  root.replaceChildren();
 
-  if (!data.events.length) {
-    root.append(document.querySelector("#empty").content.cloneNode(true));
-  }
+  if (eventsKey !== renderedEventsKey) {
+    const expanded = expandedDeliveries(root);
+    root.replaceChildren();
 
-  for (const attempts of groups) {
-    root.append(eventArticle(attempts, expanded));
+    if (!data.events.length) {
+      root.append(document.querySelector("#empty").content.cloneNode(true));
+    }
+
+    for (const attempts of groups) {
+      root.append(eventArticle(attempts, expanded));
+    }
+
+    renderedEventsKey = eventsKey;
   }
 
   document.querySelector("#connection").textContent =

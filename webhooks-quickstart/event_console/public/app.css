@@ -218,12 +218,40 @@ summary {
 
 pre {
   padding: 14px;
-  overflow-wrap: anywhere;
+  overflow: auto;
   border-radius: 9px;
   color: #dce5ed;
   background: #0d1218;
   font-size: 0.78rem;
-  white-space: pre-wrap;
+  white-space: pre;
+}
+
+.renderjson a {
+  color: #8393a7;
+  cursor: pointer;
+}
+
+.renderjson .disclosure {
+  display: inline-block;
+  width: 1.1rem;
+  color: #b8a7ff;
+}
+
+.renderjson .key {
+  color: #91c7ff;
+}
+
+.renderjson .string {
+  color: #98e6c1;
+}
+
+.renderjson .number {
+  color: #f4c98b;
+}
+
+.renderjson .boolean,
+.renderjson .keyword {
+  color: #d5a6ff;
 }
 
 .empty {
