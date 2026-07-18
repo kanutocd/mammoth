@@ -31,11 +31,16 @@ curl -fsS "$base_mammoth/healthz" >/dev/null
 curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
 
 unique_email="smoke-$(date +%s)@example.com"
-curl -fsS -o /dev/null -X POST \
+created_order_url="$(curl -fsS -o /dev/null -w '%{redirect_url}' -X POST \
   --data-urlencode "customer_email=$unique_email" \
   --data-urlencode "total=42.50" \
-  "$base_app/orders"
+  "$base_app/orders")"
+created_order_id="${created_order_url##*#order-}"
+test -n "$created_order_id"
 wait_for_event "$unique_email" "the Mammoth INSERT webhook"
+
+curl -fsS -o /dev/null -X POST "$base_app/orders/$created_order_id/delete"
+wait_for_event '"operation":"delete"' "the Mammoth DELETE webhook"
 
 curl -fsS -o /dev/null -X POST \
   --data-urlencode "status=pending" \

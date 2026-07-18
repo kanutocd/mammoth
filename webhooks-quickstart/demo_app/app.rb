@@ -11,17 +11,32 @@ require "webrick"
 # Minimal order application that demonstrates ordinary PostgreSQL writes.
 class DemoStore
   ROOT = __dir__
-  STATUS_ACTIONS = {
-    "pending" => { "paid" => "Pay", "cancelled" => "Cancel" },
-    "paid" => { "shipped" => "Ship", "cancelled" => "Cancel" },
-    "cancelled" => {},
-    "shipped" => { "received" => "Receive" },
-    "received" => {}
+  ORDER_ACTIONS = {
+    "pending" => [
+      { label: "Pay", endpoint: "status", status: "paid" },
+      {
+        label: "Cancel",
+        endpoint: "delete",
+        confirmation: "Cancel this pending order?\n\n" \
+                      "This permanently deletes the order from PostgreSQL. " \
+                      "Mammoth will emit a DELETE webhook, and the order cannot be restored."
+      }
+    ],
+    "paid" => [
+      { label: "Ship", endpoint: "status", status: "shipped" },
+      { label: "Cancel", endpoint: "status", status: "cancelled" }
+    ],
+    "cancelled" => [],
+    "shipped" => [
+      { label: "Receive", endpoint: "status", status: "received" }
+    ],
+    "received" => []
   }.freeze
-  STATUSES = STATUS_ACTIONS.keys.freeze
+  STATUSES = ORDER_ACTIONS.keys.freeze
   TEMPLATE_ROOT = File.join(ROOT, "views")
   ASSETS = {
-    "/assets/app.css" => [File.join(ROOT, "public", "app.css"), "text/css; charset=utf-8"]
+    "/assets/app.css" => [File.join(ROOT, "public", "app.css"), "text/css; charset=utf-8"],
+    "/assets/app.js" => [File.join(ROOT, "public", "app.js"), "application/javascript; charset=utf-8"]
   }.freeze
 
   def call(env)
@@ -47,22 +62,26 @@ class DemoStore
   def post(request)
     return create_order(request) if request.path == "/orders"
     return update_status(request) if request.path.match?(%r{\A/orders/\d+/status\z})
+    return delete_order(request) if request.path.match?(%r{\A/orders/\d+/delete\z})
 
     redirect("/")
   end
 
   def render_index
     orders = connection { |db| db.exec("SELECT * FROM orders ORDER BY id DESC") }.to_a
-    html(200, page("Demo Store", render_template("index", orders: orders, status_actions: STATUS_ACTIONS)))
+    html(200, page("Demo Store", render_template("index", orders: orders, order_actions: ORDER_ACTIONS)))
   end
 
   def create_order(request)
     cents = (Float(request.params.fetch("total")) * 100).round
     email = request.params.fetch("customer_email").strip
-    connection do |db|
-      db.exec_params("INSERT INTO orders (customer_email, total_cents) VALUES ($1, $2)", [email, cents])
+    order = connection do |db|
+      db.exec_params(
+        "INSERT INTO orders (customer_email, total_cents) VALUES ($1, $2) RETURNING id",
+        [email, cents]
+      ).first
     end
-    redirect("/")
+    redirect("/#order-#{order.fetch("id")}")
   rescue ArgumentError, KeyError
     render_error(422, "Invalid order", "Enter a valid email and positive total.")
   end
@@ -73,6 +92,14 @@ class DemoStore
     return render_error(422, "Invalid status", "Unknown order status.") unless STATUSES.include?(status)
 
     connection { |db| db.exec_params("UPDATE orders SET status = $1 WHERE id = $2", [status, id]) }
+    redirect("/")
+  end
+
+  def delete_order(request)
+    id = request.path.split("/")[2]
+    result = connection { |db| db.exec_params("DELETE FROM orders WHERE id = $1 AND status = 'pending'", [id]) }
+    return render_error(409, "Cannot cancel order", "Only pending orders can be deleted.") if result.cmd_tuples.zero?
+
     redirect("/")
   end
 

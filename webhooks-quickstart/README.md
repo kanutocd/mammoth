@@ -16,15 +16,15 @@ Then open:
 - Mammoth metrics: http://localhost:9393/metrics
 - PostgreSQL: `localhost:54331`
 
-Create an order or change its status. The Event Console will show the committed
-transaction, its before/after column changes, its verified signature, and every
-HTTP delivery attempt.
+Create, update, or cancel a pending order. The Event Console will show the
+committed `INSERT`, `UPDATE`, or `DELETE` transaction, its before/after column
+changes, its verified signature, and every HTTP delivery attempt.
 
 ## What this demonstrates
 
-The Demo Store performs ordinary `INSERT` and `UPDATE` statements against
-PostgreSQL. It contains no Mammoth client, callbacks, publisher, or webhook
-worker.
+The Demo Store performs ordinary `INSERT`, `UPDATE`, and `DELETE` statements
+against PostgreSQL. It contains no Mammoth client, callbacks, publisher, or
+webhook worker.
 
 ```text
 Browser → Demo Store → PostgreSQL
@@ -86,8 +86,8 @@ purpose is to make retries visible.
 
 ## Automated verification
 
-The smoke test creates and updates real orders, then waits for the corresponding
-Mammoth webhooks:
+The smoke test creates, deletes, and updates real orders, then waits for the
+corresponding Mammoth webhooks:
 
 ```bash
 ./scripts/smoke-test.sh
@@ -175,7 +175,7 @@ localhost or reuse its credentials. See the production checklist in
 The example UIs are intentionally split into ordinary source files:
 
 - `demo_app/views/` contains the Demo Store ERB templates, and
-  `demo_app/public/app.css` contains its styles.
+  `demo_app/public/` contains its styles and JavaScript.
 - `event_console/views/` contains the Event Console ERB template, and
   `event_console/public/` contains its styles and JavaScript.
 

@@ -38,19 +38,24 @@
   </div>
   <div class="orders">
     <% orders.each do |order| %>
-      <article class="order">
+      <article id="order-<%= h(order["id"]) %>" class="order">
         <div class="order-head">
           <strong>Order #<%= h(order["id"]) %></strong>
           <span class="pill <%= h(order["status"]) %>"><%= h(order["status"]) %></span>
         </div>
         <p><%= h(order["customer_email"]) %></p>
         <p class="amount">$<%= money(order["total_cents"]) %></p>
-        <% actions = status_actions.fetch(order["status"], {}) %>
+        <% actions = order_actions.fetch(order["status"], []) %>
         <% if actions.any? %>
           <form method="post" action="/orders/<%= h(order["id"]) %>/status">
-            <% actions.each do |status, label| %>
-              <button name="status" value="<%= h(status) %>" class="status <%= h(status) %>">
-                <%= h(label) %>
+            <% actions.each do |action| %>
+              <button
+                formaction="/orders/<%= h(order["id"]) %>/<%= h(action.fetch(:endpoint)) %>"
+                <% if action[:status] %>name="status" value="<%= h(action[:status]) %>"<% end %>
+                <% if action[:confirmation] %>data-confirm="<%= h(action[:confirmation]) %>"<% end %>
+                class="status <%= h(action[:status] || "delete") %>"
+              >
+                <%= h(action.fetch(:label)) %>
               </button>
             <% end %>
           </form>
