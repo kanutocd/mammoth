@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Generate deterministic fallback event and transaction-envelope IDs so retries
+  and post-crash redelivery preserve destination idempotency when upstream
+  metadata does not provide an event ID.
+- Serialize `CDC::Core::ChangeEvent` column differences when complete old and
+  new rows are available, while avoiding false differences from key-only old
+  rows.
+
 ## 1.0.0 - 2026-07-17
 
 ### Added

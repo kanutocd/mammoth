@@ -55,7 +55,7 @@ module Mammoth
       end
     end
 
-    def test_event_without_event_id_still_builds_stable_key_from_source_position
+    def test_event_without_supplied_event_id_is_deduplicated_by_generated_stable_id
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = RecordingSink.new
@@ -72,10 +72,10 @@ module Mammoth
         second = worker.deliver(event)
 
         assert_equal "delivered", first.fetch(:status)
-        assert_equal "delivered", second.fetch(:status)
-        refute second.fetch(:duplicate, false)
-        assert_equal 2, sink.delivered_events.length
-        assert_equal 2, DeliveredEnvelopeStore.new(sqlite).count
+        assert_equal "skipped", second.fetch(:status)
+        assert second.fetch(:duplicate)
+        assert_equal 1, sink.delivered_events.length
+        assert_equal 1, DeliveredEnvelopeStore.new(sqlite).count
       end
     end
 

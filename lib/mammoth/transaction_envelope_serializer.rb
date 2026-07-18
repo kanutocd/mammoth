@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require "securerandom"
+require "digest"
 require "time"
 
 module Mammoth
@@ -38,7 +38,7 @@ module Mammoth
     def call
       event_payloads = envelope.events.map { |event| EventSerializer.call(event) }
       {
-        "event_id" => envelope_metadata["event_id"] || SecureRandom.uuid,
+        "event_id" => envelope_metadata["event_id"] || deterministic_event_id(event_payloads),
         "type" => PAYLOAD_TYPE,
         "source" => first_event_value(event_payloads, "source") || EventSerializer::DEFAULT_SOURCE,
         "transaction_id" => envelope.transaction_id,
@@ -68,6 +68,16 @@ module Mammoth
 
     def envelope_metadata
       @envelope_metadata ||= stringify_keys(envelope.metadata)
+    end
+
+    def deterministic_event_id(event_payloads)
+      identity = {
+        source: first_event_value(event_payloads, "source") || EventSerializer::DEFAULT_SOURCE,
+        transaction_id: envelope.transaction_id,
+        source_position: source_position(event_payloads),
+        event_ids: event_payloads.map { |payload| payload.fetch("event_id") }
+      }
+      "txn_#{Digest::SHA256.hexdigest(JSON.generate(identity))}"
     end
 
     def source_position(event_payloads)

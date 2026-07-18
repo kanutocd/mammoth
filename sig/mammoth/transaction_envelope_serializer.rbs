@@ -17,6 +17,7 @@ module Mammoth
 
     def stringify_keys: (untyped hash) -> Hash[String, untyped]
     def envelope_metadata: () -> Hash[String, untyped]
+    def deterministic_event_id: (Array[Hash[String, untyped]] event_payloads) -> String
     def source_position: (Array[Hash[String, untyped]] event_payloads) -> untyped
     def committed_at: () -> untyped
     def first_event_value: (Array[Hash[String, untyped]] event_payloads, untyped key) -> untyped

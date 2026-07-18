@@ -50,6 +50,20 @@ module Mammoth
       assert_equal 0, payload.fetch("event_count")
     end
 
+    def test_generates_a_stable_event_id_when_metadata_does_not_supply_one
+      envelope = core_envelope(
+        events: [core_event(metadata: { "source" => "pgoutput" }, source_position: "0/001")],
+        transaction_id: "tx-stable",
+        commit_lsn: "0/ABC"
+      )
+
+      first_id = TransactionEnvelopeSerializer.call(envelope).fetch("event_id")
+      second_id = TransactionEnvelopeSerializer.call(envelope).fetch("event_id")
+
+      assert_equal first_id, second_id
+      assert_match(/\Atxn_[0-9a-f]{64}\z/, first_id)
+    end
+
     def test_rejects_non_core_envelopes
       error = assert_raises(ArgumentError) { TransactionEnvelopeSerializer.call(Object.new) }
 

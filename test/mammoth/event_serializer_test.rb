@@ -49,6 +49,36 @@ module Mammoth
       assert_equal [{ "column" => "status" }], payload.fetch("changes")
     end
 
+    def test_serializes_column_changes_when_update_has_complete_old_and_new_rows
+      event = CDC::Core::ChangeEvent.new(
+        operation: :update,
+        schema: "public",
+        table: "orders",
+        old_values: { "id" => 4, "status" => "pending", "total_cents" => 4999 },
+        new_values: { "id" => 4, "status" => "paid", "total_cents" => 4999 },
+        primary_key: { "id" => 4 }
+      )
+
+      changes = EventSerializer.call(event).fetch("changes")
+
+      assert_equal [
+        { "name" => "status", "old_value" => "pending", "new_value" => "paid" }
+      ], changes
+    end
+
+    def test_does_not_infer_column_changes_from_an_incomplete_old_row
+      event = CDC::Core::ChangeEvent.new(
+        operation: :update,
+        schema: "public",
+        table: "orders",
+        old_values: { "id" => 4 },
+        new_values: { "id" => 4, "status" => "paid", "total_cents" => 4999 },
+        primary_key: { "id" => 4 }
+      )
+
+      assert_empty EventSerializer.call(event).fetch("changes")
+    end
+
     def test_uses_defaults_when_optional_core_values_are_absent
       event = CDC::Core::ChangeEvent.new(operation: :insert, schema: "public", table: "orders")
       payload = EventSerializer.call(event)
@@ -57,6 +87,21 @@ module Mammoth
       refute_empty payload.fetch("occurred_at")
       assert_equal EventSerializer::DEFAULT_SOURCE, payload.fetch("source")
       assert_equal({}, payload.fetch("data"))
+    end
+
+    def test_generates_a_stable_event_id_when_metadata_does_not_supply_one
+      event = core_event(
+        event_id: nil,
+        metadata: { "source" => "pgoutput" },
+        transaction_id: 42,
+        source_position: "0/ABC"
+      )
+
+      first_id = EventSerializer.call(event).fetch("event_id")
+      second_id = EventSerializer.call(event).fetch("event_id")
+
+      assert_equal first_id, second_id
+      assert_match(/\Aevt_[0-9a-f]{64}\z/, first_id)
     end
 
     def test_rejects_non_core_events

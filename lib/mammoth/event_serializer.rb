@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require "securerandom"
+require "digest"
 require "time"
 
 module Mammoth
@@ -27,17 +27,17 @@ module Mammoth
     def initialize(event)
       raise ArgumentError, "event must be a CDC::Core::ChangeEvent" unless event.is_a?(CDC::Core::ChangeEvent)
 
-      @event = event.to_h
+      @event = event
     end
 
     # Return the webhook payload.
     #
     # @return [Hash] webhook payload
     def call
-      event_hash = stringify_keys(@event)
+      event_hash = stringify_keys(@event.to_h)
       metadata = stringify_keys(event_hash["metadata"] || {})
       {
-        "event_id" => event_id(metadata),
+        "event_id" => event_id(event_hash, metadata),
         "source" => source(metadata),
         "operation" => normalize_operation(event_hash.fetch("operation")),
         "namespace" => event_hash["schema"],
@@ -47,7 +47,7 @@ module Mammoth
         "transaction_id" => event_hash["transaction_id"],
         "occurred_at" => occurred_at(event_hash),
         "data" => event_data(event_hash),
-        "changes" => metadata["changes"] || [],
+        "changes" => serialized_changes(event_hash, metadata),
         "metadata" => metadata
       }
     end
@@ -69,8 +69,22 @@ module Mammoth
       operation.to_s
     end
 
-    def event_id(metadata)
-      metadata["event_id"] || SecureRandom.uuid
+    def event_id(event_hash, metadata)
+      metadata["event_id"] || deterministic_event_id(event_hash, metadata)
+    end
+
+    def deterministic_event_id(event_hash, metadata)
+      identity = {
+        source: source(metadata),
+        transaction_id: event_hash["transaction_id"],
+        source_position: event_hash["commit_lsn"],
+        namespace: event_hash["schema"],
+        entity: event_hash["table"],
+        operation: normalize_operation(event_hash.fetch("operation")),
+        primary_key: event_hash["primary_key"],
+        data: event_data(event_hash)
+      }
+      "evt_#{Digest::SHA256.hexdigest(JSON.generate(identity))}"
     end
 
     def source(metadata)
@@ -86,6 +100,21 @@ module Mammoth
 
     def event_data(event_hash)
       event_hash["data"] || event_hash["new_values"] || event_hash["old_values"] || {}
+    end
+
+    def serialized_changes(event_hash, metadata)
+      return metadata["changes"] if metadata.key?("changes")
+      return [] unless changes_available?(event_hash)
+
+      @event.changes.map(&:to_h)
+    end
+
+    def changes_available?(event_hash)
+      return true unless normalize_operation(event_hash.fetch("operation")) == "update"
+
+      old_values = event_hash["old_values"]
+      new_values = event_hash["new_values"]
+      old_values.is_a?(Hash) && new_values.is_a?(Hash) && old_values.keys.sort == new_values.keys.sort
     end
   end
 end

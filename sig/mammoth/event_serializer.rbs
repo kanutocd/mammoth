@@ -14,9 +14,12 @@ module Mammoth
 
     def stringify_keys: (untyped hash) -> Hash[String, untyped]
     def normalize_operation: (untyped operation) -> String
-    def event_id: (Hash[String, untyped] metadata) -> String
+    def event_id: (Hash[String, untyped] event_hash, Hash[String, untyped] metadata) -> String
+    def deterministic_event_id: (Hash[String, untyped] event_hash, Hash[String, untyped] metadata) -> String
     def source: (Hash[String, untyped] metadata) -> String
     def occurred_at: (Hash[String, untyped] event_hash) -> untyped
     def event_data: (Hash[String, untyped] event_hash) -> untyped
+    def serialized_changes: (Hash[String, untyped] event_hash, Hash[String, untyped] metadata) -> Array[untyped]
+    def changes_available?: (Hash[String, untyped] event_hash) -> bool
   end
 end
