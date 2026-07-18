@@ -16,11 +16,25 @@ ALTER TABLE orders ADD CONSTRAINT orders_status_check
 
 CREATE TABLE IF NOT EXISTS payments (
   id BIGSERIAL PRIMARY KEY,
-  order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id),
-  amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
-  status TEXT NOT NULL DEFAULT 'captured'
-    CHECK (status IN ('captured')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  order_id BIGINT NOT NULL REFERENCES orders(id),
+  amount_cents INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'captured',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT payments_entry_check CHECK (
+    (status = 'captured' AND amount_cents > 0) OR
+    (status = 'reversed' AND amount_cents < 0)
+  )
+);
+
+-- Migrate an existing one-payment-per-order quickstart database to an
+-- append-only accounting-entry model that permits negative reversals.
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_order_id_key;
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_amount_cents_check;
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_entry_check;
+ALTER TABLE payments ADD CONSTRAINT payments_entry_check CHECK (
+  (status = 'captured' AND amount_cents > 0) OR
+  (status = 'reversed' AND amount_cents < 0)
 );
 
 -- Include complete before/after row images so Mammoth can emit accurate
@@ -47,6 +61,19 @@ SELECT * FROM (VALUES
   ('carol@example.com', 'shipped', 7599)
 ) AS seed(customer_email, status, total_cents)
 WHERE NOT EXISTS (SELECT 1 FROM orders);
+
+-- Keep seeded or pre-existing paid demo orders consistent with the accounting
+-- entry model before offering the reversal action.
+INSERT INTO payments (order_id, amount_cents, status)
+SELECT orders.id, orders.total_cents, 'captured'
+FROM orders
+WHERE orders.status = 'paid'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM payments
+    WHERE payments.order_id = orders.id
+      AND payments.status = 'captured'
+  );
 
 DO $$
 BEGIN

@@ -58,13 +58,23 @@ wait_for_event '"operation":"update","namespace":"public","entity":"orders"' "th
 wait_for_event '"operation":"insert","namespace":"public","entity":"payments"' "the payment INSERT"
 wait_for_event '"name":"status","old_value":"pending","new_value":"paid"' "the pending-to-paid column change"
 
+curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
+curl -fsS -o /dev/null -X POST "$base_app/orders/$payment_order_id/cancel"
+wait_for_event '"event_count":2' "a two-event cancellation transaction"
+wait_for_event '"operation":"update","namespace":"public","entity":"orders"' "the cancelled order UPDATE"
+wait_for_event '"operation":"insert","namespace":"public","entity":"payments"' "the payment reversal INSERT"
+wait_for_event '"name":"status","old_value":"paid","new_value":"cancelled"' "the paid-to-cancelled column change"
+wait_for_event '"amount_cents":-8800' "the equal negative payment entry"
+wait_for_event '"status":"reversed"' "the payment reversal status"
+
 if [ "${TEST_RETRY:-0}" = "1" ]; then
   curl -fsS -X POST -H "content-type: application/json" \
     -d '{"enabled":true}' "$base_events/api/failures" >/dev/null
   curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
   curl -fsS -o /dev/null -X POST \
-    --data-urlencode "status=shipped" \
-    "$base_app/orders/$payment_order_id/status"
+    --data-urlencode "customer_email=retry-$unique_email" \
+    --data-urlencode "total=19.99" \
+    "$base_app/orders"
   wait_for_event '"response_status":500' "a simulated failed delivery"
 
   curl -fsS -X POST -H "content-type: application/json" \

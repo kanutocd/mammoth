@@ -24,6 +24,11 @@ Paying an order demonstrates a multi-event commit. The Demo Store atomically
 updates the order and inserts a captured payment; Mammoth delivers both changes
 in one transaction envelope with `event_count: 2`.
 
+Cancelling a paid order demonstrates an accounting reversal without deleting
+history. The Demo Store atomically marks the order cancelled and appends an
+equal negative `reversed` payment entry. Mammoth again delivers both changes in
+one transaction envelope with `event_count: 2`.
+
 ## What this demonstrates
 
 The Demo Store performs ordinary transactional `INSERT`, `UPDATE`, and `DELETE`
@@ -90,9 +95,9 @@ purpose is to make retries visible.
 
 ## Automated verification
 
-The smoke test creates, deletes, and pays real orders, then waits for the
-corresponding Mammoth webhooks. The payment assertion verifies an order update
-and payment insert in one two-event transaction:
+The smoke test creates, deletes, pays, and reverses real orders, then waits for
+the corresponding Mammoth webhooks. It verifies both the captured payment and
+negative reversal as two-event transactions:
 
 ```bash
 ./scripts/smoke-test.sh
@@ -179,8 +184,9 @@ localhost or reuse its credentials. See the production checklist in
 
 The example UIs are intentionally split into ordinary source files:
 
-- `demo_app/views/` contains the Demo Store ERB templates, and
-  `demo_app/public/` contains its styles and JavaScript.
+- `demo_app/order_actions.rb` defines the order workflow and confirmation copy,
+  `demo_app/views/` contains the ERB templates, and `demo_app/public/` contains
+  the Demo Store styles and JavaScript.
 - `event_console/views/` contains the Event Console ERB template, and
   `event_console/public/` contains its styles and JavaScript.
 

@@ -7,38 +7,12 @@ require "pg"
 require "rack"
 require "rackup"
 require "webrick"
+require_relative "order_actions"
 
 # Minimal order application that demonstrates ordinary PostgreSQL writes.
 class DemoStore
   ROOT = __dir__
-  ORDER_ACTIONS = {
-    "pending" => [
-      {
-        label: "Pay",
-        endpoint: "pay",
-        confirmation: "Record payment for this pending order?\n\n" \
-                      "This runs one atomic PostgreSQL transaction that marks the order as paid " \
-                      "and inserts a captured payment. Mammoth will emit one transaction webhook " \
-                      "containing both events."
-      },
-      {
-        label: "Cancel",
-        endpoint: "delete",
-        confirmation: "Cancel this pending order?\n\n" \
-                      "This permanently deletes the order from PostgreSQL. " \
-                      "Mammoth will emit a DELETE webhook, and the order cannot be restored."
-      }
-    ],
-    "paid" => [
-      { label: "Ship", endpoint: "status", status: "shipped" },
-      { label: "Cancel", endpoint: "status", status: "cancelled" }
-    ],
-    "cancelled" => [],
-    "shipped" => [
-      { label: "Receive", endpoint: "status", status: "received" }
-    ],
-    "received" => []
-  }.freeze
+  ORDER_ACTIONS = DemoOrderActions::ALL
   STATUSES = ORDER_ACTIONS.keys.freeze
   TEMPLATE_ROOT = File.join(ROOT, "views")
   ASSETS = {
@@ -69,8 +43,31 @@ class DemoStore
   def post(request)
     return create_order(request) if request.path == "/orders"
     return pay_order(request) if request.path.match?(%r{\A/orders/\d+/pay\z})
+    return cancel_paid_order(request) if request.path.match?(%r{\A/orders/\d+/cancel\z})
     return update_status(request) if request.path.match?(%r{\A/orders/\d+/status\z})
     return delete_order(request) if request.path.match?(%r{\A/orders/\d+/delete\z})
+
+    redirect("/")
+  end
+
+  def cancel_paid_order(request)
+    id = request.path.split("/")[2]
+    cancelled = connection do |db|
+      db.transaction do |transaction|
+        order = transaction.exec_params(
+          "UPDATE orders SET status = 'cancelled' WHERE id = $1 AND status = 'paid' RETURNING total_cents",
+          [id]
+        ).first
+        next false unless order
+
+        transaction.exec_params(
+          "INSERT INTO payments (order_id, amount_cents, status) VALUES ($1, $2, 'reversed')",
+          [id, -order.fetch("total_cents").to_i]
+        )
+        true
+      end
+    end
+    return render_error(409, "Cannot cancel order", "Only paid orders can be reversed.") unless cancelled
 
     redirect("/")
   end
