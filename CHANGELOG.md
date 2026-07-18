@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added an opt-in monitoring profile to `webhooks-quickstart` with provisioned
+  Prometheus and Grafana services, meaningful seeded traffic, a Mammoth
+  operations dashboard, curated Prometheus queries, recording rules, and
+  example Prometheus and Grafana alerting rules.
+
 ## 1.1.0 - 2026-07-19
 
 ### Added

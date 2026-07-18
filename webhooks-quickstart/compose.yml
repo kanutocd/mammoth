@@ -144,6 +144,82 @@ services:
       timeout: 5s
       retries: 20
 
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:v3.13.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+      - --web.console.templates=/etc/prometheus/consoles
+    depends_on:
+      mammoth-observability:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus-rules.yml:/etc/prometheus/rules/mammoth.yml:ro
+      - ./monitoring/prometheus-consoles:/etc/prometheus/consoles:ro
+      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:13.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: mammoth
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_DEFAULT_THEME: dark
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/mammoth-quickstart.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./monitoring/grafana/provisioning/dashboards/mammoth.yml:/etc/grafana/provisioning/dashboards/mammoth.yml:ro
+      - ./monitoring/grafana/provisioning/alerting/mammoth.yml:/etc/grafana/provisioning/alerting/mammoth.yml:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  monitoring-seed:
+    profiles: ["monitoring"]
+    build: ./demo_app
+    environment:
+      DEMO_APP_URL: http://demo-app:3000
+      SEED_INTERVAL_SECONDS: ${MONITORING_SEED_INTERVAL_SECONDS:-4}
+    command: ["ruby", "/scripts/seed_monitoring.rb"]
+    depends_on:
+      demo-app:
+        condition: service_healthy
+      mammoth:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    volumes:
+      - ./scripts/seed_monitoring.rb:/scripts/seed_monitoring.rb:ro
+    restart: "no"
+
 volumes:
   postgres-data:
   mammoth-data:
+  prometheus-data:
+  grafana-data:

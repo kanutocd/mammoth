@@ -23,6 +23,42 @@ observability:
   port: 9393
 ```
 
+## Runnable monitoring showcase
+
+The recommended first-run application includes an optional monitoring profile
+that provisions Prometheus, Grafana, example alert rules, and staged demo
+traffic:
+
+```bash
+cd webhooks-quickstart
+docker compose --profile monitoring up --build --wait
+```
+
+Open the local monitoring surfaces:
+
+- Mammoth Grafana dashboard: http://localhost:3001/d/mammoth-quickstart
+- Grafana-managed alert rules: http://localhost:3001/alerting/list
+- Prometheus query library: http://localhost:9090/consoles/mammoth.html
+- Prometheus expression browser: http://localhost:9090/query
+- Prometheus alert rules: http://localhost:9090/alerts
+- Prometheus recording rules: http://localhost:9090/rules
+
+The source-controlled Prometheus query library displays current values and
+provides one-click PromQL graph queries for relay health, slot readiness,
+consumer activity, delivery totals and throughput, pending dead letters, WAL
+retention and safety budget, and replication progress. The showcase also
+records the slot WAL-budget utilization ratio.
+
+Prometheus evaluates example alerts for scrape availability, slot readiness,
+WAL-budget pressure, and pending dead letters. Grafana separately evaluates
+provisioned, read-only rules for slot readiness, WAL-budget pressure, and
+pending dead letters. No contact points are configured, so the quickstart does
+not send notifications or external alert traffic.
+
+This profile is a single-node demonstration built from Mammoth's public
+observability endpoints. It is not a control plane. The multi-deployment
+control plane and its agent belong to the paid Mammoth Platform.
+
 ## Endpoints
 
 ### `GET /healthz`

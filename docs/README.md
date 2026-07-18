@@ -48,8 +48,12 @@ boundary that reconstructs exact core objects before delivery.
 
 The Database Webhooks Quickstart is the recommended first-run experience. One
 Docker Compose command starts a demo application, PostgreSQL, Mammoth, and an
-inspectable signed webhook receiver with visible retries. Use the documentation
-Quick Start when you are ready to assemble those pieces manually.
+inspectable signed webhook receiver with visible retries. Its optional
+monitoring profile adds seeded traffic, a provisioned Grafana overview and
+alerts, and a curated Prometheus query library. See
+[Observability](file.OBSERVABILITY.html) for the runnable monitoring showcase.
+Use the documentation Quick Start when you are ready to assemble those pieces
+manually.
 
 ## v1 Release Scope
 

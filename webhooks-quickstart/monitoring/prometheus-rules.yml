@@ -1,0 +1,54 @@
+groups:
+  - name: mammoth-quickstart
+    rules:
+      - record: mammoth_quickstart:wal_budget_used_ratio
+        expr: |
+          mammoth_postgres_slot_retained_wal_bytes
+          /
+          clamp_min(
+            mammoth_postgres_slot_retained_wal_bytes
+            + mammoth_postgres_slot_safe_wal_size_bytes,
+            1
+          )
+        labels:
+          showcase: webhooks-quickstart
+
+      - alert: MammothMetricsUnavailable
+        expr: up{job="mammoth"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          showcase: webhooks-quickstart
+        annotations:
+          summary: Mammoth metrics are unavailable
+          description: Prometheus cannot scrape the Mammoth observability endpoint.
+
+      - alert: MammothReplicationSlotNotReady
+        expr: mammoth_postgres_slot_ready == 0
+        for: 30s
+        labels:
+          severity: critical
+          showcase: webhooks-quickstart
+        annotations:
+          summary: Mammoth replication slot is not ready
+          description: The configured PostgreSQL slot is not safe and active for Mammoth.
+
+      - alert: MammothWalBudgetPressure
+        expr: mammoth_quickstart:wal_budget_used_ratio > 0.75
+        for: 1m
+        labels:
+          severity: warning
+          showcase: webhooks-quickstart
+        annotations:
+          summary: Mammoth replication slot is consuming its WAL budget
+          description: More than 75% of the configured slot WAL retention budget is in use.
+
+      - alert: MammothPendingDeadLetters
+        expr: mammoth_dead_letters_pending_total{destination=""} > 0
+        for: 30s
+        labels:
+          severity: warning
+          showcase: webhooks-quickstart
+        annotations:
+          summary: Mammoth has pending dead letters
+          description: One or more failed deliveries require operator inspection.

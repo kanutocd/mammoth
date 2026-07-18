@@ -15,6 +15,17 @@ cd webhooks-quickstart
 docker compose up --build --wait
 ```
 
+Add the optional monitoring profile to run seeded demo traffic through a
+provisioned Grafana dashboard, Grafana and Prometheus alert rules, and a
+curated Prometheus query library:
+
+```bash
+docker compose --profile monitoring up --build --wait
+```
+
+See [Observability](./OBSERVABILITY.md#runnable-monitoring-showcase) for the
+local dashboard, alerting, and query URLs.
+
 The examples below focus on individual delivery, continuity, identity, and
 operational behaviors after the complete flow is familiar.
 

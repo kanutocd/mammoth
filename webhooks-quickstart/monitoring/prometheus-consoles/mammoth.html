@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mammoth quickstart queries</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background: #111827;
+        color: #e5e7eb;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 40px 24px 64px;
+      }
+
+      header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 8px;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+      }
+
+      h2 {
+        margin: 32px 0 14px;
+        color: #f9fafb;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      p {
+        color: #9ca3af;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      a {
+        color: #93c5fd;
+      }
+
+      nav a,
+      .query-link {
+        padding: 8px 12px;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        text-decoration: none;
+      }
+
+      nav a:hover,
+      .query-link:hover {
+        border-color: #60a5fa;
+        background: #172554;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+      }
+
+      article {
+        display: flex;
+        min-height: 170px;
+        flex-direction: column;
+        padding: 18px;
+        border: 1px solid #273244;
+        border-radius: 12px;
+        background: #182131;
+      }
+
+      article h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      article p {
+        flex: 1;
+        margin-bottom: 14px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      code {
+        display: block;
+        overflow-x: auto;
+        margin-bottom: 14px;
+        padding: 10px;
+        border-radius: 7px;
+        background: #0b1220;
+        color: #c4b5fd;
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .value {
+        margin-bottom: 14px;
+        color: #f9fafb;
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+
+      .value span {
+        margin-right: 8px;
+      }
+
+      .empty {
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      @media (max-width: 680px) {
+        header {
+          align-items: start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Mammoth quickstart queries</h1>
+          <p>Curated PromQL entry points for exploring the local relay.</p>
+        </div>
+        <nav aria-label="Monitoring navigation">
+          <a href="/">Prometheus</a>
+          <a href="/alerts">Alerts</a>
+          <a href="/rules">Rules</a>
+          <a href="http://localhost:3001/d/mammoth-quickstart">Grafana</a>
+        </nav>
+      </header>
+
+      <h2>Health and readiness</h2>
+      <section class="grid">
+        <article>
+          <h3>Relay health</h3>
+          <p>Whether Mammoth's observability process can inspect operational state.</p>
+          <code>mammoth_up</code>
+          <div class="value">
+            {{range query "mammoth_up"}}<span>{{.Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_up"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Replication slot ready</h3>
+          <p>Whether the configured PostgreSQL slot is safe and active for Mammoth.</p>
+          <code>mammoth_postgres_slot_ready</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_ready"}}<span>{{.Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_ready"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Consumer activity</h3>
+          <p>Whether PostgreSQL currently sees a consumer attached to the slot.</p>
+          <code>mammoth_postgres_slot_active</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_active"}}<span>{{.Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_active"}}">Open query</a>
+        </article>
+      </section>
+
+      <h2>Delivery</h2>
+      <section class="grid">
+        <article>
+          <h3>Delivered envelopes</h3>
+          <p>Total durable envelopes successfully delivered by the quickstart destination.</p>
+          <code>mammoth_delivered_envelopes_total{destination=""}</code>
+          <div class="value">
+            {{range query "mammoth_delivered_envelopes_total{destination=\"\"}"}}<span>{{.Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_delivered_envelopes_total{destination=\"\"}"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Delivery throughput</h3>
+          <p>Per-second delivery rate over the last five minutes.</p>
+          <code>rate(mammoth_delivered_envelopes_total{destination=""}[5m])</code>
+          <div class="value">
+            {{range query "rate(mammoth_delivered_envelopes_total{destination=\"\"}[5m])"}}<span>{{humanize .Value}}/s</span>{{else}}<span class="empty">Collecting data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "rate(mammoth_delivered_envelopes_total{destination=\"\"}[5m])"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Pending dead letters</h3>
+          <p>Failed deliveries currently requiring operator inspection.</p>
+          <code>mammoth_dead_letters_pending_total{destination=""}</code>
+          <div class="value">
+            {{range query "mammoth_dead_letters_pending_total{destination=\"\"}"}}<span>{{.Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_dead_letters_pending_total{destination=\"\"}"}}">Open query</a>
+        </article>
+      </section>
+
+      <h2>PostgreSQL WAL safety</h2>
+      <section class="grid">
+        <article>
+          <h3>WAL budget utilization</h3>
+          <p>Recorded ratio of retained WAL to the slot's available safety budget.</p>
+          <code>mammoth_quickstart:wal_budget_used_ratio</code>
+          <div class="value">
+            {{range query "mammoth_quickstart:wal_budget_used_ratio"}}<span>{{humanizePercentage .Value}}</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_quickstart:wal_budget_used_ratio"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Retained WAL</h3>
+          <p>Bytes PostgreSQL must retain because of the Mammoth replication slot.</p>
+          <code>mammoth_postgres_slot_retained_wal_bytes</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_retained_wal_bytes"}}<span>{{humanize1024 .Value}}B</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_retained_wal_bytes"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Remaining safe WAL</h3>
+          <p>Bytes that may accumulate before PostgreSQL can invalidate the slot.</p>
+          <code>mammoth_postgres_slot_safe_wal_size_bytes</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_safe_wal_size_bytes"}}<span>{{humanize1024 .Value}}B</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_safe_wal_size_bytes"}}">Open query</a>
+        </article>
+      </section>
+
+      <h2>Replication progress</h2>
+      <section class="grid">
+        <article>
+          <h3>Confirmed flush position</h3>
+          <p>Numeric position PostgreSQL knows Mammoth has durably consumed.</p>
+          <code>mammoth_postgres_slot_confirmed_flush_lsn_bytes</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_confirmed_flush_lsn_bytes"}}<span>{{humanize1024 .Value}}B</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_confirmed_flush_lsn_bytes"}}">Open query</a>
+        </article>
+
+        <article>
+          <h3>Restart position</h3>
+          <p>Oldest WAL position PostgreSQL may still need for the replication slot.</p>
+          <code>mammoth_postgres_slot_restart_lsn_bytes</code>
+          <div class="value">
+            {{range query "mammoth_postgres_slot_restart_lsn_bytes"}}<span>{{humanize1024 .Value}}B</span>{{else}}<span class="empty">No data</span>{{end}}
+          </div>
+          <a class="query-link" href="{{graphLink "mammoth_postgres_slot_restart_lsn_bytes"}}">Open query</a>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

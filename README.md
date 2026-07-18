@@ -52,7 +52,10 @@ docker compose up --build --wait
 
 Once the flow is visible, follow its
 [`ADAPTING.md`](webhooks-quickstart/ADAPTING.md) guide to connect Mammoth to an
-existing PostgreSQL application.
+existing PostgreSQL application. Its optional `monitoring` profile adds seeded
+traffic, a provisioned Grafana dashboard and alert rules, and a curated
+Prometheus query library; see the
+[observability guide](docs/OBSERVABILITY.md#runnable-monitoring-showcase).
 
 ## v1 Release Scope
 

@@ -67,6 +67,51 @@ unavailable long enough to exceed it. Follow
 [`WAL-RETENTION.md`](./WAL-RETENTION.md) to understand the tradeoff and manually
 test graceful shutdown, abnormal termination, catch-up, and slot invalidation.
 
+## Optional monitoring showcase
+
+Start the same quickstart with a provisioned Prometheus and Grafana overview:
+
+```bash
+docker compose --profile monitoring up --build --wait
+```
+
+Then open:
+
+- Mammoth dashboard: http://localhost:3001/d/mammoth-quickstart
+- Grafana alert rules: http://localhost:3001/alerting/list
+- Prometheus query library: http://localhost:9090/consoles/mammoth.html
+- Prometheus expression browser: http://localhost:9090/query
+- Prometheus alert rules: http://localhost:9090/alerts
+- Prometheus recording rules: http://localhost:9090/rules
+
+Grafana opens anonymously in viewer mode with Prometheus already connected. A
+one-shot seeder creates pending demand, multi-event payments, fulfillment,
+pending-order deletion, and accounting reversals. The phases are spaced across
+Prometheus scrapes so delivery, WAL-safety, and replication-progress panels
+visibly move.
+
+Prometheus also loads a recorded WAL-budget utilization ratio and example
+alerts for scrape availability, slot readiness, WAL pressure, and pending dead
+letters. These remain visible in Prometheus even when healthy and inactive, so
+the local operational contract is easy to inspect. Its Mammoth query library
+shows current values and links curated health, delivery, dead-letter, WAL, and
+replication-progress expressions into the native Prometheus graph view.
+
+Grafana separately evaluates provisioned, read-only rules for slot readiness,
+WAL-budget pressure, and pending dead letters. The showcase does not configure
+contact points or send notifications; use the Alerting page to inspect rule
+state and evaluation details without generating external traffic.
+
+This is intentionally a polished single-node glimpse built from Mammoth's
+public metrics, not a control plane. The control plane and its agent are part
+of the paid Mammoth Platform experience across Mammoth deployments.
+
+Run the scenario again without recreating the stack:
+
+```bash
+docker compose --profile monitoring run --rm monitoring-seed
+```
+
 ## Retry and recovery walkthrough
 
 1. Open the Event Console.
@@ -92,6 +137,9 @@ purpose is to make retries visible.
 | `mammoth-init` | Validates config and bootstraps operational state | — |
 | `mammoth` | PostgreSQL change-event relay | — |
 | `mammoth-observability` | Health, readiness, and Prometheus metrics | 9393 |
+| `prometheus` | Optional two-day metrics history | 9090 |
+| `grafana` | Optional provisioned Mammoth overview | 3001 |
+| `monitoring-seed` | Optional staged demo traffic generator | — |
 
 ## Automated verification
 
@@ -209,7 +257,6 @@ add focused, optional walkthroughs for:
 - ordered delivery versus higher-throughput concurrent delivery;
 - composite and non-`id` PostgreSQL replica identities;
 - consumer-first additive schema evolution;
-- a richer readiness and Prometheus slot-metrics dashboard; and
 - fail-closed replication-slot invalidation and operator-led recovery.
 
 The runnable [`examples/`](../examples) directory demonstrates the underlying
@@ -220,8 +267,10 @@ quickstart. Contributions are very welcome and appreciated.
 bundle exec ./exe/mammoth validate webhooks-quickstart/mammoth/mammoth.yml
 ruby -c webhooks-quickstart/demo_app/app.rb
 ruby -c webhooks-quickstart/event_console/app.rb
+ruby -c webhooks-quickstart/scripts/seed_monitoring.rb
 node --check webhooks-quickstart/demo_app/public/app.js
 node --check webhooks-quickstart/event_console/public/app.js
 sh -n webhooks-quickstart/scripts/smoke-test.sh
+ruby -rjson -e 'JSON.parse(File.read("webhooks-quickstart/monitoring/grafana/dashboards/mammoth-quickstart.json"))'
 docker compose -f webhooks-quickstart/compose.yml config
 ```
