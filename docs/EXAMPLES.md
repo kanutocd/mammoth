@@ -2,6 +2,22 @@
 
 Mammoth ships examples that validate different parts of the system.
 
+## Recommended first run: `webhooks-quickstart`
+
+Start with the
+[Database Webhooks Quickstart](https://github.com/kanutocd/mammoth/tree/main/webhooks-quickstart)
+for a one-command, application-level walkthrough. It includes a Demo Store,
+logical-replication-enabled PostgreSQL, Mammoth, an inspectable signed webhook
+receiver, visible retry recovery, and an end-to-end smoke test.
+
+```bash
+cd webhooks-quickstart
+docker compose up --build --wait
+```
+
+The examples below focus on individual delivery, continuity, identity, and
+operational behaviors after the complete flow is familiar.
+
 ## `examples/postgres_webhook`
 
 Purpose:

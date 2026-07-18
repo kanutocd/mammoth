@@ -1,0 +1,63 @@
+<header>
+  <div>
+    <span class="eyebrow">Mammoth Quick Start</span>
+    <h1>Demo Store</h1>
+  </div>
+  <a class="console" href="http://localhost:4000" target="_blank" rel="noreferrer">
+    Open Event Console →
+  </a>
+</header>
+
+<section class="intro">
+  <h2>Ordinary PostgreSQL writes. Reliable webhooks.</h2>
+  <p>
+    This application contains no Mammoth client, callbacks, or event-producing
+    code. Change an order and watch Mammoth relay the committed database change.
+  </p>
+</section>
+
+<section class="create">
+  <h2>Create an order</h2>
+  <form method="post" action="/orders">
+    <label>
+      Email
+      <input required type="email" name="customer_email" value="new.customer@example.com">
+    </label>
+    <label>
+      Total (USD)
+      <input required type="number" min="0.01" step="0.01" name="total" value="49.99">
+    </label>
+    <button>Create order</button>
+  </form>
+</section>
+
+<section>
+  <div class="section-title">
+    <h2>Orders</h2>
+    <span><%= orders.length %> records</span>
+  </div>
+  <div class="orders">
+    <% orders.each do |order| %>
+      <article class="order">
+        <div class="order-head">
+          <strong>Order #<%= h(order["id"]) %></strong>
+          <span class="pill <%= h(order["status"]) %>"><%= h(order["status"]) %></span>
+        </div>
+        <p><%= h(order["customer_email"]) %></p>
+        <p class="amount">$<%= money(order["total_cents"]) %></p>
+        <% actions = status_actions.fetch(order["status"], {}) %>
+        <% if actions.any? %>
+          <form method="post" action="/orders/<%= h(order["id"]) %>/status">
+            <% actions.each do |status, label| %>
+              <button name="status" value="<%= h(status) %>" class="status <%= h(status) %>">
+                <%= h(label) %>
+              </button>
+            <% end %>
+          </form>
+        <% else %>
+          <p class="no-actions">No actions available</p>
+        <% end %>
+      </article>
+    <% end %>
+  </div>
+</section>

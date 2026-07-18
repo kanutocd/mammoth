@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../config/mammoth.schema.json
+
+# Mammoth Database Webhooks Quick Start.
+# The demo applications only write to PostgreSQL; this is the entire integration.
+mammoth:
+  name: webhooks_quickstart
+
+postgres:
+  host: postgres
+  port: 5432
+  database: mammoth_demo
+  username: mammoth
+  password_env: MAMMOTH_POSTGRES_PASSWORD
+
+replication:
+  slot: mammoth_quickstart
+  publications:
+    - mammoth_publication
+  auto_create_slot: true
+  temporary_slot: false
+  feedback_interval: 2.0
+
+delivery:
+  unit: transaction
+  ordering:
+    scope: transaction
+
+runtime:
+  adapter: concurrent
+  concurrency: 4
+  batch_size: 1
+  preserve_order: true
+  timeout_seconds:
+
+webhook:
+  name: event_console
+  url: http://event-console:4000/webhooks/mammoth
+  timeout_seconds: 5
+  header_env:
+    Authorization: MAMMOTH_WEBHOOK_AUTHORIZATION
+  signing:
+    algorithm: hmac_sha256
+    secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
+    signature_header: X-Mammoth-Signature
+    timestamp_header: X-Mammoth-Timestamp
+
+retry:
+  max_attempts: 20
+  schedule_seconds:
+    - 1
+    - 2
+    - 3
+    - 5
+    - 10
+
+sqlite:
+  path: /app/.sqlite3/mammoth.db
+
+operational_state:
+  adapter: sqlite
+
+observability:
+  host: 0.0.0.0
+  port: 9393
+
+logging:
+  level: info

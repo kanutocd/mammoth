@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mammoth Event Console</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <span class="eyebrow">Mammoth Quick Start</span>
+          <h1>Webhook Event Console</h1>
+        </div>
+        <a href="http://localhost:3000">← Demo Store</a>
+      </header>
+
+      <section class="controls">
+        <div>
+          <h2>Delivery target</h2>
+          <code>POST /webhooks/mammoth</code>
+          <small>Authorization + HMAC verified</small>
+        </div>
+        <label class="toggle">
+          <input id="failure-toggle" type="checkbox">
+          <span></span>
+          <b>Simulate HTTP 500</b>
+        </label>
+        <button id="clear">Clear events</button>
+      </section>
+
+      <section class="explain">
+        <strong>Try this:</strong>
+        Enable failures, change an order, then disable failures. Mammoth should
+        retry until this receiver returns HTTP 200.
+      </section>
+
+      <div class="status">
+        <span id="connection">Refreshing…</span>
+        <span id="count"></span>
+      </div>
+
+      <main id="events"></main>
+
+      <template id="empty">
+        <section class="empty">
+          <h2>No webhooks received yet</h2>
+          <p>Create or update an order in the Demo Store.</p>
+        </section>
+      </template>
+    </div>
+  </body>
+</html>

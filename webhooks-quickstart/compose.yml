@@ -1,0 +1,149 @@
+name: mammoth-database-webhooks
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mammoth_demo
+      POSTGRES_USER: mammoth
+      POSTGRES_PASSWORD: mammoth
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=10
+      - -c
+      - max_wal_senders=10
+      - -c
+      - wal_sender_timeout=30s
+      - -c
+      - max_slot_wal_keep_size=${POSTGRES_MAX_SLOT_WAL_KEEP_SIZE:-1GB}
+    ports:
+      - "54331:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mammoth -d mammoth_demo"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgres-setup:
+    image: postgres:17-alpine
+    environment:
+      PGPASSWORD: mammoth
+    command:
+      - psql
+      - -h
+      - postgres
+      - -U
+      - mammoth
+      - -d
+      - mammoth_demo
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /setup/init.sql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./postgres/init.sql:/setup/init.sql:ro
+    restart: "no"
+
+  event-console:
+    build: ./event_console
+    environment:
+      PORT: "4000"
+      DATA_DIR: /data
+      WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
+      WEBHOOK_SIGNING_SECRET: "mammoth-quickstart-signing-secret"
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./data/events:/data
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI('http://localhost:4000/health')).is_a?(Net::HTTPSuccess) ? 0 : 1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  demo-app:
+    build: ./demo_app
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgres://mammoth:mammoth@postgres:5432/mammoth_demo
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI('http://localhost:3000/health')).is_a?(Net::HTTPSuccess) ? 0 : 1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mammoth-init:
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+      MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
+      MAMMOTH_WEBHOOK_SIGNING_SECRET: "mammoth-quickstart-signing-secret"
+    command: ["sh", "-c", "mammoth validate /config/mammoth.yml && mammoth bootstrap /config/mammoth.yml"]
+    depends_on:
+      postgres-setup:
+        condition: service_completed_successfully
+      event-console:
+        condition: service_healthy
+    volumes:
+      - ./mammoth/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth-data:/app/.sqlite3
+    restart: "no"
+
+  mammoth:
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+      MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
+      MAMMOTH_WEBHOOK_SIGNING_SECRET: "mammoth-quickstart-signing-secret"
+    command: ["start", "/config/mammoth.yml"]
+    depends_on:
+      mammoth-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./mammoth/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth-data:/app/.sqlite3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mammoth", "status", "/config/mammoth.yml"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mammoth-observability:
+    image: ${MAMMOTH_IMAGE:-ghcr.io/kanutocd/mammoth:v1.1.0}
+    environment:
+      MAMMOTH_POSTGRES_PASSWORD: mammoth
+      MAMMOTH_WEBHOOK_AUTHORIZATION: "Bearer mammoth-quickstart"
+      MAMMOTH_WEBHOOK_SIGNING_SECRET: "mammoth-quickstart-signing-secret"
+    command: ["observability", "/config/mammoth.yml"]
+    depends_on:
+      mammoth-init:
+        condition: service_completed_successfully
+    ports:
+      - "9393:9393"
+    volumes:
+      - ./mammoth/mammoth.yml:/config/mammoth.yml:ro
+      - mammoth-data:/app/.sqlite3
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-e", "exit(Net::HTTP.get_response(URI('http://localhost:9393/healthz')).is_a?(Net::HTTPSuccess) ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  mammoth-data:

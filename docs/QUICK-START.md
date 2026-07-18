@@ -2,6 +2,11 @@
 
 This guide shows the shortest path from a PostgreSQL table change to a Mammoth webhook delivery.
 
+For a one-command, application-level walkthrough with a browser UI, signed
+receiver, visible retries, health endpoints, and an adaptation guide, start
+with [`../webhooks-quickstart`](../webhooks-quickstart). Continue here when you
+want to assemble the same pieces manually.
+
 ## 1. Install Mammoth
 
 From RubyGems:
@@ -174,6 +179,10 @@ Mammoth
   ↓
 Webhook POST
 ```
+
+See [Webhook Payloads](file.WEBHOOK-PAYLOADS.html) for the canonical event and
+transaction JSON shapes, column-change availability, and destination
+idempotency guidance.
 
 ## 8. Inspect status
 

@@ -6,6 +6,9 @@
 
 - Added a serializer benchmark comparing explicit and deterministic fallback
   event IDs for event and transaction payload projection.
+- Added `webhooks-quickstart`, a one-command PostgreSQL-to-Mammoth demo with an
+  order application, inspectable signed webhook deliveries and retries,
+  adaptation guidance, WAL-retention safeguards, and end-to-end verification.
 
 ### Fixed
 

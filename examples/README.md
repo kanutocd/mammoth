@@ -8,6 +8,7 @@ SQLite operational memory while keeping unit tests Docker-free.
 
 | Example | Purpose | Runs live PostgreSQL replication? |
 | --- | --- | --- |
+| [`../webhooks-quickstart`](../webhooks-quickstart) | Recommended first-run application with visible signed deliveries, retries, adaptation guidance, and an end-to-end smoke test. | Yes |
 | [`postgres_webhook`](./postgres_webhook) | Sample CDC-shaped event delivered with SQLite checkpoints and duplicate-suppression ledger. | No |
 | [`live_postgres_webhook`](./live_postgres_webhook) | Full PostgreSQL logical replication shape using `mammoth start`. | Yes |
 | [`composite_replica_identity`](./composite_replica_identity) | Proves catalog-derived composite identity preservation across live `INSERT`, `UPDATE`, and `DELETE` events. | Yes |

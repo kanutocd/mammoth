@@ -31,6 +31,7 @@ boundary that reconstructs exact core objects before delivery.
 
 ## Start here
 
+- [Database Webhooks Quickstart](https://github.com/kanutocd/mammoth/tree/main/webhooks-quickstart)
 - [Quick Start](file.QUICK-START.html)
 - [Webhook Payloads](file.WEBHOOK-PAYLOADS.html)
 - [PostgreSQL](file.POSTGRESQL.html)
@@ -44,6 +45,11 @@ boundary that reconstructs exact core objects before delivery.
 - [Compatibility](file.COMPATIBILITY.html)
 - [Helm](file.HELM.html)
 - [Troubleshooting](file.TROUBLESHOOTING.html)
+
+The Database Webhooks Quickstart is the recommended first-run experience. One
+Docker Compose command starts a demo application, PostgreSQL, Mammoth, and an
+inspectable signed webhook receiver with visible retries. Use the documentation
+Quick Start when you are ready to assemble those pieces manually.
 
 ## v1 Release Scope
 

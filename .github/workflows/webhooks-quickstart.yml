@@ -1,0 +1,56 @@
+name: Webhooks Quickstart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webhooks-quickstart/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webhooks-quickstart-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webhooks-quickstart:
+    name: Webhooks quickstart
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MAMMOTH_IMAGE: mammoth:quickstart-ci
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build Mammoth image
+        run: docker build -t mammoth:quickstart-ci -f docker/Dockerfile .
+
+      - name: Validate Compose model
+        run: docker compose config
+        working-directory: webhooks-quickstart
+
+      - name: Start quickstart
+        run: docker compose up -d --build --wait --wait-timeout 180
+        working-directory: webhooks-quickstart
+
+      - name: Run end-to-end delivery and retry checks
+        run: ./scripts/smoke-test.sh
+        working-directory: webhooks-quickstart
+        env:
+          TEST_RETRY: "1"
+
+      - name: Show service logs after failure
+        if: failure()
+        run: docker compose logs --no-color
+        working-directory: webhooks-quickstart
+
+      - name: Stop quickstart
+        if: always()
+        run: docker compose down -v
+        working-directory: webhooks-quickstart

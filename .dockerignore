@@ -1,0 +1,38 @@
+# Version-control and editor metadata
+.git
+.github
+.history
+.ignoreme
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.envrc
+
+# Ruby and generated build artifacts
+.bundle
+coverage
+doc
+pkg
+spec/reports
+tmp
+test/tmp
+vendor/bundle
+*.gem
+
+# Local runtime data
+.sqlite3
+data
+public
+benchmark/results
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+docs
+examples
+webhooks-quickstart

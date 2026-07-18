@@ -38,7 +38,21 @@ API documentation:
 
 https://kanutocd.github.io/mammoth/Mammoth.html
 
+## Start Here
 
+The recommended first-run experience is the
+[`webhooks-quickstart`](webhooks-quickstart) stack. One Compose command starts a
+demo application, logical-replication-enabled PostgreSQL, Mammoth, a signed
+webhook receiver with visible retries, and Mammoth health endpoints:
+
+```bash
+cd webhooks-quickstart
+docker compose up --build --wait
+```
+
+Once the flow is visible, follow its
+[`ADAPTING.md`](webhooks-quickstart/ADAPTING.md) guide to connect Mammoth to an
+existing PostgreSQL application.
 
 ## v1.0 Release Scope
 
