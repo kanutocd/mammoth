@@ -68,6 +68,25 @@ module Mammoth
         assert_match(/jsonb_array_elements_text/, query)
       end
 
+      def test_accepts_predecoded_replica_identity_columns
+        connection = FakeConnection.new(rows: [{
+                                          "relation_id" => "16385",
+                                          "schema_name" => "audit",
+                                          "table_name" => "entries",
+                                          "publishes_updates" => true,
+                                          "publishes_deletes" => true,
+                                          "replica_identity" => "i",
+                                          "replica_identity_columns" => %w[tenant_id entry_id],
+                                          "primary_key_usable" => false,
+                                          "replica_identity_index_usable" => true
+                                        }])
+
+        table = inspector(connection).inspect(["audit_publication"]).fetch(0)
+
+        assert_equal %w[tenant_id entry_id], table.replica_identity_columns
+        assert_predicate table, :identity_usable?
+      end
+
       def test_wraps_pg_errors_and_closes_connection
         require "pg"
         connection = FakeConnection.new(error: PG::Error.new("catalog unavailable"))

@@ -64,6 +64,26 @@ module Mammoth
       assert_match(/\Atxn_[0-9a-f]{64}\z/, first_id)
     end
 
+    def test_generated_event_id_distinguishes_envelopes_with_different_event_sequences
+      attributes = {
+        operation: :update,
+        schema: "public",
+        table: "orders",
+        old_values: { "id" => 4, "status" => "pending" },
+        new_values: { "id" => 4, "status" => "paid" },
+        primary_key: { "id" => 4 },
+        transaction_id: 42,
+        commit_lsn: "0/ABC"
+      }
+      first_event = CDC::Core::ChangeEvent.new(**attributes, sequence_number: 1)
+      second_event = CDC::Core::ChangeEvent.new(**attributes, sequence_number: 2)
+      first = core_envelope(events: [first_event], transaction_id: 42, commit_lsn: "0/ABC")
+      second = core_envelope(events: [second_event], transaction_id: 42, commit_lsn: "0/ABC")
+
+      refute_equal TransactionEnvelopeSerializer.call(first).fetch("event_id"),
+                   TransactionEnvelopeSerializer.call(second).fetch("event_id")
+    end
+
     def test_rejects_non_core_envelopes
       error = assert_raises(ArgumentError) { TransactionEnvelopeSerializer.call(Object.new) }
 

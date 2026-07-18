@@ -618,6 +618,14 @@ module Mammoth
           table_name: "memberships",
           primary_key_usable: true,
           replica_identity_columns: %w[tenant_id member_uuid]
+        ),
+        publication_table(
+          relation_id: 78,
+          table_name: "insert_only_audit",
+          publishes_updates: false,
+          publishes_deletes: false,
+          replica_identity: "n",
+          replica_identity_columns: []
         )
       ]
       inspector = Struct.new(:tables, :calls) do

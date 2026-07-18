@@ -14,6 +14,7 @@ CODE_OF_CONDUCT.md
 LICENSE.txt
 
 docs/QUICK-START.md
+docs/WEBHOOK-PAYLOADS.md
 docs/POSTGRESQL.md
 docs/CONFIGURATION.md
 docs/CLI.md

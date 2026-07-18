@@ -78,11 +78,14 @@ module Mammoth
         source: source(metadata),
         transaction_id: event_hash["transaction_id"],
         source_position: event_hash["commit_lsn"],
+        sequence_number: event_hash["sequence_number"],
+        occurred_at: event_hash["occurred_at"],
         namespace: event_hash["schema"],
         entity: event_hash["table"],
         operation: normalize_operation(event_hash.fetch("operation")),
         primary_key: event_hash["primary_key"],
-        data: event_data(event_hash)
+        old_values: event_hash["old_values"],
+        new_values: event_hash["new_values"]
       }
       "evt_#{Digest::SHA256.hexdigest(JSON.generate(identity))}"
     end
@@ -103,7 +106,7 @@ module Mammoth
     end
 
     def serialized_changes(event_hash, metadata)
-      return metadata["changes"] if metadata.key?("changes")
+      return metadata["changes"] || [] if metadata.key?("changes")
       return [] unless changes_available?(event_hash)
 
       @event.changes.map(&:to_h)

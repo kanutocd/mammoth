@@ -32,6 +32,7 @@ boundary that reconstructs exact core objects before delivery.
 ## Start here
 
 - [Quick Start](file.QUICK-START.html)
+- [Webhook Payloads](file.WEBHOOK-PAYLOADS.html)
 - [PostgreSQL](file.POSTGRESQL.html)
 - [Configuration](file.CONFIGURATION.html)
 - [CLI](file.CLI.html)
@@ -76,6 +77,8 @@ Mammoth 1.x supports:
 The supported compatibility boundaries for configuration, webhook payloads,
 CLI behavior, and operational-state migrations are documented in
 [Compatibility](file.COMPATIBILITY.html).
+The canonical event and transaction JSON contracts are documented in
+[Webhook Payloads](file.WEBHOOK-PAYLOADS.html).
 
 ## v1 Non-goals
 

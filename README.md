@@ -39,6 +39,7 @@ API documentation:
 https://kanutocd.github.io/mammoth/Mammoth.html
 
 
+
 ## v1.0 Release Scope
 
 Mammoth 1.0 includes:
@@ -107,7 +108,9 @@ Human-readable CLI formatting and PostgreSQL-derived row columns are not frozen:
 scripts should rely on documented exit behavior, while receivers must tolerate
 additive fields and coordinate source schema changes. See
 [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) for the complete promise and
-major-version boundaries.
+major-version boundaries. See
+[`docs/WEBHOOK-PAYLOADS.md`](docs/WEBHOOK-PAYLOADS.md) for the canonical event
+and transaction JSON contracts, column-change semantics, and event-ID behavior.
 
 ## Boundary
 

@@ -49,6 +49,12 @@ module Mammoth
       assert_equal [{ "column" => "status" }], payload.fetch("changes")
     end
 
+    def test_normalizes_nil_metadata_changes_to_an_empty_array
+      event = core_event(metadata: { "changes" => nil })
+
+      assert_equal [], EventSerializer.call(event).fetch("changes")
+    end
+
     def test_serializes_column_changes_when_update_has_complete_old_and_new_rows
       event = CDC::Core::ChangeEvent.new(
         operation: :update,
@@ -102,6 +108,48 @@ module Mammoth
 
       assert_equal first_id, second_id
       assert_match(/\Aevt_[0-9a-f]{64}\z/, first_id)
+    end
+
+    def test_generated_event_id_distinguishes_event_sequence
+      attributes = {
+        operation: :update,
+        schema: "public",
+        table: "orders",
+        old_values: { "id" => 4, "status" => "pending" },
+        new_values: { "id" => 4, "status" => "paid" },
+        primary_key: { "id" => 4 },
+        transaction_id: 42,
+        commit_lsn: "0/ABC"
+      }
+      first = CDC::Core::ChangeEvent.new(**attributes, sequence_number: 1)
+      second = CDC::Core::ChangeEvent.new(**attributes, sequence_number: 2)
+
+      refute_equal EventSerializer.call(first).fetch("event_id"),
+                   EventSerializer.call(second).fetch("event_id")
+    end
+
+    def test_generated_event_id_distinguishes_before_and_after_state
+      attributes = {
+        operation: :update,
+        schema: "public",
+        table: "orders",
+        primary_key: { "id" => 4 },
+        transaction_id: 42,
+        commit_lsn: "0/ABC"
+      }
+      first = CDC::Core::ChangeEvent.new(
+        **attributes,
+        old_values: { "id" => 4, "status" => "pending" },
+        new_values: { "id" => 4, "status" => "paid" }
+      )
+      second = CDC::Core::ChangeEvent.new(
+        **attributes,
+        old_values: { "id" => 4, "status" => "paid" },
+        new_values: { "id" => 4, "status" => "refunded" }
+      )
+
+      refute_equal EventSerializer.call(first).fetch("event_id"),
+                   EventSerializer.call(second).fetch("event_id")
     end
 
     def test_rejects_non_core_events

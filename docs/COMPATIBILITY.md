@@ -28,6 +28,9 @@ The documented serialized forms of `CDC::Core::ChangeEvent` and
 Mammoth does not remove or rename established envelope fields or change their
 types and meanings incompatibly.
 
+The canonical field shapes, column-change semantics, and event-ID behavior are
+defined in [Webhook Payloads](file.WEBHOOK-PAYLOADS.html).
+
 Minor releases may add fields. Receivers should ignore unknown fields and use
 `event_id` or an appropriate domain key for destination-side idempotency.
 
