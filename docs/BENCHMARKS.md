@@ -20,6 +20,7 @@ entrypoint stay aligned.
 
 | Script | Product surface | Primary config knobs |
 | --- | --- | --- |
+| `benchmark/serialization.rb` | event and transaction payload projection | fallback-ID usage, events per transaction |
 | `benchmark/concurrent_delivery.rb` | `cdc-concurrent` downstream runtime | `runtime.concurrency`, `runtime.preserve_order` |
 | `benchmark/webhook_delivery.rb` | real `WebhookSink` HTTP delivery | `webhook.timeout_seconds`, `webhook.headers`, `webhook.header_env`, `webhook.signing`, `delivery.unit` |
 | `benchmark/webhook_fanout.rb` | multi-destination webhook fanout | `destinations`, destination count, destination `timeout_seconds`, `route`, destination `retry`, `delivery.unit` |
@@ -83,6 +84,40 @@ bundle exec ruby benchmark/snapshot.rb
 
 Publish snapshots with the generated command, environment metadata, and Mammoth
 commit SHA. Do not commit `benchmark/results/`; it is ignored by git.
+
+## Serialization
+
+```bash
+bundle exec ruby benchmark/serialization.rb
+```
+
+Measures `Mammoth::EventSerializer` and
+`Mammoth::TransactionEnvelopeSerializer` payload projection for four scenarios:
+
+- event payload with an explicit metadata event ID;
+- event payload with a deterministic fallback ID;
+- transaction payload with explicit envelope and child IDs; and
+- transaction payload with deterministic envelope and child fallback IDs.
+
+The benchmark uses identical update values within each transaction and stable
+transaction-local sequence numbers. Before timing, it verifies that the
+fallback child IDs are unique. Input objects are prebuilt so the results isolate
+payload projection, column-change normalization, and fallback digest cost.
+JSON encoding, HTTP delivery, source normalization, and persistence are outside
+the timed region.
+
+Options:
+
+```bash
+MAMMOTH_BENCH_SERIALIZATIONS=100000 \
+MAMMOTH_BENCH_WARMUP_SERIALIZATIONS=5000 \
+MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
+bundle exec ruby benchmark/serialization.rb
+```
+
+Results include operations and events per second, microseconds and allocations
+per operation, and representative payload size. Compare scenarios from the same
+run and host; these are local measurements, not universal performance claims.
 
 ## Concurrent Delivery
 

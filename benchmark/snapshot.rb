@@ -22,6 +22,11 @@ BenchmarkSpec = Data.define(:name, :script, :defaults)
 
 class BenchmarkSnapshotRunner
   SMOKE_DEFAULTS = {
+    "serialization" => {
+      "MAMMOTH_BENCH_SERIALIZATIONS" => "100",
+      "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS" => "10",
+      "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
+    },
     "concurrent_delivery" => {
       "MAMMOTH_BENCH_TRANSACTIONS" => "20",
       "MAMMOTH_BENCH_WARMUP_TRANSACTIONS" => "2",
@@ -62,6 +67,11 @@ class BenchmarkSnapshotRunner
   }.freeze
 
   FULL_DEFAULTS = {
+    "serialization" => {
+      "MAMMOTH_BENCH_SERIALIZATIONS" => "100000",
+      "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS" => "5000",
+      "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
+    },
     "concurrent_delivery" => {
       "MAMMOTH_BENCH_TRANSACTIONS" => "5000",
       "MAMMOTH_BENCH_WARMUP_TRANSACTIONS" => "100",

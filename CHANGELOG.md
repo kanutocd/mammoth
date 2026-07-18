@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Added a serializer benchmark comparing explicit and deterministic fallback
+  event IDs for event and transaction payload projection.
+
 ### Fixed
 
 - Generate deterministic fallback event and transaction-envelope IDs so retries

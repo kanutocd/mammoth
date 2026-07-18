@@ -225,6 +225,7 @@ rather than opening SQLite directly.
 Mammoth includes local benchmarks for the product surfaces operators tune in
 production:
 
+- event and transaction serialization, including deterministic fallback IDs
 - concurrent delivery runtime
 - real webhook delivery
 - multi-destination webhook fanout
