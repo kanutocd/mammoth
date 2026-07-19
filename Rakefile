@@ -29,6 +29,9 @@ namespace :test do
 end
 
 YARD::Rake::YardocTask.new(:yard)
+Rake::Task[:yard].enhance do
+  ruby "scripts/install_docs_branding.rb", "doc"
+end
 
 namespace :yard do
   desc "Validate YARD documentation coverage"

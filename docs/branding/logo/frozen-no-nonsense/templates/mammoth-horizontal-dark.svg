@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="500" viewBox="0 0 1600 500" role="img" aria-labelledby="title desc">
+  <title id="title">Mammoth reversed horizontal logo</title>
+  <desc id="desc">The white Mammoth mark and wordmark on rich black.</desc>
+  <rect width="1600" height="500" fill="#0F0F0F"/>
+  <image href="../exports/png/mammoth-icon-white-transparent-2048.png" x="60" y="50" width="400" height="400"/>
+  <text x="520" y="253" fill="#FFFFFF" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="180" font-weight="900" letter-spacing="-5">MAMMOTH</text>
+  <text x="529" y="326" fill="#E8EBEF" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="7">POSTGRESQL CDC DATA PLANE</text>
+  <rect x="529" y="367" width="120" height="9" rx="4.5" fill="#5BA0E6"/>
+  <text x="670" y="386" fill="#E8EBEF" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="32" font-weight="500">Carry Every Transaction.</text>
+</svg>

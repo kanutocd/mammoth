@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500">
+  <rect width="1500" height="500" fill="#0F0F0F"/>
+  <image href="../exports/png/mammoth-icon-white-transparent-2048.png" x="50" y="50" width="400" height="400"/>
+  <text x="500" y="302" fill="#FFFFFF"
+        font-family="Inter, Geist, Arial, sans-serif"
+        font-size="190" font-weight="800" letter-spacing="8">MAMMOTH</text>
+</svg>

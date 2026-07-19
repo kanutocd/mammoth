@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo/mammoth-horizontal.png" alt="Mammoth" width="520">
+  <img src="docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png" alt="Mammoth" width="620">
 </p>
 
 # Mammoth

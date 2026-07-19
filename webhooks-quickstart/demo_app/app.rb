@@ -16,6 +16,7 @@ class DemoStore
   STATUSES = ORDER_ACTIONS.keys.freeze
   TEMPLATE_ROOT = File.join(ROOT, "views")
   ASSETS = {
+    "/favicon.ico" => [File.join(ROOT, "public", "favicon.ico"), "image/x-icon"],
     "/assets/app.css" => [File.join(ROOT, "public", "app.css"), "text/css; charset=utf-8"],
     "/assets/app.js" => [File.join(ROOT, "public", "app.js"), "application/javascript; charset=utf-8"]
   }.freeze

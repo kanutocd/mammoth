@@ -4,7 +4,7 @@ Mammoth is the PostgreSQL CDC Data Plane.
 
 It exists for one purpose: to reliably carry PostgreSQL transactions from the database to downstream systems.
 
-![Mammoth](assets/logo/mammoth-horizontal.png)
+![Mammoth](branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png)
 
 ## Brand Promise
 

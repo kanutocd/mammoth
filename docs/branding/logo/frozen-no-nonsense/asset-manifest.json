@@ -1,0 +1,18 @@
+{
+  "name": "Mammoth no-nonsense brand mark",
+  "status": "visual-design-frozen",
+  "source": {
+    "path": "source/mammoth-no-nonsense-frozen-master.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "7d905444da14b1d32a7d90fb5fbcdf929f47719fc1b8b55662fc8c7b9b38c5b1"
+  },
+  "primary_raster_derivative": {
+    "path": "exports/png/mammoth-icon-black-transparent-2048.png",
+    "width": 2048,
+    "height": 2048,
+    "sha256": "0fe42689dc7e19f98aaa118d413560a5b995823647671f462be583072e5efa4e"
+  },
+  "geometry_policy": "Do not redraw, regenerate, stretch, rotate, crop, or rearrange the frozen mark.",
+  "vector_status": "native-path master still required"
+}

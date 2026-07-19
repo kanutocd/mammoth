@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png" alt="Mammoth" width="620">
+</p>
+
 # Mammoth Documentation
 
 [![Gem Version](https://badge.fury.io/rb/mammoth.svg)](https://badge.fury.io/rb/mammoth)

@@ -12,6 +12,7 @@ on:
       - "CODE_OF_CONDUCT.md"
       - "LICENSE.txt"
       - ".yardopts"
+      - "scripts/install_docs_branding.rb"
       - "Gemfile"
       - "Gemfile.lock"
       - "mammoth.gemspec"
@@ -48,10 +49,14 @@ jobs:
       - name: Build YARD documentation
         run: bundle exec yard doc --no-private --output-dir public
 
+      - name: Install documentation branding
+        run: ruby scripts/install_docs_branding.rb public
+
       - name: Verify documentation output
         run: |
           test -f public/index.html
           test -f public/file.README.html
+          test -f public/favicon.ico
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

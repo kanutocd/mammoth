@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440" role="img" aria-labelledby="title desc">
+  <title id="title">Mammoth YouTube banner</title>
+  <desc id="desc">A banner identifying Mammoth OSS as the open-source data plane of Mammoth Platform.</desc>
+  <rect width="2560" height="1440" fill="#0F0F0F"/>
+  <path d="M0 1220C610 1120 720 1310 1280 1208S2030 1118 2560 1230" fill="none" stroke="#336791" stroke-width="14"/>
+  <path d="M0 1260C610 1160 720 1350 1280 1248S2030 1158 2560 1270" fill="none" stroke="#5BA0E6" stroke-width="7"/>
+  <!-- Keep key content inside YouTube's centered 1546 × 423 safe area. -->
+  <g transform="translate(507 508)">
+    <image href="../exports/png/mammoth-icon-white-transparent-2048.png" x="0" y="-22" width="470" height="470"/>
+    <text x="510" y="184" fill="#FFFFFF" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="170" font-weight="900" letter-spacing="-5">MAMMOTH OSS</text>
+    <text x="519" y="258" fill="#E8EBEF" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="5">POSTGRESQL CDC DATA PLANE</text>
+    <text x="519" y="340" fill="#5BA0E6" font-family="Inter, Geist, Noto Sans, Arial, sans-serif" font-size="37" font-weight="600">The open-source data plane of Mammoth Platform</text>
+  </g>
+</svg>

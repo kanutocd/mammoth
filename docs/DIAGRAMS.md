@@ -4,7 +4,7 @@ Mammoth architecture diagrams should communicate operational flow clearly.
 
 ## Primary Diagram
 
-![Mammoth Data Plane](assets/diagrams/mammoth-data-plane.svg)
+![Mammoth Data Plane](branding/diagrams/mammoth-data-plane.svg)
 
 ## Diagram Language
 

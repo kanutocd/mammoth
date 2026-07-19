@@ -4,12 +4,13 @@ The Mammoth design system keeps the public documentation, GitHub assets, diagram
 
 ## Canonical Assets
 
-- `docs/assets/logo/mammoth-horizontal.png`
-- `docs/assets/logo/mammoth-icon.png`
-- `docs/assets/logo/mammoth-horizontal.svg`
-- `docs/assets/logo/mammoth-icon.svg`
-- `docs/assets/css/mammoth.css`
-- `docs/assets/diagrams/mammoth-data-plane.svg`
+- `docs/branding/logo/frozen-no-nonsense/source/mammoth-no-nonsense-frozen-master.png`
+- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-icon-black-transparent-2048.png`
+- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-icon-white-transparent-2048.png`
+- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png`
+- `docs/branding/logo/frozen-no-nonsense/exports/favicon/favicon.ico`
+- `docs/branding/tokens/mammoth.css`
+- `docs/branding/diagrams/mammoth-data-plane.svg`
 
 ## Color Tokens
 
@@ -24,4 +25,7 @@ The Mammoth design system keeps the public documentation, GitHub assets, diagram
 
 ## Implementation Note
 
-The current SVG logo files intentionally embed the approved Candidate A raster artwork. They should be replaced with native path-based SVGs after manual vector construction.
+The selected no-nonsense mark is visually frozen. Its SVG composition templates
+still reference raster exports and must not be presented as native-vector
+masters. Complete manual path construction and overlay approval before
+promoting a canonical SVG.
