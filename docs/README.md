@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png" alt="Mammoth" width="620">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-reversed-transparent.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png">
+    <img src="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png" alt="Mammoth" width="620">
+  </picture>
 </p>
 
 # Mammoth Documentation

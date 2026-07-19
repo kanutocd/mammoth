@@ -103,6 +103,7 @@ project includes the paid control plane.
 - `exports/png/mammoth-avatar-dark-1024.png`
 - `exports/png/mammoth-primary-horizontal-light.png`
 - `exports/png/mammoth-primary-horizontal-dark.png`
+- `exports/png/mammoth-primary-horizontal-reversed-transparent.png`
 - `exports/png/mammoth-horizontal-light.png`
 - `exports/png/mammoth-horizontal-dark.png`
 - `exports/png/mammoth-stacked-light.png`
