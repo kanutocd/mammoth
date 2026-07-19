@@ -7,9 +7,9 @@ SOCIAL_PREVIEW_URL = "#{SITE_ROOT}mammoth-social-preview-1280x640.png".freeze
 DOCS_LOGO_FILENAME = "mammoth-primary-horizontal-light.png"
 README_LOGO_REFERENCES = [
   "https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/" \
-  "frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png",
+  "exports/png/mammoth-primary-horizontal-light.png",
   "https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/" \
-  "frozen-no-nonsense/exports/png/mammoth-primary-horizontal-reversed-transparent.png"
+  "exports/png/mammoth-primary-horizontal-reversed-transparent.png"
 ].freeze
 
 def insert_before_head!(html, html_file, content)
@@ -68,13 +68,13 @@ end
 
 output_root = Pathname(ARGV.fetch(0)).expand_path
 favicon_source = Pathname(__dir__).join(
-  "../docs/branding/logo/frozen-no-nonsense/exports/favicon/favicon.ico"
+  "../docs/branding/logo/exports/favicon/favicon.ico"
 ).expand_path
 social_preview_source = Pathname(__dir__).join(
-  "../docs/branding/logo/frozen-no-nonsense/social/mammoth-social-preview-1280x640.png"
+  "../docs/branding/logo/social/mammoth-social-preview-1280x640.png"
 ).expand_path
 docs_logo_source = Pathname(__dir__).join(
-  "../docs/branding/logo/frozen-no-nonsense/exports/png/#{DOCS_LOGO_FILENAME}"
+  "../docs/branding/logo/exports/png/#{DOCS_LOGO_FILENAME}"
 ).expand_path
 
 abort("Documentation output does not exist: #{output_root}") unless output_root.directory?

@@ -4,12 +4,12 @@ The Mammoth design system keeps the public documentation, GitHub assets, diagram
 
 ## Canonical Assets
 
-- `docs/branding/logo/frozen-no-nonsense/source/mammoth-no-nonsense-frozen-master.png`
-- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-icon-black-transparent-2048.png`
-- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-icon-white-transparent-2048.png`
-- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png`
-- `docs/branding/logo/frozen-no-nonsense/exports/png/mammoth-primary-horizontal-reversed-transparent.png`
-- `docs/branding/logo/frozen-no-nonsense/exports/favicon/favicon.ico`
+- `docs/branding/logo/source/mammoth-no-nonsense-frozen-master.png`
+- `docs/branding/logo/exports/png/mammoth-icon-black-transparent-2048.png`
+- `docs/branding/logo/exports/png/mammoth-icon-white-transparent-2048.png`
+- `docs/branding/logo/exports/png/mammoth-primary-horizontal-light.png`
+- `docs/branding/logo/exports/png/mammoth-primary-horizontal-reversed-transparent.png`
+- `docs/branding/logo/exports/favicon/favicon.ico`
 - `docs/branding/tokens/mammoth.css`
 - `docs/branding/diagrams/mammoth-data-plane.svg`
 
