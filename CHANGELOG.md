@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.3.0 - 2026-07-19
+
 ### Added
 
 - Added opt-in, destination-scoped payload policies that remove or mask
