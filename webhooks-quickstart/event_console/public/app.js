@@ -48,6 +48,10 @@ function summarize(payload) {
   };
 }
 
+function policyFingerprint(payload) {
+  return payload.metadata?.mammoth_payload_policy?.fingerprint;
+}
+
 function groupByDelivery(events) {
   const groups = new Map();
 
@@ -97,6 +101,10 @@ function attemptTimeline(attempts) {
 function eventArticle(attempts, expanded) {
   const event = attempts[0];
   const summary = summarize(event.payload);
+  const fingerprint = policyFingerprint(event.payload);
+  const policyBadge = fingerprint
+    ? `<span class="policy-badge" title="${escapeHTML(fingerprint)}">● Payload policy applied</span>`
+    : "";
   const article = document.createElement("article");
   article.dataset.deliveryKey = event.delivery_key;
   article.innerHTML = `
@@ -105,7 +113,10 @@ function eventArticle(attempts, expanded) {
         <span class="event-type">${escapeHTML(eventName(event.payload))}</span>
         <h2>${escapeHTML(summary.operation)} ${escapeHTML(summary.table)}</h2>
       </div>
-      <span class="verified">✓ HMAC verified</span>
+      <div class="assurances">
+        ${policyBadge}
+        <span class="verified">✓ HMAC verified</span>
+      </div>
     </div>
     <div class="meta">
       <span>${escapeHTML(summary.count)} change${summary.count === 1 ? "" : "s"}</span>

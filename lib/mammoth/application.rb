@@ -30,7 +30,15 @@ module Mammoth
       @checkpoint_store = @state_adapter.checkpoint_store
       @consumer = ReplicationConsumer.new(source: source || build_source, delivery_unit: delivery_unit)
       @progress_coordinator = build_progress_coordinator
-      @delivery_worker = sink ? build_delivery_worker(sink: sink, sleeper: sleeper) : build_configured_delivery_worker(sleeper:)
+      @delivery_worker = if sink
+                           build_delivery_worker(
+                             sink: sink,
+                             sleeper: sleeper,
+                             delivery_policy: destination_delivery_policy(config.data["webhook"] || {})
+                           )
+                         else
+                           build_configured_delivery_worker(sleeper: sleeper)
+                         end
     end
 
     # @return [Mammoth::SQLiteStore] underlying SQLite store for compatibility
@@ -155,8 +163,8 @@ module Mammoth
     def destination_specs
       destinations = config.data["destinations"]
       unless destinations
-        delivery_policy = {} # : Hash[String, untyped]
-        return [{ sink: WebhookSink.from_config(config), delivery_policy: delivery_policy }]
+        webhook = config.data.fetch("webhook")
+        return [{ sink: WebhookSink.from_config(config), delivery_policy: destination_delivery_policy(webhook) }]
       end
 
       destinations.map.with_index(1) do |destination, index|
@@ -173,7 +181,8 @@ module Mammoth
         "enabled" => destination.fetch("enabled", true),
         "max_attempts" => retry_config.fetch("max_attempts", config.dig("retry", "max_attempts")),
         "schedule_seconds" => retry_config.fetch("schedule_seconds", config.dig("retry", "schedule_seconds")),
-        "route_filter" => RouteFilter.new(destination["route"])
+        "route_filter" => RouteFilter.new(destination["route"]),
+        "payload_policy" => PayloadPolicy.new(destination["payload_policy"])
       }
     end
 

@@ -34,6 +34,12 @@ defined in [Webhook Payloads](file.WEBHOOK-PAYLOADS.html).
 Minor releases may add fields. Receivers should ignore unknown fields and use
 `event_id` or an appropriate domain key for destination-side idempotency.
 
+An opt-in destination payload policy intentionally changes configured row
+content by removing or masking selected columns. Policy-free configurations
+retain the canonical v1 payload profile. Policy metadata is additive, and a
+stored dead letter retains the profile and fingerprint used when it was
+prepared.
+
 Columns inside an event's row `data`, identity, or old/new values reflect the
 source PostgreSQL schema and replica identity. They are not frozen by Mammoth's
 version. Coordinate schema evolution with receivers, as demonstrated by

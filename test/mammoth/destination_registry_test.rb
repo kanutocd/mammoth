@@ -12,6 +12,7 @@ module Mammoth
       assert_equal "custom", CustomAdapter.adapter_type
       assert_equal "webhook", Destinations::WebhookAdapter.adapter_type
       assert Destinations::WebhookAdapter.capabilities.fetch(:signing)
+      assert Destinations::WebhookAdapter.capabilities.fetch(:prepared_payloads)
     end
 
     def test_builds_webhook_sink

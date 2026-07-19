@@ -4,6 +4,85 @@
   "title": "Mammoth Configuration",
   "type": "object",
   "additionalProperties": false,
+  "definitions": {
+    "payloadPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rules"
+      ],
+      "properties": {
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "columns",
+              "action"
+            ],
+            "properties": {
+              "schemas": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "PostgreSQL schemas matched by this rule. Omit to match every schema."
+              },
+              "tables": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "PostgreSQL tables matched by this rule. Omit to match every table."
+              },
+              "operations": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "insert",
+                    "update",
+                    "delete"
+                  ]
+                },
+                "description": "CDC operations matched by this rule. Omit to match every operation."
+              },
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Column names scrubbed from data, identity, and changes."
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "remove",
+                  "mask"
+                ],
+                "description": "Remove matching columns or replace their non-null values."
+              },
+              "replacement": {
+                "type": "string",
+                "description": "Replacement used by mask. Defaults to [REDACTED]."
+              }
+            }
+          }
+        }
+      },
+      "description": "Deterministic destination payload projection and PII-redaction rules."
+    }
+  },
   "required": [
     "mammoth",
     "postgres",
@@ -237,6 +316,9 @@
             }
           },
           "description": "Optional HMAC-SHA256 request signing for webhook receivers."
+        },
+        "payload_policy": {
+          "$ref": "#/definitions/payloadPolicy"
         }
       },
       "description": "HTTP webhook destination settings. This is shorthand for a single webhook destination; use destinations for fanout."
@@ -360,6 +442,9 @@
               }
             },
             "description": "Optional destination route filter. Event delivery matches one event; transaction delivery matches when any event in the transaction matches and delivers the full envelope."
+          },
+          "payload_policy": {
+            "$ref": "#/definitions/payloadPolicy"
           },
           "retry": {
             "type": "object",

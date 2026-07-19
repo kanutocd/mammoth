@@ -105,11 +105,13 @@ mammoth dead-letters replay config/mammoth.yml 12
 
 `list` shows pending rows by default. Pass `--status resolved`, `--status ignored`, or `--status all` to inspect other records. Use `--destination`, `--failed-after`, `--failed-before`, and `--limit` to narrow the result set.
 
-`replay` reconstructs the stored payload as an exact `CDC::Core::ChangeEvent`
-or `CDC::Core::TransactionEnvelope`, re-delivers it through the current Mammoth
-configuration, and marks the row resolved on success. Passing explicit IDs
-replays those rows. Without IDs, replay uses the same filters as `list`, so
-operators can replay a specific destination, status, and failed-at time window.
+`replay` sends the exact prepared JSON stored for the original destination and
+marks the row resolved on success. It does not reconstruct a CDC-core work item
+or reapply the current payload policy. This preserves the body that exhausted
+delivery and prevents removed fields from resurfacing under a later policy.
+Passing explicit IDs replays those rows. Without IDs, replay uses the same
+filters as `list`, so operators can replay a specific destination, status, and
+failed-at time window.
 
 If the current configuration disables the destination or its route no longer
 matches the payload, replay reports `skipped` and leaves the row pending.

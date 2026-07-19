@@ -3,6 +3,7 @@
 require "test_helper"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class DeliveryWorkerTest < Minitest::Test
     def test_delivers_without_advancing_shared_progress
       with_temp_dir do |dir|
@@ -125,9 +126,89 @@ module Mammoth
       end
     end
 
+    def test_applies_payload_policy_before_delivery
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = PreparedSink.new
+        policy = PayloadPolicy.new("rules" => [{ "columns" => ["email"], "action" => "remove" }])
+        worker = build_worker(sqlite, sink: sink, payload_policy: policy)
+
+        result = worker.deliver(sample_event(data: { "id" => 1, "email" => "private@example.com" }))
+        payload = sink.payloads.fetch(0)
+
+        assert_equal "delivered", result.fetch(:status)
+        refute payload.fetch("data").key?("email")
+        assert_equal policy.fingerprint,
+                     payload.dig("metadata", PayloadPolicy::POLICY_METADATA_KEY, "fingerprint")
+      end
+    end
+
+    def test_retries_and_dead_letters_the_same_prepared_payload
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = FailingPreparedSink.new
+        policy = PayloadPolicy.new("rules" => [{ "columns" => ["email"], "action" => "remove" }])
+        worker = build_worker(sqlite, sink: sink, payload_policy: policy)
+
+        result = worker.deliver(sample_event(data: { "id" => 1, "email" => "private@example.com" }))
+        stored = JSON.parse(DeadLetterStore.new(sqlite).pending.fetch(0).fetch("payload_json"))
+
+        assert_equal "dead_lettered", result.fetch(:status)
+        assert_equal 3, sink.payloads.length
+        assert_prepared_dead_letter(sink, stored, policy)
+      end
+    end
+
+    def test_exact_payload_replay_does_not_apply_current_policy
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        sink = PreparedSink.new
+        policy = PayloadPolicy.new("rules" => [{ "columns" => ["email"], "action" => "mask" }])
+        worker = build_worker(sqlite, sink: sink, payload_policy: policy)
+        stored = EventSerializer.call(sample_event(data: { "email" => "already-prepared" }))
+
+        worker.deliver_payload(stored)
+
+        assert_same stored, sink.payloads.fetch(0)
+        assert_equal "already-prepared", sink.payloads.fetch(0).dig("data", "email")
+      end
+    end
+
+    def test_active_policy_rejects_sink_without_prepared_payload_support
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        policy = PayloadPolicy.new("rules" => [{ "columns" => ["email"], "action" => "remove" }])
+
+        error = assert_raises(ConfigurationError) do
+          build_worker(sqlite, sink: RecordingSink.new, payload_policy: policy)
+        end
+
+        assert_match(/does not accept prepared payloads/, error.message)
+      end
+    end
+
+    def test_exact_payload_replay_rejects_legacy_sink
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        worker = build_worker(sqlite, sink: RecordingSink.new)
+        payload = EventSerializer.call(sample_event)
+
+        error = assert_raises(ConfigurationError) { worker.deliver_payload(payload) }
+
+        assert_match(/does not accept prepared payloads/, error.message)
+      end
+    end
+
     private
 
-    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {}, route_filter: nil, enabled: true)
+    def assert_prepared_dead_letter(sink, stored, policy)
+      assert(sink.payloads.all? { |payload| payload.equal?(sink.payloads.fetch(0)) })
+      refute_includes JSON.generate(stored), "private@example.com"
+      assert_equal policy.fingerprint,
+                   stored.dig("metadata", PayloadPolicy::POLICY_METADATA_KEY, "fingerprint")
+    end
+
+    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {}, route_filter: nil, payload_policy: nil, enabled: true)
       DeliveryWorker.new(
         sink: sink,
         checkpoint_store: CheckpointStore.new(sqlite),
@@ -140,12 +221,13 @@ module Mammoth
         retry_schedule: [1, 5],
         sleeper: sleeper,
         route_filter: route_filter,
+        payload_policy: payload_policy,
         enabled: enabled
       )
     end
 
-    def sample_event
-      core_event(event_id: "event-1", source_position: "0/16F4A8B0")
+    def sample_event(data: {})
+      core_event(event_id: "event-1", source_position: "0/16F4A8B0", data: data)
     end
 
     class RecordingSink
@@ -190,5 +272,27 @@ module Mammoth
         super
       end
     end
+
+    class PreparedSink
+      attr_reader :name, :payloads
+
+      def initialize
+        @name = "prepared_webhook"
+        @payloads = []
+      end
+
+      def deliver_payload(payload)
+        payloads << payload
+        { event_id: payload.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
+      end
+    end
+
+    class FailingPreparedSink < PreparedSink
+      def deliver_payload(payload)
+        payloads << payload
+        raise DeliveryError, "boom"
+      end
+    end
   end
+  # rubocop:enable Metrics/ClassLength
 end

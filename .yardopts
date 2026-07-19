@@ -15,6 +15,7 @@ LICENSE.txt
 
 docs/QUICK-START.md
 docs/WEBHOOK-PAYLOADS.md
+docs/PAYLOAD-POLICIES.md
 docs/POSTGRESQL.md
 docs/CONFIGURATION.md
 docs/CLI.md

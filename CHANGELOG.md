@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+- Added opt-in, destination-scoped payload policies that remove or mask
+  selected columns across event data, identity, and changes before webhook
+  delivery.
+- Added deterministic policy fingerprints and exact prepared-payload handling
+  across signing, retries, dead-letter persistence, and replay.
+- Added a payload-policy projection benchmark and updated the dead-letter replay
+  benchmark to measure exact prepared-payload replay without CDC reconstruction
+  or policy reapplication.
+- Updated `webhooks-quickstart` to mask `orders.customer_email` by default and
+  highlight the applied policy and fingerprint in the Event Console and smoke
+  test.
+
 ## 1.2.0 - 2026-07-19
 
 ### Added

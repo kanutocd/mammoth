@@ -46,6 +46,15 @@ module Mammoth
       worker_for(destination_name).deliver_transaction(envelope)
     end
 
+    # Replay one exact prepared payload to one configured destination.
+    #
+    # @param destination_name [String] destination name
+    # @param payload [Hash] prepared destination payload
+    # @return [Hash] destination delivery summary
+    def deliver_payload_to(destination_name, payload)
+      worker_for(destination_name).deliver_payload(payload)
+    end
+
     private
 
     def fanout(delivery_method, work)

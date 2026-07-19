@@ -21,6 +21,11 @@ module Mammoth
     POSTGRES_SOURCE_FILE = File.join(LIB_ROOT, "mammoth", "sources", "postgres.rb")
     PUBLICATION_INSPECTOR_FILE = File.join(LIB_ROOT, "mammoth", "sources", "postgres_publication_inspector.rb")
     POSTGRES_SOURCE_SIGNATURE = File.join(SIG_ROOT, "mammoth", "sources", "postgres.rbs")
+    PAYLOAD_POLICY_FILE = File.join(LIB_ROOT, "mammoth", "payload_policy.rb")
+    PREPARED_DELIVERY_FILE = File.join(LIB_ROOT, "mammoth", "prepared_delivery.rb")
+    DELIVERY_WORKER_FILE = File.join(LIB_ROOT, "mammoth", "delivery_worker.rb")
+    WEBHOOK_SINK_FILE = File.join(LIB_ROOT, "mammoth", "webhook_sink.rb")
+    DEAD_LETTER_COMMANDS_FILE = File.join(LIB_ROOT, "mammoth", "dead_letter_commands.rb")
     OPERATIONAL_STATE_CONSUMERS = %w[
       application.rb
       cli.rb
@@ -176,6 +181,35 @@ module Mammoth
         offenders,
         "replication slot lifecycle belongs to pgoutput-client: #{offenders.join(", ")}"
       )
+    end
+
+    def test_payload_policy_stays_inside_the_serialized_delivery_boundary
+      policy = File.read(PAYLOAD_POLICY_FILE)
+      prepared = File.read(PREPARED_DELIVERY_FILE)
+
+      refute_match(%r{Pgoutput::|pgoutput[_/-]|Sources::Postgres}, policy)
+      refute_match(/CDC::Core|WebhookSink|DeadLetterStore|OperationalState/, policy)
+      assert_match(/serializer\.call\(work\)/, prepared)
+      assert_match(/payload_policy\.apply\(canonical_payload\)/, prepared)
+      refute_match(/Pgoutput::|Sources::Postgres|WebhookSink|DeadLetterStore/, prepared)
+    end
+
+    def test_delivery_worker_owns_policy_execution_before_protocol_delivery
+      worker = File.read(DELIVERY_WORKER_FILE)
+      sink = File.read(WEBHOOK_SINK_FILE)
+
+      assert_match(/PreparedDelivery\.build/, worker)
+      assert_match(/sink\.deliver_payload\(prepared\.payload\)/, worker)
+      refute_match(/PayloadPolicy|PreparedDelivery/, sink)
+    end
+
+    def test_dead_letter_replay_preserves_the_prepared_destination_payload
+      commands = File.read(DEAD_LETTER_COMMANDS_FILE)
+
+      assert_match(/JSON\.parse\(row\.fetch\("payload_json"\)\)/, commands)
+      assert_match(/deliver_payload/, commands)
+      refute_match(/PersistedPayloadDeserializer/, commands)
+      refute_match(/PayloadPolicy|PreparedDelivery\.build/, commands)
     end
 
     private

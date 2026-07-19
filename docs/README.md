@@ -34,14 +34,17 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration, JSON
 The source adapter owns incremental PostgreSQL transaction normalization.
 Mammoth consumes exact CDC-core work items and does not rebuild transaction
 envelopes inside its PostgreSQL composition layer.
-Persisted JSON samples and dead letters cross an explicit deserialization
-boundary that reconstructs exact core objects before delivery.
+Persisted sample JSON crosses an explicit deserialization boundary that
+reconstructs exact core work before first delivery. Dead-letter replay instead
+sends the exact destination payload already persisted after policy projection;
+it does not reconstruct CDC work or reapply the current policy.
 
 ## Start here
 
 - [Database Webhooks Quickstart](https://github.com/kanutocd/mammoth/tree/main/webhooks-quickstart)
 - [Quick Start](file.QUICK-START.html)
 - [Webhook Payloads](file.WEBHOOK-PAYLOADS.html)
+- [Payload Policies](file.PAYLOAD-POLICIES.html)
 - [PostgreSQL](file.POSTGRESQL.html)
 - [Configuration](file.CONFIGURATION.html)
 - [CLI](file.CLI.html)
@@ -56,12 +59,16 @@ boundary that reconstructs exact core objects before delivery.
 
 The Database Webhooks Quickstart is the recommended first-run experience. One
 Docker Compose command starts a demo application, PostgreSQL, Mammoth, and an
-inspectable signed webhook receiver with visible retries. Its optional
+inspectable signed webhook receiver with visible retries and customer-email
+masking. Its optional
 monitoring profile adds seeded traffic, a provisioned Grafana overview and
 alerts, and a curated Prometheus query library. See
 [Observability](file.OBSERVABILITY.html) for the runnable monitoring showcase.
 Use the documentation Quick Start when you are ready to assemble those pieces
 manually.
+Released tags use their matching image; when testing Unreleased quickstart
+configuration from `main`, build the local image as described in the
+quickstart README.
 
 ## v1 Release Scope
 
@@ -71,6 +78,7 @@ Mammoth 1.x supports:
 - normalized CDC event and transaction delivery to webhooks
 - multi-destination webhook fanout
 - fanout route filters by schema, table, and operation
+- per-destination payload removal and masking policies
 - per-destination enable/disable and retry policy controls
 - transaction envelope preservation
 - concurrent downstream delivery with one PostgreSQL replication stream

@@ -65,6 +65,25 @@ module Mammoth
       end
     end
 
+    def test_delivers_transaction_to_one_named_destination_for_replay
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        primary = RecordingSink.new("primary_webhook")
+        audit = RecordingSink.new("audit_webhook")
+        worker = FanoutDeliveryWorker.new([
+                                            build_worker(sqlite, sink: primary),
+                                            build_worker(sqlite, sink: audit)
+                                          ])
+        envelope = core_envelope(events: [sample_event("0/transaction")])
+
+        result = worker.deliver_transaction_to("audit_webhook", envelope)
+
+        assert_equal "delivered", result.fetch(:status)
+        assert_empty primary.delivered_transactions
+        assert_equal [envelope], audit.delivered_transactions
+      end
+    end
+
     def test_named_destination_replay_rejects_missing_destination
       worker = FanoutDeliveryWorker.new([build_worker(SQLiteStore.connect(":memory:").bootstrap!,
                                                       sink: RecordingSink.new)])
@@ -72,6 +91,25 @@ module Mammoth
       error = assert_raises(ConfigurationError) { worker.deliver_to("missing_webhook", sample_event("0/missing")) }
 
       assert_match(/destination not configured/, error.message)
+    end
+
+    def test_delivers_exact_payload_to_one_named_destination
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        primary = PreparedSink.new("primary_webhook")
+        audit = PreparedSink.new("audit_webhook")
+        worker = FanoutDeliveryWorker.new([
+                                            build_worker(sqlite, sink: primary),
+                                            build_worker(sqlite, sink: audit)
+                                          ])
+        payload = EventSerializer.call(sample_event("0/prepared"))
+
+        result = worker.deliver_payload_to("audit_webhook", payload)
+
+        assert_equal "delivered", result.fetch(:status)
+        assert_empty primary.payloads
+        assert_same payload, audit.payloads.fetch(0)
+      end
     end
 
     def test_requires_at_least_one_destination_worker
@@ -126,6 +164,20 @@ module Mammoth
         delivered_transactions << envelope
         { event_id: "transaction-#{envelope.transaction_id}", payload_type: "transaction.committed", destination: name,
           status: "delivered", http_status: 200 }
+      end
+    end
+
+    class PreparedSink < RecordingSink
+      attr_reader :payloads
+
+      def initialize(name)
+        super
+        @payloads = []
+      end
+
+      def deliver_payload(payload)
+        payloads << payload
+        { event_id: payload.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
       end
     end
 

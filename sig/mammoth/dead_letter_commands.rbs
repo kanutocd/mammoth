@@ -61,15 +61,11 @@ module Mammoth
 
     def replay_row: (untyped row) -> untyped
 
-    def replay_event: (untyped destination_name, untyped payload) -> untyped
+    def replay_payload: (untyped destination_name, untyped payload) -> untyped
 
-    def replay_transaction: (untyped destination_name, untyped envelope) -> untyped
+    def replay_fanout_payload: (untyped destination_name, untyped payload) -> untyped
 
     def replay_resolved?: (untyped result) -> bool
-
-    def transaction_payload?: (untyped payload) -> bool
-
-    def transaction_envelope: (untyped payload) -> CDC::Core::TransactionEnvelope
 
     def show_payload: (untyped row) -> untyped
 

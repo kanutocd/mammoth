@@ -50,9 +50,9 @@ module Mammoth
 
     def deliver_transaction: (CDC::Core::TransactionEnvelope envelope) -> untyped
 
-    private
-
     def deliver_payload: (untyped payload) -> untyped
+
+    private
 
     def perform_request: (untyped payload) -> untyped
 

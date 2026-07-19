@@ -20,6 +20,13 @@ Create, update, or cancel a pending order. The Event Console will show the
 committed `INSERT`, `UPDATE`, or `DELETE` transaction, its before/after column
 changes, its verified signature, and every HTTP delivery attempt.
 
+The quickstart also enables a destination payload policy. The Demo Store keeps
+and displays each real `customer_email`, while the Event Console receives
+`[REDACTED]`, shows a **Payload policy applied** badge, and exposes the
+deterministic policy fingerprint in the JSON metadata. This demonstrates that
+Mammoth minimizes the payload before HMAC signing, retry, and dead-letter
+persistence.
+
 Paying an order demonstrates a multi-event commit. The Demo Store atomically
 updates the order and inserts a captured payment; Mammoth delivers both changes
 in one transaction envelope with `event_count: 2`.
@@ -48,6 +55,11 @@ The complete Mammoth integration is the Compose service plus
 existing application, follow [`ADAPTING.md`](./ADAPTING.md). To build a safe
 receiver, including signature verification and idempotency, follow
 [`RECEIVING_WEBHOOKS.md`](./RECEIVING_WEBHOOKS.md).
+
+The masking rule is intentionally visible in
+[`mammoth/mammoth.yml`](./mammoth/mammoth.yml). Remove or adapt it only after
+reviewing the receiver's minimum data requirements and
+[`docs/PAYLOAD-POLICIES.md`](../docs/PAYLOAD-POLICIES.md).
 
 The demo table uses `REPLICA IDENTITY FULL` so PostgreSQL supplies complete
 before/after rows and Mammoth can identify changed columns accurately. This
@@ -144,8 +156,9 @@ purpose is to make retries visible.
 ## Automated verification
 
 The smoke test creates, deletes, pays, and reverses real orders, then waits for
-the corresponding Mammoth webhooks. It verifies both the captured payment and
-negative reversal as two-event transactions:
+the corresponding Mammoth webhooks. It verifies customer-email masking and the
+policy fingerprint as well as both the captured payment and negative reversal
+as two-event transactions:
 
 ```bash
 ./scripts/smoke-test.sh
@@ -211,7 +224,7 @@ MAMMOTH_IMAGE=ghcr.io/kanutocd/mammoth:latest \
 For a locally built image:
 
 ```bash
-docker build -t mammoth:local ..
+docker build -f ../docker/Dockerfile -t mammoth:local ..
 MAMMOTH_IMAGE=mammoth:local docker compose up --build --wait
 ```
 
@@ -219,6 +232,11 @@ The `mammoth-init` service validates configuration against the selected image
 before the relay starts. A schema mismatch therefore fails startup with a
 specific validation error instead of producing a silent, partially working
 demo.
+
+The checked-in quickstart configuration tracks the current source tree. While
+`payload_policy` remains in the Unreleased changelog section, use the local
+build above; the released-image default is updated as part of the corresponding
+release.
 
 ## Local-only security boundary
 

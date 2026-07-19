@@ -15,6 +15,7 @@ module Mammoth
       assert_includes capabilities.fetch(:runtimes), "concurrent"
       assert_includes capabilities.fetch(:features), "routing"
       assert_includes capabilities.fetch(:features), "fanout"
+      assert_includes capabilities.fetch(:features), "payload_policies"
     end
   end
 end

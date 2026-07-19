@@ -59,6 +59,12 @@ destinations:
       operations:
         - insert
         - update
+    payload_policy:
+      rules:
+        - columns:
+            - customer_email
+          action: mask
+          replacement: "[PRIVATE]"
     retry:
       max_attempts: 3
       schedule_seconds:

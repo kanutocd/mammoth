@@ -1,0 +1,31 @@
+module Mammoth
+  class PayloadPolicy
+    DEFAULT_MASK: String
+    POLICY_METADATA_KEY: String
+    SUPPORTED_ACTIONS: Array[String]
+
+    attr_reader config: Hash[String, untyped]
+    attr_reader fingerprint: String?
+
+    def initialize: (?Hash[String | Symbol, untyped]? config) -> void
+    def active?: () -> bool
+    def apply: (Hash[String, untyped] payload) -> Hash[String, untyped]
+
+    private
+
+    def rules: () -> untyped
+    def validate!: () -> void
+    def events_for: (untyped payload) -> untyped
+    def apply_rules: (untyped event) -> void
+    def apply_rule: (untyped event, untyped rule) -> void
+    def remove_columns: (untyped event, untyped columns) -> void
+    def mask_columns: (untyped event, untyped columns, untyped replacement) -> void
+    def mask_map_value: (untyped map, untyped column, untyped replacement) -> void
+    def match?: (untyped event, untyped rule) -> bool
+    def matches?: (untyped configured, untyped actual) -> bool
+    def build_fingerprint: () -> String
+    def canonicalize: (untyped value) -> untyped
+    def stringify_keys: (untyped value) -> untyped
+    def deep_freeze: (untyped value) -> untyped
+  end
+end

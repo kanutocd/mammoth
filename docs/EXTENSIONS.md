@@ -12,6 +12,7 @@ Mammoth owns:
 - delivered-envelope ledger semantics
 - dead-letter persistence and replay rules
 - route filtering and fanout behavior
+- deterministic destination payload-policy execution
 
 Extensions may provide:
 
@@ -21,6 +22,12 @@ Extensions may provide:
 - local lifecycle hook callbacks
 - configuration providers
 - local command orchestration around existing command objects
+
+Destination adapters that advertise prepared-payload support receive the exact
+JSON already projected by Mammoth. They must not restore fields, reserialize a
+source work item, or apply a second policy. Central policy authoring and fleet
+governance may live in Mammoth Platform; deterministic policy execution remains
+inside the OSS data plane.
 
 Registration is explicit:
 
@@ -77,9 +84,9 @@ Mammoth::Commands::DeadLettersCommand.new(
 ).call
 ```
 
-These APIs are the foundation for Mammoth Pro, but they are useful in OSS too:
-they make the data-plane seams inspectable and testable without introducing a
-control plane.
+These APIs are useful in OSS and are also integration seams for the paid
+Mammoth Platform. They keep the local data plane inspectable and testable
+without introducing a control plane into Mammoth OSS.
 
 See also:
 

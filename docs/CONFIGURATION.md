@@ -63,6 +63,10 @@ webhook:
     secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
     signature_header: X-Mammoth-Signature
     timestamp_header: X-Mammoth-Timestamp
+  payload_policy:
+    rules:
+      - columns: [customer_email]
+        action: mask
 
 retry:
   max_attempts: 5
@@ -193,6 +197,9 @@ which is the recommended path for API keys and bearer tokens.
 the timestamp in `timestamp_header`, and sends a `sha256=<hex digest>` signature
 in `signature_header`.
 
+`payload_policy` optionally removes or masks selected columns before delivery.
+See [Payload Policies](./PAYLOAD-POLICIES.md).
+
 ### `destinations`
 
 Use `destinations` instead of `webhook` when Mammoth should fan out each CDC
@@ -223,6 +230,11 @@ destinations:
       operations:
         - insert
         - update
+    payload_policy:
+      rules:
+        - columns:
+            - customer_email
+          action: remove
     retry:
       max_attempts: 3
       schedule_seconds:
@@ -244,6 +256,10 @@ the full transaction envelope so downstream receivers keep transaction context.
 
 `retry` overrides the top-level retry policy for one destination. This lets a
 slow audit receiver use longer backoff without weakening the primary receiver.
+
+`payload_policy` is destination-scoped. Rules can select schemas, tables, and
+operations, then `remove` or `mask` named columns in `data`, `identity`, and
+`changes`. Different fanout destinations may use different projections.
 
 `header_env` and `signing.secret_env` are environment variable names. Mammoth
 reads the actual bearer token or signing secret from the process environment at

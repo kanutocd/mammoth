@@ -20,9 +20,27 @@ module Mammoth
     # @param error [Exception, nil] delivery failure
     # @param retry_count [Integer] number of delivery attempts
     # @return [Integer] inserted dead letter id
-    def write(event:, destination_name:, error: nil, retry_count: 0, serializer: EventSerializer) # rubocop:disable Metrics/MethodLength
+    def write(event:, destination_name:, error: nil, retry_count: 0, serializer: EventSerializer)
+      write_payload(
+        payload: serializer.call(event),
+        destination_name: destination_name,
+        error: error,
+        retry_count: retry_count
+      )
+    end
+
+    # Store the exact payload prepared for one destination.
+    #
+    # Persisting the prepared payload prevents retries and replay from restoring
+    # fields removed by a destination payload policy.
+    #
+    # @param payload [Hash] prepared destination payload
+    # @param destination_name [String] destination name
+    # @param error [Exception, nil] delivery failure
+    # @param retry_count [Integer] number of delivery attempts
+    # @return [Integer] inserted dead letter id
+    def write_payload(payload:, destination_name:, error: nil, retry_count: 0) # rubocop:disable Metrics/MethodLength
       now = Time.now.utc.iso8601
-      payload = serializer.call(event)
       database.execute(
         <<~SQL,
           INSERT INTO dead_letters(

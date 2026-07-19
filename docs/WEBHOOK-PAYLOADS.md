@@ -61,6 +61,12 @@ With `delivery.unit: event`, Mammoth sends one payload per
 | `changes` | Column differences using the canonical shape below. Always an array for supported payloads. |
 | `metadata` | Additive source-specific context. |
 
+When a destination has an active payload policy, Mammoth may remove or mask
+configured columns and adds
+`metadata.mammoth_payload_policy.fingerprint`. The policy applies to `data`,
+`identity`, and old/new values in `changes`. See
+[Payload Policies](./PAYLOAD-POLICIES.md).
+
 ## Transaction envelope
 
 With the recommended `delivery.unit: transaction`, Mammoth sends one
@@ -187,6 +193,9 @@ Persisted payload replay preserves an existing explicit `changes` array.
 An explicit `null` metadata value is normalized to an empty array; when no
 explicit value exists, Mammoth computes changes from the available row images
 using the rules above.
+
+Dead letters produced by a payload-policy destination contain the exact
+prepared destination payload. Replay does not reapply the current policy.
 
 ## Event IDs
 

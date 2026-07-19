@@ -251,8 +251,8 @@ primary webhook + audit webhook
 Use this when you want to inspect the `destinations` configuration shape for
 multi-destination webhook fanout. The example is config-only: it demonstrates
 the YAML contract, per-destination routing controls, env-backed Authorization
-headers, HMAC signing secrets, and retry overrides without adding another
-Docker stack.
+headers, HMAC signing secrets, destination-scoped payload masking, and retry
+overrides without adding another Docker stack.
 
 This example exercises:
 
@@ -262,6 +262,7 @@ This example exercises:
 - per-destination `signing.secret_env`
 - per-destination `enabled`
 - per-destination `route`
+- per-destination `payload_policy`
 - per-destination `retry`
 - independent destination names used by delivered ledgers and dead letters
 

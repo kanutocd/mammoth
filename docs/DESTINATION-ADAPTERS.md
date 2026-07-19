@@ -21,12 +21,16 @@ adapter = Mammoth::Destinations::Registry.fetch("webhook")
 sink = adapter.build(destination_config, label: "destinations[0]")
 sink.deliver(event)
 sink.deliver_transaction(envelope)
+sink.deliver_payload(prepared_payload)
 sink.name
 ```
 
 Destination adapters own protocol-specific delivery mechanics. Mammoth still
 owns retry, route filtering, fanout, delivered-ledger writes, dead letters, and
-replay targeting.
+replay targeting. An adapter that advertises `prepared_payloads: true` must
+send the supplied JSON without restoring fields, rebuilding CDC-core work, or
+applying another payload policy. Mammoth uses this method for policy-projected
+delivery and exact dead-letter replay.
 
 Built-in registration:
 

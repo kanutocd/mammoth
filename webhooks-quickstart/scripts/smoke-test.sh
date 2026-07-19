@@ -25,6 +25,16 @@ wait_for_event() {
   return 1
 }
 
+assert_event_absent() {
+  pattern="$1"
+  description="$2"
+
+  if curl -fsS "$base_events/api/events" | grep -q "$pattern"; then
+    printf '%s\n' "Unexpectedly observed $description." >&2
+    return 1
+  fi
+}
+
 curl -fsS "$base_app/health" >/dev/null
 curl -fsS "$base_events/health" >/dev/null
 curl -fsS "$base_mammoth/healthz" >/dev/null
@@ -37,7 +47,9 @@ created_order_url="$(curl -fsS -o /dev/null -w '%{redirect_url}' -X POST \
   "$base_app/orders")"
 created_order_id="${created_order_url##*#order-}"
 test -n "$created_order_id"
-wait_for_event "$unique_email" "the Mammoth INSERT webhook"
+wait_for_event '"customer_email":"\[REDACTED\]"' "the masked customer email"
+wait_for_event '"mammoth_payload_policy":{"fingerprint":"sha256:' "the payload-policy fingerprint"
+assert_event_absent "$unique_email" "the source customer email in the destination payload"
 
 curl -fsS -o /dev/null -X POST "$base_app/orders/$created_order_id/delete"
 wait_for_event '"operation":"delete"' "the Mammoth DELETE webhook"
@@ -49,7 +61,8 @@ payment_order_url="$(curl -fsS -o /dev/null -w '%{redirect_url}' -X POST \
   "$base_app/orders")"
 payment_order_id="${payment_order_url##*#order-}"
 test -n "$payment_order_id"
-wait_for_event "$payment_email" "the payment scenario INSERT webhook"
+wait_for_event '"customer_email":"\[REDACTED\]"' "the masked payment-scenario customer email"
+assert_event_absent "$payment_email" "the payment-scenario source email in the destination payload"
 curl -fsS -X POST "$base_events/api/events/clear" >/dev/null
 
 curl -fsS -o /dev/null -X POST "$base_app/orders/$payment_order_id/pay"

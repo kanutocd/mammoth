@@ -12,7 +12,7 @@ module Mammoth
     DEFAULT_SOURCE = "postgresql"
 
     attr_reader :sink, :checkpoint_store, :dead_letter_store, :delivered_envelope_store, :retry_schedule, :max_attempts,
-                :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :enabled
+                :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :payload_policy, :enabled
 
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] retained dependency; shared progress owns writes
@@ -25,10 +25,11 @@ module Mammoth
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
     # @param route_filter [Mammoth::RouteFilter, nil] optional destination route matcher
+    # @param payload_policy [Mammoth::PayloadPolicy, nil] destination payload transformation policy
     # @param enabled [Boolean] whether this destination accepts new deliveries
     def initialize(sink:, checkpoint_store:, dead_letter_store:, delivered_envelope_store:, source_name:, slot_name:,
                    publication_name:, max_attempts:, retry_schedule:, sleeper: Kernel.method(:sleep),
-                   route_filter: nil, enabled: true)
+                   route_filter: nil, payload_policy: nil, enabled: true)
       @sink = sink
       @checkpoint_store = checkpoint_store
       @dead_letter_store = dead_letter_store
@@ -40,7 +41,11 @@ module Mammoth
       @retry_schedule = retry_schedule
       @sleeper = sleeper
       @route_filter = route_filter || RouteFilter.new
+      @payload_policy = payload_policy || PayloadPolicy.new
       @enabled = enabled
+      return unless @payload_policy.active? && !sink.respond_to?(:deliver_payload)
+
+      raise ConfigurationError, "destination #{destination_name} does not accept prepared payloads"
     end
 
     # Build a delivery worker from Mammoth configuration and stores.
@@ -66,6 +71,7 @@ module Mammoth
         retry_schedule: delivery_policy.fetch("schedule_seconds", config.dig("retry", "schedule_seconds")),
         sleeper: sleeper,
         route_filter: delivery_policy.fetch("route_filter", RouteFilter.new),
+        payload_policy: delivery_policy.fetch("payload_policy", PayloadPolicy.new),
         enabled: delivery_policy.fetch("enabled", true)
       )
     end
@@ -86,16 +92,32 @@ module Mammoth
       deliver_work(event, serializer: EventSerializer, delivery_method: :deliver)
     end
 
+    # Replay one exact destination payload without reapplying the current policy.
+    #
+    # @param payload [Hash] prepared payload persisted in the dead-letter store
+    # @return [Hash] delivery summary
+    def deliver_payload(payload)
+      prepared = PreparedDelivery.from_payload(payload)
+      delivery_method = transaction_payload?(payload) ? :deliver_transaction : :deliver
+      deliver_prepared(prepared, work: nil, delivery_method: delivery_method)
+    end
+
     private
 
-    # rubocop:disable Metrics/MethodLength
     def deliver_work(work, serializer:, delivery_method:)
-      attempts = 0
-      payload = serializer.call(work)
-      delivery_unit = delivery_unit_for(delivery_method)
-      idempotency_key = idempotency_key_for(payload:, delivery_unit:)
+      prepared = PreparedDelivery.build(work, serializer: serializer, payload_policy: payload_policy)
+      deliver_prepared(prepared, work: work, delivery_method: delivery_method)
+    end
 
-      skip_result = skip_result_for(payload, idempotency_key:)
+    # rubocop:disable Metrics/MethodLength
+    def deliver_prepared(prepared, work:, delivery_method:)
+      attempts = 0
+      canonical_payload = prepared.canonical_payload
+      payload = prepared.payload
+      delivery_unit = delivery_unit_for(delivery_method)
+      idempotency_key = idempotency_key_for(payload: canonical_payload, delivery_unit: delivery_unit)
+
+      skip_result = skip_result_for(canonical_payload, idempotency_key: idempotency_key)
       return skip_result if skip_result
 
       if delivered_envelope_store.delivered?(idempotency_key)
@@ -110,7 +132,7 @@ module Mammoth
 
       begin
         attempts += 1
-        result = sink.public_send(delivery_method, work)
+        result = deliver_to_sink(prepared, work: work, delivery_method: delivery_method)
         delivered_envelope_store.record!(
           idempotency_key: idempotency_key,
           source_name: source_name,
@@ -122,7 +144,7 @@ module Mammoth
         )
         result.merge(attempts: attempts, idempotency_key: idempotency_key)
       rescue DeliveryError => e
-        return dead_letter(work, e, attempts, serializer:) if attempts >= max_attempts
+        return dead_letter(payload, e, attempts) if attempts >= max_attempts
 
         wait_before_retry(attempts)
         retry
@@ -166,20 +188,30 @@ module Mammoth
       }
     end
 
-    def dead_letter(event, error, attempts, serializer:)
-      id = dead_letter_store.write(
-        event: event,
+    def wait_before_retry(attempts)
+      wait_seconds = retry_schedule.fetch(attempts - 1, retry_schedule.last)
+      sleeper.call(wait_seconds)
+    end
+
+    def deliver_to_sink(prepared, work:, delivery_method:)
+      return sink.deliver_payload(prepared.payload) if sink.respond_to?(:deliver_payload)
+      return sink.public_send(delivery_method, work) if work && !payload_policy.active?
+
+      raise ConfigurationError, "destination #{destination_name} does not accept prepared payloads"
+    end
+
+    def dead_letter(payload, error, attempts)
+      id = dead_letter_store.write_payload(
+        payload: payload,
         destination_name: sink.name,
         error: error,
-        retry_count: attempts,
-        serializer: serializer
+        retry_count: attempts
       )
       { status: "dead_lettered", dead_letter_id: id, attempts: attempts }
     end
 
-    def wait_before_retry(attempts)
-      wait_seconds = retry_schedule.fetch(attempts - 1, retry_schedule.last)
-      sleeper.call(wait_seconds)
+    def transaction_payload?(payload)
+      payload["type"] == TransactionEnvelopeSerializer::PAYLOAD_TYPE
     end
   end
 end

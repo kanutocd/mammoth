@@ -17,6 +17,8 @@ module Mammoth
     # @return [Integer] inserted dead letter id
     def write: (event: (CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope), destination_name: untyped, ?error: untyped?, ?retry_count: ::Integer, ?serializer: untyped) -> untyped
 
+    def write_payload: (payload: Hash[String, untyped], destination_name: untyped, ?error: untyped?, ?retry_count: ::Integer) -> untyped
+
     # Fetch pending dead letters.
     #
     # @param limit [Integer] maximum number of rows

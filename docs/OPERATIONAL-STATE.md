@@ -93,6 +93,11 @@ The dead-letter table answers:
 What failed, where was it going, and why did it fail?
 ```
 
+`payload_json` is the exact payload prepared for the destination. When a
+payload policy is active, removed source values are not restored in this
+operational store. Replay sends this stored JSON unchanged rather than applying
+the current policy again.
+
 ### `delivered_envelopes`
 
 Stores successfully delivered event or transaction idempotency keys.

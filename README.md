@@ -47,12 +47,17 @@ https://kanutocd.github.io/mammoth/Mammoth.html
 The recommended first-run experience is the
 [`webhooks-quickstart`](webhooks-quickstart) stack. One Compose command starts a
 demo application, logical-replication-enabled PostgreSQL, Mammoth, a signed
-webhook receiver with visible retries, and Mammoth health endpoints:
+webhook receiver with visible retries and payload-policy masking, and Mammoth
+health endpoints:
 
 ```bash
 cd webhooks-quickstart
 docker compose up --build --wait
 ```
+
+Released tags default to their matching Mammoth image. When running `main`
+with Unreleased configuration features, follow the quickstart's local-image
+instructions.
 
 Once the flow is visible, follow its
 [`ADAPTING.md`](webhooks-quickstart/ADAPTING.md) guide to connect Mammoth to an
@@ -76,6 +81,7 @@ Mammoth 1.x includes:
 - webhook delivery sink
 - webhook fanout to multiple destinations
 - fanout route filters by schema, table, and operation
+- per-destination payload removal and masking policies
 - per-destination enable/disable and retry policy controls
 - delivery worker with retry, delivered-ledger, and DLQ handling
 - contiguous delivery watermark for checkpoint and PostgreSQL acknowledgement
@@ -103,7 +109,7 @@ modes, not isolated API snippets.
 | --- | --- |
 | [`live_postgres_webhook`](examples/live_postgres_webhook) | End-to-end PostgreSQL logical replication into webhook delivery. |
 | [`transaction_webhook`](examples/transaction_webhook) | TransactionEnvelope preservation through the concurrent runtime. |
-| [`webhook_fanout`](examples/webhook_fanout) | Routed multi-destination fanout, environment-backed headers, signing, and independent retry policies. |
+| [`webhook_fanout`](examples/webhook_fanout) | Routed multi-destination fanout, destination payload masking, environment-backed headers, signing, and independent retry policies. |
 | [`ordering`](examples/ordering) | Ordered and throughput-oriented transaction scheduling. |
 | [`checkpoint_recovery`](examples/checkpoint_recovery) | Durable restart recovery, replay suppression, checkpointing, and acknowledgement. |
 | [`slot_invalidation_recovery`](examples/slot_invalidation_recovery) | Fail-closed slot invalidation and explicit operator reconciliation. |
@@ -159,9 +165,12 @@ maps the canonical started, succeeded, failed, and skipped notifications to
 Prometheus counters.
 
 `Mammoth::ReplicationConsumer` accepts only exact core events and transaction
-envelopes. Operator-facing JSON, such as `deliver-sample` input and persisted
-dead letters, is reconstructed by `PersistedPayloadDeserializer` before it
-re-enters delivery; stored hashes do not masquerade as live CDC work.
+envelopes. `deliver-sample` input crosses
+`PersistedPayloadDeserializer` before entering the live delivery path, so its
+stored hash does not masquerade as CDC-core work. Dead-letter replay is a
+separate destination boundary: Mammoth sends the exact prepared JSON persisted
+for that destination and does not reconstruct CDC work or reapply the current
+payload policy.
 
 ## Extensions
 
@@ -203,10 +212,17 @@ destinations:
       schemas: [public]
       tables: [orders]
       operations: [insert, update]
+    payload_policy:
+      rules:
+        - columns: [customer_email]
+          action: mask
     retry:
       max_attempts: 3
       schedule_seconds: [1, 10]
 ```
+
+See [`docs/PAYLOAD-POLICIES.md`](docs/PAYLOAD-POLICIES.md) for deterministic
+data minimization, retry and dead-letter behavior, and policy boundaries.
 
 ## CLI
 

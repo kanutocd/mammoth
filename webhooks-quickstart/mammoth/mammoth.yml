@@ -43,6 +43,13 @@ webhook:
     secret_env: MAMMOTH_WEBHOOK_SIGNING_SECRET
     signature_header: X-Mammoth-Signature
     timestamp_header: X-Mammoth-Timestamp
+  payload_policy:
+    rules:
+      - tables:
+          - orders
+        columns:
+          - customer_email
+        action: mask
 
 retry:
   max_attempts: 20

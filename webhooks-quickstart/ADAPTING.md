@@ -172,6 +172,30 @@ Before routing production traffic:
 The included [`scripts/smoke-test.sh`](./scripts/smoke-test.sh) demonstrates the
 first five checks.
 
+## Minimize destination payloads
+
+The quickstart masks `orders.customer_email` before the payload reaches the
+Event Console:
+
+```yaml
+webhook:
+  payload_policy:
+    rules:
+      - tables: [orders]
+        columns: [customer_email]
+        action: mask
+```
+
+Start from the receiver's minimum data requirements. Keep, change, or remove
+this example rule deliberately; do not copy the selected column blindly. Use
+`remove` when the receiver needs no value, or `mask` when preserving the payload
+shape is useful. Mammoth applies the rule consistently to `data`, `identity`,
+and `changes`, then persists the same projected body for retries and
+dead-letter replay.
+
+See [`../docs/PAYLOAD-POLICIES.md`](../docs/PAYLOAD-POLICIES.md) for selectors,
+fingerprints, replay behavior, limitations, and production verification.
+
 ## Production checklist
 
 - Store PostgreSQL, authorization, and signing secrets outside YAML.
@@ -180,6 +204,8 @@ first five checks.
 - Reject stale signing timestamps to limit replay.
 - Atomically deduplicate receiver side effects by `event_id`.
 - Make consumers tolerant of additive payload and database columns.
+- Configure destination payload policies from minimum data requirements and
+  verify that representative PII is absent.
 - Use a permanent, DBA-managed replication slot after bootstrap.
 - Back up Mammoth operational state with the slot as one continuity boundary.
 - Alert on `/readyz`, pending dead letters, retained WAL, and PostgreSQL disk.

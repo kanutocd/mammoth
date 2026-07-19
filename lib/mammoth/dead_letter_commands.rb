@@ -238,36 +238,21 @@ module Mammoth
 
     def replay_row(row)
       payload = JSON.parse(row.fetch("payload_json"))
-      if transaction_payload?(payload)
-        replay_transaction(row.fetch("destination_name"), transaction_envelope(payload))
-      else
-        replay_event(row.fetch("destination_name"), payload)
-      end
+      return replay_payload(row.fetch("destination_name"), payload) if worker.respond_to?(:deliver_payload)
+
+      replay_fanout_payload(row.fetch("destination_name"), payload)
     end
 
-    def replay_event(destination_name, payload)
-      event = PersistedPayloadDeserializer.event(payload)
-      return worker.deliver_to(destination_name, event) if worker.respond_to?(:deliver_to)
-
-      worker.deliver(event)
+    def replay_payload(_destination_name, payload)
+      worker.deliver_payload(payload)
     end
 
-    def replay_transaction(destination_name, envelope)
-      return worker.deliver_transaction_to(destination_name, envelope) if worker.respond_to?(:deliver_transaction_to)
-
-      worker.deliver_transaction(envelope)
+    def replay_fanout_payload(destination_name, payload)
+      worker.deliver_payload_to(destination_name, payload)
     end
 
     def replay_resolved?(result)
       result.fetch(:status) == "delivered" || result.fetch(:duplicate, false)
-    end
-
-    def transaction_payload?(payload)
-      payload.fetch("type", nil) == TransactionEnvelopeSerializer::PAYLOAD_TYPE
-    end
-
-    def transaction_envelope(payload)
-      PersistedPayloadDeserializer.transaction(payload)
     end
 
     def show_payload(row)

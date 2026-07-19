@@ -21,6 +21,7 @@ entrypoint stay aligned.
 | Script | Product surface | Primary config knobs |
 | --- | --- | --- |
 | `benchmark/serialization.rb` | event and transaction payload projection | fallback-ID usage, events per transaction |
+| `benchmark/payload_policy.rb` | deterministic destination payload projection | policy action, events per transaction, selected columns |
 | `benchmark/concurrent_delivery.rb` | `cdc-concurrent` downstream runtime | `runtime.concurrency`, `runtime.preserve_order` |
 | `benchmark/webhook_delivery.rb` | real `WebhookSink` HTTP delivery | `webhook.timeout_seconds`, `webhook.headers`, `webhook.header_env`, `webhook.signing`, `delivery.unit` |
 | `benchmark/webhook_fanout.rb` | multi-destination webhook fanout | `destinations`, destination count, destination `timeout_seconds`, `route`, destination `retry`, `delivery.unit` |
@@ -118,6 +119,33 @@ bundle exec ruby benchmark/serialization.rb
 Results include operations and events per second, microseconds and allocations
 per operation, and representative payload size. Compare scenarios from the same
 run and host; these are local measurements, not universal performance claims.
+
+## Payload Policy
+
+```bash
+bundle exec ruby benchmark/payload_policy.rb
+```
+
+Measures `Mammoth::PayloadPolicy` against one canonical transaction payload for
+inactive, matching `remove`, and matching `mask` scenarios. Canonical
+serialization happens before the timed region, so results isolate deterministic
+destination projection, JSON-compatible copy cost, selector evaluation,
+redaction, and policy-fingerprint metadata.
+
+The benchmark excludes PostgreSQL decoding, routing, HTTP, HMAC signing,
+retries, and operational-state persistence.
+
+Options:
+
+```bash
+MAMMOTH_BENCH_TRANSFORMATIONS=100000 \
+MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS=5000 \
+MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
+bundle exec ruby benchmark/payload_policy.rb
+```
+
+Results include transformations and events per second, microseconds and
+allocations per transformation, and projected payload size.
 
 ## Concurrent Delivery
 
@@ -288,8 +316,10 @@ bundle exec ruby benchmark/dlq_replay.rb
 ```
 
 Measures replay mechanics without network IO: pending-row reads, JSON parsing,
-exact core-object reconstruction, targeted fanout replay, delivered ledger
-writes, and row resolution.
+exact prepared-payload delivery, targeted fanout replay, delivered-ledger
+writes, and row resolution. Seeded rows already contain policy-projected
+payloads; policy execution and CDC-core reconstruction are outside the timed
+region because production replay does neither.
 
 Useful for tuning:
 

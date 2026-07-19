@@ -28,6 +28,8 @@ module Mammoth
 
     @route_filter: untyped
 
+    @payload_policy: untyped
+
     @enabled: untyped
 
     DEFAULT_SOURCE: "postgresql"
@@ -54,6 +56,8 @@ module Mammoth
 
     attr_reader route_filter: untyped
 
+    attr_reader payload_policy: untyped
+
     attr_reader enabled: untyped
 
     # @param sink [#deliver] destination sink
@@ -65,7 +69,7 @@ module Mammoth
     # @param max_attempts [Integer] maximum delivery attempts
     # @param retry_schedule [Array<Integer>] retry wait schedule in seconds
     # @param sleeper [#call] sleep strategy, injectable for tests
-    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, delivered_envelope_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped, ?route_filter: untyped, ?enabled: untyped) -> void
+    def initialize: (sink: untyped, checkpoint_store: untyped, dead_letter_store: untyped, delivered_envelope_store: untyped, source_name: untyped, slot_name: untyped, publication_name: untyped, max_attempts: untyped, retry_schedule: untyped, ?sleeper: untyped, ?route_filter: untyped, ?payload_policy: untyped, ?enabled: untyped) -> void
 
     # Build a delivery worker from Mammoth configuration and stores.
     #
@@ -85,13 +89,13 @@ module Mammoth
 
     def deliver: (CDC::Core::ChangeEvent event) -> untyped
 
+    def deliver_payload: (Hash[String, untyped] payload) -> untyped
+
     private
 
     def deliver_work: (untyped work, serializer: untyped, delivery_method: untyped) -> untyped
 
-    def checkpoint: (untyped work, serializer: untyped) -> untyped
-
-    def checkpoint_payload: (untyped payload) -> untyped
+    def deliver_prepared: (untyped prepared, work: untyped?, delivery_method: untyped) -> untyped
 
     def idempotency_key_for: (payload: untyped, delivery_unit: untyped) -> String
 
@@ -103,8 +107,12 @@ module Mammoth
 
     def skipped: (untyped payload, idempotency_key: untyped, reason: untyped) -> untyped
 
-    def dead_letter: (untyped event, untyped error, untyped attempts, serializer: untyped) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
+    def deliver_to_sink: (untyped prepared, work: untyped?, delivery_method: untyped) -> untyped
+
+    def dead_letter: (untyped payload, untyped error, untyped attempts) -> { status: "dead_lettered", dead_letter_id: untyped, attempts: untyped }
 
     def wait_before_retry: (untyped attempts) -> untyped
+
+    def transaction_payload?: (untyped payload) -> bool
   end
 end

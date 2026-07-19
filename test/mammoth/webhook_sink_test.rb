@@ -5,6 +5,7 @@ require "openssl"
 require "webrick"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class WebhookSinkTest < Minitest::Test
     def test_from_config_builds_sink
       config = Configuration.load(fixture_config_path)
@@ -23,6 +24,22 @@ module Mammoth
         assert_equal "delivered", result.fetch(:status)
         assert_equal 201, result.fetch(:http_status)
         assert_match(/event-1/, received.fetch(:body))
+      end
+    end
+
+    def test_delivers_an_exact_prepared_payload
+      payload = {
+        "event_id" => "event-prepared",
+        "source" => "postgresql",
+        "source_position" => "0/1",
+        "metadata" => { "mammoth_payload_policy" => { "fingerprint" => "sha256:test" } }
+      }
+
+      with_test_server(201) do |url, received|
+        sink = WebhookSink.new(name: "primary_webhook", url: url, timeout_seconds: 2)
+        sink.deliver_payload(payload)
+
+        assert_equal payload, JSON.parse(received.fetch(:body))
       end
     end
 
@@ -183,4 +200,5 @@ module Mammoth
       thread&.join
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

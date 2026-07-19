@@ -34,6 +34,8 @@ module Mammoth
     # @return [Hash] destination delivery summary
     def deliver_transaction_to: (String destination_name, CDC::Core::TransactionEnvelope envelope) -> untyped
 
+    def deliver_payload_to: (String destination_name, Hash[String, untyped] payload) -> untyped
+
     private
 
     def fanout: (untyped delivery_method, untyped work) -> untyped

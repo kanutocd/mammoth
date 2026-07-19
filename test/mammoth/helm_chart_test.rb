@@ -92,6 +92,11 @@ module Mammoth
               operations:
                 - insert
                 - update
+            payload_policy:
+              rules:
+                - columns:
+                    - customer_email
+                  action: remove
             retry:
               max_attempts: 3
               schedule_seconds:
@@ -108,6 +113,9 @@ module Mammoth
         "enabled: false",
         "schemas:",
         "- public",
+        "payload_policy:",
+        "customer_email",
+        "action: remove",
         "max_attempts: 3",
         "Authorization: MAMMOTH_PRIMARY_WEBHOOK_AUTHORIZATION",
         "secret_env: MAMMOTH_PRIMARY_WEBHOOK_SIGNING_SECRET",

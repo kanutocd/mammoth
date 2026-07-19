@@ -84,6 +84,10 @@ data:
         route:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+        {{- with .payload_policy }}
+        payload_policy:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         {{- with .retry }}
         retry:
           {{- toYaml . | nindent 10 }}
@@ -104,6 +108,10 @@ data:
       {{- end }}
       {{- with .Values.webhook.signing }}
       signing:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webhook.payload_policy }}
+      payload_policy:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}

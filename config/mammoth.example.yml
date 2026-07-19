@@ -288,6 +288,23 @@ webhook:
   #   signature_header: X-Mammoth-Signature
   #   timestamp_header: X-Mammoth-Timestamp
 
+  # Optional deterministic payload projection and PII redaction.
+  #
+  # Rules apply after canonical serialization and route evaluation. Matching
+  # columns are scrubbed consistently from data, identity, and changes before
+  # signing, HTTP delivery, retry, and dead-letter persistence.
+  #
+  # payload_policy:
+  #   rules:
+  #     - schemas: [public]
+  #       tables: [customers, orders]
+  #       columns: [customer_email, phone]
+  #       action: remove
+  #     - tables: [customers]
+  #       columns: [external_customer_id]
+  #       action: mask
+  #       replacement: "[PRIVATE]"
+
 # Optional fanout configuration.
 #
 # Use destinations instead of webhook when one PostgreSQL replication stream
@@ -323,6 +340,14 @@ webhook:
 #       operations:
 #         - insert
 #         - update
+#
+#     # Optional destination-specific payload policy. Other destinations still
+#     # receive their own independently prepared payloads.
+#     payload_policy:
+#       rules:
+#         - tables: [orders]
+#           columns: [customer_email]
+#           action: remove
 #
 #     # Optional per-destination retry override. Omit to use top-level retry.
 #     retry:

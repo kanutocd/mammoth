@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Benchmark dead-letter replay mechanics without network IO. This covers SQLite
-# pending-row reads, JSON payload parsing, targeted destination replay, delivered
-# ledger writes, and resolving successful rows.
+# pending-row reads, JSON payload parsing, exact prepared-payload replay,
+# targeted destination delivery, ledger writes, and resolving successful rows.
 
 require_relative "support"
 
@@ -63,13 +63,16 @@ module MammothBenchmarks
     end
 
     def seed_dead_letters(store)
+      payload_policy = Mammoth::PayloadPolicy.new(
+        "rules" => [{ "columns" => ["id"], "action" => "remove" }]
+      )
       dead_letters.times do |index|
-        store.write(
-          event: dead_letter_payload(index),
+        payload = payload_policy.apply(serializer.call(dead_letter_payload(index)))
+        store.write_payload(
+          payload: payload,
           destination_name: "webhook_#{(index % destinations) + 1}",
           error: RuntimeError.new("benchmark failure"),
-          retry_count: 3,
-          serializer: serializer
+          retry_count: 3
         )
       end
     end
@@ -109,14 +112,9 @@ module MammothBenchmarks
     def replay_row(worker, row)
       payload = JSON.parse(row.fetch("payload_json"))
       destination_name = row.fetch("destination_name")
-      if payload.fetch("type", nil) == Mammoth::TransactionEnvelopeSerializer::PAYLOAD_TYPE
-        envelope = Mammoth::PersistedPayloadDeserializer.transaction(payload)
-        worker.respond_to?(:deliver_transaction_to) ? worker.deliver_transaction_to(destination_name, envelope) : worker.deliver_transaction(envelope)
-      elsif worker.respond_to?(:deliver_to)
-        worker.deliver_to(destination_name, Mammoth::PersistedPayloadDeserializer.event(payload))
-      else
-        worker.deliver(Mammoth::PersistedPayloadDeserializer.event(payload))
-      end
+      return worker.deliver_payload(payload) if worker.respond_to?(:deliver_payload)
+
+      worker.deliver_payload_to(destination_name, payload)
     end
 
     class RecordingSink
@@ -133,6 +131,10 @@ module MammothBenchmarks
 
       def deliver_transaction(envelope)
         { event_id: "transaction-#{envelope.transaction_id}", destination: name, status: "delivered", http_status: 200 }
+      end
+
+      def deliver_payload(payload)
+        { event_id: payload.fetch("event_id"), destination: name, status: "delivered", http_status: 200 }
       end
     end
 

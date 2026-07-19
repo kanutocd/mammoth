@@ -51,6 +51,19 @@ module Mammoth
       end
     end
 
+    def test_writes_exact_prepared_payload
+      with_temp_dir do |dir|
+        sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
+        store = DeadLetterStore.new(sqlite)
+        payload = EventSerializer.call(sample_event)
+        payload.fetch("metadata")[PayloadPolicy::POLICY_METADATA_KEY] = { "fingerprint" => "sha256:test" }
+
+        store.write_payload(payload: payload, destination_name: "primary_webhook")
+
+        assert_equal payload, JSON.parse(store.pending.fetch(0).fetch("payload_json"))
+      end
+    end
+
     def test_resolves_and_ignores_dead_letters
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!

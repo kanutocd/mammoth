@@ -13,6 +13,7 @@ module Mammoth
       metrics
       routing
       fanout
+      payload_policies
     ].freeze
 
     attr_reader :config

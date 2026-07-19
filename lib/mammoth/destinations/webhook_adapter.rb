@@ -21,7 +21,13 @@ module Mammoth
 
         # @return [Hash] JSON-friendly capabilities
         def capabilities
-          { type: adapter_type, delivery_units: %w[event transaction], signing: true, header_env: true }
+          {
+            type: adapter_type,
+            delivery_units: %w[event transaction],
+            prepared_payloads: true,
+            signing: true,
+            header_env: true
+          }
         end
       end
     end

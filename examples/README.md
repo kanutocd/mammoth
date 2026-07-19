@@ -17,7 +17,7 @@ SQLite operational memory while keeping unit tests Docker-free.
 | [`schema_evolution`](./schema_evolution) | Demonstrates a consumer-first additive schema rollout and relation-metadata refresh without implying DDL delivery. | Yes |
 | [`destination_idempotency`](./destination_idempotency) | Proves that isolated relay ledgers may both deliver while the destination applies one atomic side effect. | No |
 | [`transaction_webhook`](./transaction_webhook) | Live PostgreSQL transaction delivered as one TransactionEnvelope webhook payload through the concurrent runtime. | Yes |
-| [`webhook_fanout`](./webhook_fanout) | Config-only example for multi-destination webhook fanout with env-backed auth and signing. | No |
+| [`webhook_fanout`](./webhook_fanout) | Config-only fanout example with destination-scoped payload masking, env-backed auth, and signing. | No |
 | [`ordering`](./ordering) | Demonstrates `runtime.preserve_order` tradeoffs for transaction-level delivery. | Yes |
 | [`failing_webhook_retry`](./failing_webhook_retry) | Retry exhaustion and dead-letter persistence when a webhook fails. | No |
 | [`operational_state`](./operational_state) | SQLite bootstrap/status workflow for checkpoints, delivered envelopes, and dead letters. | No |
@@ -32,6 +32,11 @@ without requiring Docker or PostgreSQL in the unit suite. The live replication
 examples are the place where PostgreSQL acknowledgement, logical replication,
 TransactionEnvelope delivery, and the CDC Ecosystem source adapter are
 intentionally exercised together.
+
+Dead-letter replay deliberately follows a different boundary from
+`deliver-sample`: it sends the exact destination payload persisted after any
+payload policy was applied. Replay does not reconstruct CDC-core work or apply
+the current policy a second time.
 
 In those live examples, `pgoutput-source-adapter` owns incremental transaction
 buffering and yields CDC-core events or transaction envelopes to Mammoth.

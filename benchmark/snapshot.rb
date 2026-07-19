@@ -27,6 +27,11 @@ class BenchmarkSnapshotRunner
       "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS" => "10",
       "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
     },
+    "payload_policy" => {
+      "MAMMOTH_BENCH_TRANSFORMATIONS" => "100",
+      "MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS" => "10",
+      "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
+    },
     "concurrent_delivery" => {
       "MAMMOTH_BENCH_TRANSACTIONS" => "20",
       "MAMMOTH_BENCH_WARMUP_TRANSACTIONS" => "2",
@@ -70,6 +75,11 @@ class BenchmarkSnapshotRunner
     "serialization" => {
       "MAMMOTH_BENCH_SERIALIZATIONS" => "100000",
       "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS" => "5000",
+      "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
+    },
+    "payload_policy" => {
+      "MAMMOTH_BENCH_TRANSFORMATIONS" => "100000",
+      "MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS" => "5000",
       "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION" => "4"
     },
     "concurrent_delivery" => {

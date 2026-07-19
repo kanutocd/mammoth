@@ -1,0 +1,11 @@
+module Mammoth
+  class PreparedDelivery
+    attr_reader canonical_payload: Hash[String, untyped]
+    attr_reader payload: Hash[String, untyped]
+    attr_reader policy_fingerprint: String?
+
+    def initialize: (canonical_payload: Hash[String, untyped], payload: Hash[String, untyped], policy_fingerprint: String?) -> void
+    def self.build: (untyped work, serializer: untyped, payload_policy: PayloadPolicy) -> PreparedDelivery
+    def self.from_payload: (Hash[String, untyped] payload) -> PreparedDelivery
+  end
+end

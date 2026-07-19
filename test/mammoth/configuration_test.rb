@@ -103,6 +103,43 @@ module Mammoth
       end
     end
 
+    def test_accepts_destination_payload_policy
+      with_temp_dir do |dir|
+        replacement = <<~YAML.lines.map { |line| "  #{line}" }.join
+          timeout_seconds: 5
+          payload_policy:
+            rules:
+              - tables: [orders]
+                columns: [customer_email]
+                action: mask
+                replacement: "[PRIVATE]"
+        YAML
+        yaml = minimal_config(sqlite_path: File.join(dir, "mammoth.db")).sub("  timeout_seconds: 5\n", replacement)
+        config = Configuration.load(write_file(File.join(dir, "payload-policy.yml"), yaml))
+
+        assert_equal "mask", config.dig("webhook", "payload_policy", "rules", 0, "action")
+      end
+    end
+
+    def test_rejects_invalid_destination_payload_policy
+      with_temp_dir do |dir|
+        replacement = <<~YAML.lines.map { |line| "  #{line}" }.join
+          timeout_seconds: 5
+          payload_policy:
+            rules:
+              - columns: [customer_email]
+                action: encrypt
+        YAML
+        yaml = minimal_config(sqlite_path: File.join(dir, "mammoth.db")).sub("  timeout_seconds: 5\n", replacement)
+        path = write_file(File.join(dir, "bad-payload-policy.yml"), yaml)
+
+        error = assert_raises(ConfigurationError) { Configuration.load(path) }
+
+        assert_match(/configuration failed schema validation/, error.message)
+        assert_match(/encrypt/, error.message)
+      end
+    end
+
     def test_accepts_node_identity_and_operational_state_adapter
       config = Configuration.load(fixture_config_path)
 

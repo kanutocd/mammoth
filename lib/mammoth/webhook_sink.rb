@@ -110,8 +110,14 @@ module Mammoth
       deliver_payload(TransactionEnvelopeSerializer.call(envelope))
     end
 
-    private
-
+    # Deliver an already prepared destination payload.
+    #
+    # The caller owns canonical serialization and payload-policy application.
+    # WebhookSink signs and sends exactly this payload.
+    #
+    # @param payload [Hash] prepared JSON-compatible destination payload
+    # @return [Hash] delivery result
+    # @raise [Mammoth::DeliveryError] when delivery fails
     def deliver_payload(payload)
       response = perform_request(payload)
       return delivery_result(payload, response) if SUCCESS_RANGE.cover?(response.code.to_i)
@@ -120,6 +126,8 @@ module Mammoth
     rescue Timeout::Error, SystemCallError, SocketError, JSON::GeneratorError => e
       raise DeliveryError, "webhook #{name} delivery failed: #{e.message}"
     end
+
+    private
 
     def perform_request(payload)
       Net::HTTP.start(url.host, url.port, use_ssl: url.scheme == "https", open_timeout: timeout_seconds,
