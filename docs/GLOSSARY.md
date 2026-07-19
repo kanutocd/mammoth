@@ -11,8 +11,6 @@ This glossary defines the canonical terminology used throughout the Mammoth docu
 
 Where possible, terminology follows PostgreSQL's official documentation. Terms specific to Mammoth are explicitly identified.
 
-> **A Work in Progress**
-
 ---
 
 ## Version Compatibility
@@ -50,9 +48,9 @@ Examples include:
 
 ## At-Least-Once Delivery
 
-Mammoth guarantees that committed changes are delivered one or more times.
+A delivery guarantee in which each event is delivered one or more times.
 
-Failures, retries, and replay may result in duplicate deliveries. Downstream systems are encouraged to implement idempotent processing.
+Under failure conditions, retries or replay may result in duplicate deliveries. Systems that rely on at-least-once delivery are therefore typically designed to process events idempotently.
 
 ---
 
@@ -60,9 +58,11 @@ Failures, retries, and replay may result in duplicate deliveries. Downstream sys
 
 ## Change Data Capture (CDC)
 
-A technique for observing and processing changes made to a database as a stream of events rather than repeatedly querying entire tables.
+A software design pattern for observing and processing changes made to a data source as a stream of change events rather than repeatedly querying or scanning the source for differences.
 
-Mammoth is a Change Data Capture platform built on PostgreSQL logical replication.
+Change Data Capture is commonly used to synchronize systems, build event-driven architectures, maintain caches and search indexes, replicate data, and trigger downstream processing.
+
+Mammoth implements Change Data Capture using PostgreSQL logical replication.
 
 ---
 
@@ -83,11 +83,9 @@ Internally Mammoth represents these using `CDC::Core::ChangeEvent`.
 
 ## Checkpoint
 
-A durable record indicating the highest PostgreSQL WAL position that has been safely processed.
+A durable record representing the progress of event processing.
 
-Checkpoints allow Mammoth to resume processing after failures without replaying already acknowledged changes.
-
-A checkpoint represents the highest **durably acknowledged** WAL position, not merely the highest position observed.
+In Mammoth, checkpoints record the highest durably acknowledged PostgreSQL WAL position, allowing processing to resume after interruptions without reprocessing already acknowledged changes.
 
 ---
 
@@ -220,7 +218,9 @@ LSNs are used for:
 
 The open-source PostgreSQL Change Data Capture data plane.
 
-Its responsibilities include:
+Mammoth provides the core runtime responsible for reliably capturing, processing, and delivering PostgreSQL change events while maintaining operational state for production deployments.
+
+Capabilities include, but are not limited to:
 
 - reliable delivery
 - retries
@@ -314,11 +314,9 @@ Examples include:
 
 ## Replay
 
-Reprocessing previously captured events from durable operational state.
+The act of reprocessing previously captured events.
 
-Replay is useful after downstream failures or operational recovery.
-
-Replay may legitimately redeliver events. Downstream systems should therefore be designed to process events idempotently where practical.
+In Mammoth, replay uses durable operational state to safely redeliver historical events for recovery or operational purposes.
 
 ---
 
@@ -332,7 +330,7 @@ The range of checkpoints or WAL positions selected for replay.
 
 A PostgreSQL object that preserves WAL required by logical replication clients.
 
-Mammoth consumes changes from a logical replication slot.
+Mammoth consumes change events from a logical replication slot.
 
 ---
 
