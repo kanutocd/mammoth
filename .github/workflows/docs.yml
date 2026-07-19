@@ -58,8 +58,11 @@ jobs:
           test -f public/file.README.html
           test -f public/favicon.ico
           test -f public/mammoth-social-preview-1280x640.png
+          test -f public/mammoth-primary-horizontal-light.png
           grep -q 'property="og:image"' public/index.html
           grep -q 'name="twitter:card"' public/index.html
+          grep -q 'srcset="mammoth-primary-horizontal-light.png"' public/index.html
+          ! grep -q 'mammoth-primary-horizontal-reversed-transparent.png' public/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

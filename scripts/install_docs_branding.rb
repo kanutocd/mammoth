@@ -4,6 +4,13 @@ require "fileutils"
 
 SITE_ROOT = "https://kanutocd.github.io/mammoth/"
 SOCIAL_PREVIEW_URL = "#{SITE_ROOT}mammoth-social-preview-1280x640.png".freeze
+DOCS_LOGO_FILENAME = "mammoth-primary-horizontal-light.png"
+README_LOGO_REFERENCES = [
+  "https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/" \
+  "frozen-no-nonsense/exports/png/mammoth-primary-horizontal-light.png",
+  "https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/" \
+  "frozen-no-nonsense/exports/png/mammoth-primary-horizontal-reversed-transparent.png"
+].freeze
 
 def insert_before_head!(html, html_file, content)
   return if html.sub!(%r{</head>}i, "  #{content}\n</head>")
@@ -52,6 +59,13 @@ def install_social_metadata(html, html_file, output_root)
   insert_before_head!(html, html_file, metadata)
 end
 
+def install_docs_logo(html, html_file, logo_target)
+  relative_logo = logo_target.relative_path_from(html_file.dirname).to_s
+  README_LOGO_REFERENCES.each do |reference|
+    html.gsub!(reference, relative_logo)
+  end
+end
+
 output_root = Pathname(ARGV.fetch(0)).expand_path
 favicon_source = Pathname(__dir__).join(
   "../docs/branding/logo/frozen-no-nonsense/exports/favicon/favicon.ico"
@@ -59,20 +73,27 @@ favicon_source = Pathname(__dir__).join(
 social_preview_source = Pathname(__dir__).join(
   "../docs/branding/logo/frozen-no-nonsense/social/mammoth-social-preview-1280x640.png"
 ).expand_path
+docs_logo_source = Pathname(__dir__).join(
+  "../docs/branding/logo/frozen-no-nonsense/exports/png/#{DOCS_LOGO_FILENAME}"
+).expand_path
 
 abort("Documentation output does not exist: #{output_root}") unless output_root.directory?
 abort("Favicon source does not exist: #{favicon_source}") unless favicon_source.file?
 abort("Social preview source does not exist: #{social_preview_source}") unless social_preview_source.file?
+abort("Documentation logo source does not exist: #{docs_logo_source}") unless docs_logo_source.file?
 
 favicon_target = output_root.join("favicon.ico")
 social_preview_target = output_root.join("mammoth-social-preview-1280x640.png")
+docs_logo_target = output_root.join(DOCS_LOGO_FILENAME)
 FileUtils.cp(favicon_source, favicon_target)
 FileUtils.cp(social_preview_source, social_preview_target)
+FileUtils.cp(docs_logo_source, docs_logo_target)
 
 Dir.glob(output_root.join("**/*.html")).each do |html_path|
   html_file = Pathname(html_path)
   html = html_file.read(encoding: Encoding::UTF_8)
   install_favicon(html, html_file, favicon_target)
   install_social_metadata(html, html_file, output_root)
+  install_docs_logo(html, html_file, docs_logo_target)
   html_file.write(html)
 end
