@@ -1,3 +1,7 @@
+<!--
+# @title Troubleshooting
+-->
+
 # Troubleshooting
 
 This guide records common issues encountered while running Mammoth locally, with Docker Compose, or with Kubernetes.

@@ -1,3 +1,7 @@
+<!--
+# @title Operational State Adapters
+-->
+
 # Operational State Adapters
 
 Operational state adapters expose Mammoth's local reliability stores through a

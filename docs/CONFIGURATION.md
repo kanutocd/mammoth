@@ -1,3 +1,7 @@
+<!--
+# @title Configuration
+-->
+
 # Configuration
 
 Mammoth uses YAML configuration validated by JSON Schema.

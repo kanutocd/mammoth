@@ -1,3 +1,7 @@
+<!--
+# @title Destination Adapters
+-->
+
 # Destination Adapters
 
 Destination adapters turn a destination config entry into a delivery sink.

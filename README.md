@@ -1,3 +1,9 @@
+<!--
+# @markup markdown
+# @title Github Repo README
+# @author Ken C. Demanawa
+-->
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/kanutocd/mammoth/main/docs/branding/logo/exports/png/mammoth-primary-horizontal-reversed-transparent.png">
@@ -8,10 +14,12 @@
 
 # Mammoth
 
-[![Gem Version](https://badge.fury.io/rb/mammoth.svg)](https://badge.fury.io/rb/mammoth)
-[![CI](https://github.com/kanutocd/mammoth/workflows/CI/badge.svg)](https://github.com/kanutocd/mammoth/actions)
-[![Ruby Version](https://img.shields.io/badge/ruby-%3E%3D%204.0-ruby.svg)](https://www.ruby-lang.org/en/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Gem Version](https://img.shields.io/gem/v/mammoth?logo=rubygems&logoColor=white)](https://rubygems.org/gems/mammoth)
+[![Requires Ruby 4.0+](https://img.shields.io/badge/Requires-Ruby%204.0%2B-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
+[![CI](https://github.com/kanutocd/mammoth/actions/workflows/ci.yml/badge.svg)](https://github.com/kanutocd/mammoth/actions/workflows/ci.yml)
+[![Tested Against PostgreSQL 14–18](https://img.shields.io/badge/Tested%20Against-PostgreSQL%2014--18-336791?logo=postgresql&logoColor=white)](https://github.com/kanutocd/mammoth/blob/main/.github/workflows/ci.yml#L50)
+[![License](https://img.shields.io/badge/License-MIT-22C55E)](LICENSE.txt)
+
 
 Mammoth is a self-hosted PostgreSQL event relay focused on reliable delivery
 of database change events.
@@ -31,6 +39,20 @@ Webhook fanout
 Mammoth is intentionally boring infrastructure. It uses YAML configuration,
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
 shared vocabulary so operators can inspect, recover, and reason about delivery.
+
+## Supported PostgreSQL versions
+
+Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These are the
+PostgreSQL major versions currently maintained by the PostgreSQL community and
+covered by Mammoth's real logical-replication E2E compatibility matrix.
+
+Mammoth supports PostgreSQL major versions that are both maintained by the
+PostgreSQL community and included in Mammoth's compatibility test matrix. New
+PostgreSQL majors are unsupported until explicitly tested and documented. EOL
+versions may be removed from the supported range in a subsequent Mammoth minor
+release with release-note notice.
+
+PostgreSQL 19 is a development release and is not supported.
 
 ## Documentation
 

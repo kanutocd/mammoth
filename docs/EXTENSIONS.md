@@ -1,3 +1,7 @@
+<!--
+# @title Extensions
+-->
+
 # Extensions
 
 Mammoth 1.x exposes explicit extension contracts for adapters.

@@ -1,3 +1,7 @@
+<!--
+# @title Diagrams
+-->
+
 # Mammoth Diagrams
 
 Mammoth architecture diagrams should communicate operational flow clearly.

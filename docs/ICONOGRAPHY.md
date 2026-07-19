@@ -1,3 +1,7 @@
+<!--
+# @title Iconography
+-->
+
 # Mammoth Iconography
 
 Mammoth icons use a simple 24×24 SVG grid with consistent stroke weight, rounded joins, and minimal interior detail.

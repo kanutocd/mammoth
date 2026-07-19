@@ -1,3 +1,6 @@
+<!--
+# @title Benchmarks
+-->
 # Benchmarks
 
 Mammoth benchmarks are small, repeatable scripts for validating showcase

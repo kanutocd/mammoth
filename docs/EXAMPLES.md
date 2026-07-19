@@ -1,3 +1,7 @@
+<!--
+# @title Examples
+-->
+
 # Examples
 
 Mammoth ships examples that validate different parts of the system.

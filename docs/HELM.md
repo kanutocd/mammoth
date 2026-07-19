@@ -1,3 +1,7 @@
+<!--
+# @title Kubernetes and Helm
+-->
+
 # Kubernetes and Helm
 
 Mammoth ships with a Helm chart stored in the repository:

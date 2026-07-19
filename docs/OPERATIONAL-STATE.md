@@ -1,3 +1,7 @@
+<!--
+# @title Operational State
+-->
+
 # Operational State
 
 Mammoth stores operational memory in SQLite.

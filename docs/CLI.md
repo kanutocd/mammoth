@@ -1,3 +1,6 @@
+<!--
+# @title Command Line Interface (CLI) Reference
+-->
 # CLI Reference
 
 Mammoth exposes a small operator-facing command surface.

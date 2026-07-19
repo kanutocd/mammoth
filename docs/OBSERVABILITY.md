@@ -1,3 +1,7 @@
+<!--
+# @title Observability
+-->
+
 # Observability
 
 Mammoth exposes optional HTTP health, readiness, and metrics endpoints for

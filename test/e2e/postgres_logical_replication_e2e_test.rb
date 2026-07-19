@@ -306,7 +306,7 @@ module Mammoth
 
     def slot_status(fixture)
       columns = %w[slot_name active active_pid confirmed_flush_lsn wal_status]
-      columns << "invalidation_reason" if server_version(fixture.connection) >= 16
+      columns << "invalidation_reason" if server_version(fixture.connection) >= 17
       result = fixture.connection.exec_params(
         "SELECT #{columns.join(", ")} FROM pg_replication_slots WHERE slot_name = $1",
         [fixture.slot_name]

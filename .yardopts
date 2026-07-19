@@ -1,4 +1,4 @@
---title "Mammoth API Documentation"
+--title "Mammoth OSS Data Plane API Documentation"
 --protected
 --markup markdown
 
@@ -7,11 +7,6 @@
 lib/**/*.rb
 
 -
-
-README.md
-CHANGELOG.md
-CODE_OF_CONDUCT.md
-LICENSE.txt
 
 docs/QUICK-START.md
 docs/WEBHOOK-PAYLOADS.md
@@ -29,4 +24,12 @@ docs/RUNTIME-ADAPTERS.md
 docs/EXAMPLES.md
 docs/COMPATIBILITY.md
 docs/HELM.md
+docs/GLOSSARY.md
 docs/TROUBLESHOOTING.md
+
+README.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+LICENSE.txt

@@ -1,3 +1,7 @@
+<!--
+# @title Design System
+-->
+
 # Mammoth Design System
 
 The Mammoth design system keeps the public documentation, GitHub assets, diagrams, and future platform components visually consistent.

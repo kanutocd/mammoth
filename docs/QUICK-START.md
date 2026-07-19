@@ -1,3 +1,7 @@
+<!--
+# @title Quick Start
+-->
+
 # Quick Start
 
 This guide shows the shortest path from a PostgreSQL table change to a Mammoth webhook delivery.

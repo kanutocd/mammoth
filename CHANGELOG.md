@@ -1,6 +1,25 @@
+<!--
+# @title Changelog
+-->
+
 # Changelog
 
-## Unreleased
+## 1.4.0 - Unreleased
+
+### Added
+
+- Declared PostgreSQL 14 through PostgreSQL 18, inclusive, as Mammoth's
+  supported server range.
+- Replaced the PostgreSQL 17-only CI gate with real logical-replication E2E
+  coverage across PostgreSQL 14, 15, 16, 17, and 18.
+- Documented the maintained-version support policy, version-dependent
+  `pg_replication_slots` fields, and PostgreSQL 18-only
+  `idle_replication_slot_timeout`.
+
+### Fixed
+
+- Query `pg_replication_slots.invalidation_reason` in the E2E helper only on
+  PostgreSQL 17 and newer; PostgreSQL 16 does not expose that field.
 
 ## 1.3.0 - 2026-07-19
 

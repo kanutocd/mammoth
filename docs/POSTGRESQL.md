@@ -1,10 +1,29 @@
+<!--
+# @title PostgreSQL Requirements
+-->
+
 # PostgreSQL Requirements
 
 Mammoth consumes PostgreSQL logical replication through the CDC ecosystem's pgoutput path.
 
+## Supported PostgreSQL versions
+
+Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These are the
+PostgreSQL major versions currently maintained by the PostgreSQL community and
+covered by Mammoth's real logical-replication E2E compatibility matrix.
+
+Mammoth supports PostgreSQL major versions that are both maintained by the
+PostgreSQL community and included in Mammoth's compatibility test matrix. New
+PostgreSQL majors are unsupported until explicitly tested and documented. EOL
+versions may be removed from the supported range in a subsequent Mammoth minor
+release with release-note notice.
+
+PostgreSQL 19 is a development release and is not supported.
+
 ## PostgreSQL settings
 
 The PostgreSQL server must allow logical replication:
+
 
 ```text
 wal_level = logical
@@ -17,10 +36,10 @@ The exact values depend on your deployment, but `wal_level=logical` is mandatory
 ### Server-side WAL retention guardrails
 
 Set `max_slot_wal_keep_size` to a value appropriate for the database volume and
-recovery budget. Where the PostgreSQL version supports it,
-`idle_replication_slot_timeout` can invalidate slots that remain inactive too
-long. These settings protect PostgreSQL from unbounded retention; they do not
-preserve Mammoth delivery continuity. When a guardrail invalidates a slot,
+recovery budget. `idle_replication_slot_timeout` is available only in
+PostgreSQL 18 and can invalidate slots that remain inactive too long. PostgreSQL
+14 through 17 do not provide this setting. These settings protect PostgreSQL
+from unbounded retention; they do not preserve Mammoth delivery continuity. When a guardrail invalidates a slot,
 Mammoth fails closed and requires external backfill or reconciliation before
 new operational state is established.
 
@@ -177,8 +196,12 @@ reports these facts; deployment infrastructure remains responsible for disk
 capacity and catalog-XID age alerts.
 
 The columns available in `pg_replication_slots` vary by PostgreSQL version.
-Remove unavailable fields from the inspection query rather than assuming that
-an older server exposes current catalog columns.
+In particular, `inactive_since` and `invalidation_reason` are available from
+PostgreSQL 17, while PostgreSQL 16 exposes `conflicting` but not those newer
+fields. PostgreSQL 18 can additionally report `idle_timeout` as an
+`invalidation_reason`. Mammoth's production inspection path is version-tolerant
+and treats unavailable fields as absent. For manual SQL, remove fields that do
+not exist on the server version being inspected.
 
 ## One slot, one active subscriber
 

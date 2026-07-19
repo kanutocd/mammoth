@@ -1,3 +1,6 @@
+<!--
+# @title Brand
+-->
 # Mammoth Brand
 
 Mammoth is the PostgreSQL CDC Data Plane.

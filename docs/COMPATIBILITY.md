@@ -1,7 +1,27 @@
+<!--
+# @title Compatability
+-->
+
 # v1 Compatibility
 
 Mammoth follows semantic versioning for its supported public contracts. The
 v1 promise applies throughout the 1.x release line.
+
+## PostgreSQL server compatibility
+
+Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. Supported
+server versions must be both maintained by the PostgreSQL community and present
+in Mammoth's logical-replication E2E compatibility matrix. A newly released
+PostgreSQL major is unsupported until Mammoth explicitly tests and documents it.
+
+An EOL PostgreSQL major may be removed from Mammoth's support range in a later
+1.x minor release after release-note notice. This exception keeps the v1
+compatibility promise aligned with upstream security and maintenance coverage.
+PostgreSQL 19 remains a development release and is not supported.
+
+PostgreSQL system catalogs evolve across major versions. Mammoth's production
+code treats optional replication-slot fields as version-dependent rather than
+requiring every supported server to expose the newest catalog shape.
 
 ## Configuration
 

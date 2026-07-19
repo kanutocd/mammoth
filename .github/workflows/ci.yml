@@ -18,9 +18,39 @@ jobs:
     name: Test, lint, docs, package
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install native extension headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.5"
+          bundler-cache: true
+
+      - name: Run tests with coverage gates
+        run: bundle exec rake
+
+  postgres-e2e:
+    name: PostgreSQL ${{ matrix.postgres }} E2E
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["14", "15", "16", "17", "18"]
     services:
       postgres:
-        image: postgres:17
+        image: postgres:${{ matrix.postgres }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -49,9 +79,6 @@ jobs:
         with:
           ruby-version: "4.0.5"
           bundler-cache: true
-
-      - name: Run tests with coverage gates
-        run: bundle exec rake
 
       - name: Enable PostgreSQL logical replication
         run: |
