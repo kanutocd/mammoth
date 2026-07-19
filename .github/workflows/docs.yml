@@ -57,6 +57,9 @@ jobs:
           test -f public/index.html
           test -f public/file.README.html
           test -f public/favicon.ico
+          test -f public/mammoth-social-preview-1280x640.png
+          grep -q 'property="og:image"' public/index.html
+          grep -q 'name="twitter:card"' public/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

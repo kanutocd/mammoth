@@ -125,9 +125,15 @@ larger because the frozen eye and crest details are intentionally intricate.
 
 ### Marketing exports
 
-- `social/mammoth-social-preview-1280x640.png`
+- `social/mammoth-social-preview-1280x640.png` — Open Graph, X/Twitter,
+  and repository social preview
 - `social/mammoth-youtube-banner-2560x1440.png`
 - `social/mammoth-brand-standards-sheet.png`
+
+The documentation build publishes the social preview at the site root and adds
+Open Graph and X/Twitter metadata to every generated YARD page. GitHub controls
+the preview for `github.com` repository links separately; upload the same image
+as the repository social preview in GitHub's repository settings.
 
 ### Templates
 
