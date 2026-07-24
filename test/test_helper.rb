@@ -45,6 +45,7 @@ $LOAD_PATH.unshift FAKE_RUNTIME_DIR
 require "mammoth"
 
 require "minitest/autorun"
+require "minitest/mock"
 require "stringio"
 require "tempfile"
 require "tmpdir"

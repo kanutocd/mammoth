@@ -6,10 +6,11 @@ source "https://rubygems.org"
 gemspec
 
 gem "irb"
-gem "minitest", "~> 5.16"
+gem "minitest", "~> 6.0"
+gem "minitest-mock", "~> 5.27"
 gem "rake", "~> 13.0"
 gem "rubocop", "~> 1.21"
-gem "rubocop-minitest", "~> 0.39.1"
+gem "rubocop-minitest", "~> 0.40.0"
 gem "rubocop-rake", "~> 0.7.1"
 gem "simplecov", "~> 0.22.0"
 gem "steep", "~> 2.0"
