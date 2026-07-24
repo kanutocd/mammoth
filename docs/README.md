@@ -79,18 +79,21 @@ PostgreSQL 19 is a development release and is not supported.
 - [Glossary](file.GLOSSARY.html)
 - [Troubleshooting](file.TROUBLESHOOTING.html)
 
-The **[Webhooks Quick Start](https://github.com/kanutocd/mammoth/tree/main/webhooks-quickstart)** is the recommended first-run experience. One
-Docker Compose command starts a demo application, PostgreSQL, Mammoth, and an
-inspectable signed webhook receiver with visible retries and customer-email
-masking. Its optional
+The **[Webhooks Quick Start](https://github.com/kanutocd/mammoth/tree/main/webhooks-quickstart)**
+is the recommended first-run experience. One Docker Compose command starts a
+demo application, PostgreSQL, Mammoth, and an inspectable signed webhook
+receiver with visible retries and customer-email masking. Its optional
 monitoring profile adds seeded traffic, a provisioned Grafana overview and
 alerts, and a curated Prometheus query library. See
 [Observability](file.OBSERVABILITY.html) for the runnable monitoring showcase.
 Use the documentation Quick Start when you are ready to assemble those pieces
 manually.
+
 Released tags use their matching image; when testing Unreleased quickstart
-configuration from `main`, build the local image as described in the
-quickstart README.
+configuration from `main`, build the local image as described in the quickstart
+README. For measured projection, delivery, SQLite operational-state,
+observability, and replay costs, see
+**[Benchmarks](file.BENCHMARKS.html)**.
 
 ## v1 Release Scope
 

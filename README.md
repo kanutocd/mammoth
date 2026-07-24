@@ -307,24 +307,35 @@ rather than opening SQLite directly.
 
 ## Performance
 
-Mammoth includes local benchmarks for the product surfaces operators tune in
-production:
+A reference benchmark run on Ruby 4.0.5 produced:
 
-- event and transaction serialization, including deterministic fallback IDs
-- concurrent delivery runtime
-- real webhook delivery
-- multi-destination webhook fanout
-- SQLite operational state
-- observability snapshots
-- DLQ replay
+| Benchmark                                           |                Result |
+| --------------------------------------------------- | --------------------: |
+| Event payload projection with explicit ID           | **56,265 events/sec** |
+| Transaction payload projection with explicit IDs    | **55,612 events/sec** |
+| Mask payload-policy projection                      | **72,403 events/sec** |
+| Concurrent delivery, 25 workers                     |  **3,825 events/sec** |
+| Concurrent delivery, 50 workers                     |  **7,447 events/sec** |
+| Signed webhook delivery with 10 ms receiver latency | **83.5 requests/sec** |
+| SQLite delivered-ledger writes                      |  **1,630 writes/sec** |
+| Dead-letter replay mechanics                        | **1,030 entries/sec** |
+
+At concurrency 50 with a synthetic 25 ms destination, Mammoth processed
+**1,862 transactions/sec** against a theoretical ceiling of 2,000, while
+maintaining **28.4 ms P95 latency**. This indicates low scheduling overhead for
+I/O-bound downstream delivery.
+
+These are local, single-trial reference measurements, not universal capacity
+claims or comparisons with other CDC platforms. The benchmarks isolate specific
+Mammoth components and may exclude PostgreSQL transport, decoding, checkpoint
+coordination, network latency, or destination processing.
 
 The [reference snapshot](https://github.com/kanutocd/mammoth/blob/main/benchmark/results/20260724T104950Z/snapshot.md)
-records a full local run, its exact commands, environment, raw output, and
-interpretation. It is a reproducible baseline, not a universal performance
-claim. Re-run the scripts in
-[`benchmark/`](https://github.com/kanutocd/mammoth/tree/main/benchmark) on your own hardware when choosing
-`runtime.concurrency`, `destinations`, SQLite storage, scrape frequency, and
-DLQ replay expectations.
+records the exact commands, environment, raw output, and detailed
+interpretation. Re-run the scripts in
+[`benchmark/`](https://github.com/kanutocd/mammoth/tree/main/benchmark)
+on your own hardware when choosing `runtime.concurrency`, destination count,
+SQLite storage, scrape frequency, and DLQ replay expectations.
 
 Create a publishable benchmark snapshot with:
 
