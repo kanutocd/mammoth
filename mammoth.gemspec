@@ -52,6 +52,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "cdc-concurrent", "~> 0.1"
   spec.add_dependency "cdc-core", "~> 0.1"
+  spec.add_dependency "json", ">= 2.19.2", "< 3.0"
   spec.add_dependency "json-schema", "~> 6.2"
   spec.add_dependency "pg", "~> 1.6"
   spec.add_dependency "pgoutput-client", "~> 0.4"

@@ -4,6 +4,7 @@ PATH
     mammoth (1.4.0)
       cdc-concurrent (~> 0.1)
       cdc-core (~> 0.1)
+      json (>= 2.19.2, < 3.0)
       json-schema (~> 6.2)
       pg (~> 1.6)
       pgoutput-client (~> 0.4)

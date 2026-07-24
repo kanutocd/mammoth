@@ -14,6 +14,8 @@
 - Implement `logging.level` with container-friendly JSON stdout logs for
   application and replication lifecycle, delivery outcomes, retries, dead
   letters, checkpoints, and debug-level work progress.
+- Require a patched `json` gem and remove the vulnerable bundled default-gem
+  specification from the runtime image to address CVE-2026-33210.
 
 ### Quality
 
