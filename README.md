@@ -17,6 +17,7 @@
 [![Gem Version](https://img.shields.io/gem/v/mammoth?logo=rubygems&logoColor=white)](https://rubygems.org/gems/mammoth)
 [![Requires Ruby 4.0+](https://img.shields.io/badge/Requires-Ruby%204.0%2B-CC342D?logo=ruby&logoColor=white)](https://www.ruby-lang.org/)
 [![CI](https://github.com/kanutocd/mammoth/actions/workflows/ci.yml/badge.svg)](https://github.com/kanutocd/mammoth/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/kanutocd/mammoth/security.yml?branch=main&event=push&label=security)](https://github.com/kanutocd/mammoth/actions/workflows/security.yml)
 [![Tested Against PostgreSQL 14–18](https://img.shields.io/badge/Tested%20Against-PostgreSQL%2014--18-336791?logo=postgresql&logoColor=white)](https://github.com/kanutocd/mammoth/blob/main/.github/workflows/ci.yml#L50)
 [![License](https://img.shields.io/badge/License-MIT-22C55E)](LICENSE.txt)
 

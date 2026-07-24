@@ -20,7 +20,9 @@ Security fixes are provided for the latest supported Mammoth release line.
 | Older stable releases           |       Best effort |
 | Unreleased development branches | No formal support |
 
-Users should upgrade to the latest stable Mammoth release before reporting a suspected vulnerability unless the issue prevents upgrading.
+Reports are welcome for any Mammoth version. When it is safe and practical,
+reporters are encouraged to confirm whether the behavior is still present in
+the latest stable release, but upgrading is not a prerequisite for reporting.
 
 The PostgreSQL compatibility policy is separate from the Mammoth security-support policy. Mammoth currently supports PostgreSQL 14 through PostgreSQL 18 inclusive.
 
@@ -38,11 +40,14 @@ Use GitHub Private Vulnerability Reporting for the Mammoth repository:
 4. Select **Report a vulnerability**.
 5. Provide the requested details.
 
-Repository:
+Private report URL:
 
-`https://github.com/kanutocd/mammoth`
+`https://github.com/kanutocd/mammoth/security/advisories/new`
 
-When private vulnerability reporting is unavailable, contact the maintainer privately using a verified contact method listed on the maintainer's GitHub profile.
+No alternative private contact channel is currently published. If GitHub
+Private Vulnerability Reporting is unavailable, do not post vulnerability
+details publicly. A public issue may state only that the private reporting
+channel is unavailable and request a private contact method.
 
 Do not include credentials, production data, access tokens, webhook secrets, database passwords, or other sensitive information that is not necessary to reproduce the issue.
 
@@ -259,10 +264,18 @@ Operators should review PostgreSQL privileges after configuration changes and up
 
 ## Network Security
 
-Production deployments should:
+Mammoth currently constructs its PostgreSQL connection from `host`, `port`,
+`database`, `username`, and `password_env`. Its configuration schema does not
+currently expose PostgreSQL TLS mode, certificate, or custom CA settings.
+Deployments that require encrypted PostgreSQL transport must provide and verify
+that transport outside Mammoth, for example with a trusted local proxy, service
+mesh, or private network control. Operators must not assume that Mammoth enables
+PostgreSQL TLS by itself.
 
-* Use encrypted PostgreSQL connections.
-* Validate PostgreSQL server certificates where supported.
+Production deployments should otherwise:
+
+* Protect PostgreSQL traffic with an appropriately trusted transport.
+* Validate PostgreSQL server certificates at the component terminating TLS.
 * Use HTTPS for webhook and HTTP destinations.
 * Validate destination certificates.
 * Restrict inbound and outbound network access.
@@ -307,10 +320,14 @@ Operators should:
 * Protect event payloads in transit.
 * Restrict access to logs and dead-letter storage.
 * Define appropriate retention policies.
-* Sanitize payloads before forwarding them to lower-trust systems.
+* Configure destination payload policies to remove or mask known sensitive
+  columns before forwarding them to lower-trust systems.
 * Review transformations and filters for accidental data leakage.
 
-Mammoth does not automatically classify or redact sensitive application data.
+Mammoth supports explicitly configured column removal and masking, but it does
+not discover or classify sensitive application data automatically. Operators
+remain responsible for selecting the correct schemas, tables, columns, and
+destinations.
 
 ---
 
@@ -348,13 +365,25 @@ Administrative workflows should:
 
 Downstream systems should implement idempotent processing where practical.
 
+Mammoth's local replay CLI does not authenticate operators or record a human
+actor identity. Deployments that require replay authorization or attribution
+must enforce access and audit activity through the surrounding host, container,
+Kubernetes, or command-execution platform.
+
 ---
 
 ## Logging
 
 Logs should support operational diagnosis without exposing sensitive information.
 
-Contributors and operators should avoid logging:
+Mammoth's structured operational logger is designed to exclude payload bodies,
+configured headers, credentials, signing secrets, and exception messages.
+`debug` adds per-work and WAL-acknowledgement progress, but does not
+intentionally add those excluded values. This guarantee does not extend to
+output produced by third-party dependencies, operator-provided hooks,
+destination services, container runtimes, or orchestration platforms.
+
+Contributors and operators should avoid adding or retaining logs containing:
 
 * Passwords
 * Access tokens
@@ -365,7 +394,8 @@ Contributors and operators should avoid logging:
 * Unredacted destination responses
 * Personally identifiable information without a clear need
 
-Debug logging may expose additional details and should be enabled cautiously in production.
+Debug logging increases the volume of operational identifiers and progress
+metadata. Access to it should still be restricted in production.
 
 ---
 
@@ -384,6 +414,29 @@ Contributors and maintainers should:
 * Review transitive dependencies for security-sensitive functionality.
 
 Dependency scanners are useful signals but do not replace manual impact analysis.
+
+---
+
+## Automated Security Checks
+
+The repository's `Security` workflow runs on pull requests, pushes to `main`,
+and a weekly schedule. It currently performs:
+
+* Ruby dependency advisory scanning with `bundler-audit`
+* Dependency review for pull requests
+* CodeQL static analysis
+* Trivy scanning of the built container for fixed high- and
+  critical-severity findings
+
+The README security badge reports the status of the latest `push` workflow on
+`main`. A passing badge means only that these configured checks passed for that
+revision with the tools, advisory databases, severity sources, and policy in
+use at the time. It is not a guarantee that Mammoth is free of vulnerabilities,
+that every dependency path is safe, or that a deployed environment is secure.
+
+Automated findings are triage inputs. Maintainers should evaluate reachability,
+runtime exposure, available fixes, and operational impact rather than treating
+either a passing scan or a scanner report as conclusive by itself.
 
 ---
 
