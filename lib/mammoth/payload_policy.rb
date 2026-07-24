@@ -10,8 +10,13 @@ module Mammoth
   # items. Column rules scrub every canonical row-value representation: data,
   # identity, and old/new values in changes.
   class PayloadPolicy
+    # Default replacement used by mask rules.
     DEFAULT_MASK = "[REDACTED]"
+
+    # Payload metadata key containing the applied policy fingerprint.
     POLICY_METADATA_KEY = "mammoth_payload_policy"
+
+    # Transformation actions accepted by payload-policy rules.
     SUPPORTED_ACTIONS = %w[remove mask].freeze
 
     attr_reader :config, :fingerprint

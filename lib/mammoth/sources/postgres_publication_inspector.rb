@@ -70,6 +70,7 @@ module Mammoth
 
     # Read-only PostgreSQL publication and replica-identity catalog inspector.
     class PostgresPublicationInspector
+      # Catalog query used to inspect publication actions and replica identity.
       QUERY = <<~SQL
         SELECT
           relation.oid AS relation_id,

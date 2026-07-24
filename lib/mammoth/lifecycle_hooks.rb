@@ -7,6 +7,7 @@ module Mammoth
   # future control agents stable observation points without changing the data
   # plane or introducing remote behavior into OSS.
   class LifecycleHooks
+    # Supported lifecycle callback names.
     EVENTS = %i[
       before_start
       after_start
@@ -15,6 +16,8 @@ module Mammoth
       before_replay
       after_replay
     ].freeze
+
+    # Frozen empty callback list used for events without registrations.
     EMPTY_CALLBACKS = [nil].compact.freeze
 
     attr_reader :callbacks
