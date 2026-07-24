@@ -342,8 +342,8 @@ operational_state:
 ```
 
 `operational_state.adapter` selects the local operational state adapter.
-Mammoth OSS ships `sqlite`, which remains the default when this section is
-omitted.
+Mammoth Data Plane ships `sqlite`, which remains the default when this section
+is omitted.
 
 ### `logging`
 

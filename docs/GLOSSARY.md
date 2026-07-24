@@ -105,7 +105,8 @@ Rolled-back transactions are never delivered.
 
 The runtime responsible for reading, processing, and delivering change events.
 
-Mammoth OSS is the data plane of the Mammoth Platform.
+Mammoth Data Plane is the open-source runtime component of the Mammoth
+ecosystem.
 
 ---
 
@@ -216,9 +217,18 @@ LSNs are used for:
 
 ## Mammoth
 
+The umbrella brand for the Mammoth ecosystem. When the component is clear from
+context, Mammoth may also refer to Mammoth Data Plane.
+
+---
+
+## Mammoth Data Plane
+
 The open-source PostgreSQL Change Data Capture data plane.
 
-Mammoth provides the core runtime responsible for reliably capturing, processing, and delivering PostgreSQL change events while maintaining operational state for production deployments.
+Mammoth Data Plane provides the core runtime responsible for reliably
+capturing, processing, and delivering PostgreSQL change events while
+maintaining operational state for production deployments.
 
 Capabilities include, but are not limited to:
 
@@ -231,11 +241,11 @@ Capabilities include, but are not limited to:
 
 ---
 
-## Mammoth Platform
+## Mammoth Ecosystem
 
 The complete product family consisting of:
 
-- Mammoth OSS (Data Plane)
+- Mammoth Data Plane
 - Mammoth Extensions
 - Mammoth Control Agent
 - Mammoth Control Plane
@@ -400,12 +410,11 @@ Logical replication streams are derived from WAL records.
 
 An HTTP endpoint that receives change events from Mammoth.
 
-Webhooks are the primary destination supported by Mammoth OSS.
+Webhooks are the primary destination supported by Mammoth Data Plane.
 
 ---
 
 ## Webhook Payload
 
 The serialized event or transaction body delivered to an HTTP webhook destination.
-
 

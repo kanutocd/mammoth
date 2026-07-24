@@ -25,6 +25,17 @@
 Mammoth is a self-hosted PostgreSQL event relay focused on reliable delivery
 of database change events.
 
+This repository contains the **Mammoth Data Plane**, the open-source runtime in
+the broader Mammoth ecosystem:
+
+```text
+Mammoth
+├── Mammoth Data Plane
+├── Mammoth Control Plane
+├── Mammoth Control Agent
+└── Mammoth Extensions
+```
+
 ```text
 PostgreSQL
       ↓
@@ -32,7 +43,7 @@ CDC Ecosystem source adapter
       ↓
 CDC::Core::TransactionEnvelope
       ↓
-Mammoth
+Mammoth Data Plane
       ↓
 Webhook fanout
 ```
@@ -198,7 +209,7 @@ payload policy.
 
 ## Extensions
 
-Mammoth OSS exposes small adapter registries for future extensions:
+Mammoth Data Plane exposes small adapter registries for future extensions:
 
 - operational state adapters
 - destination adapters
@@ -391,4 +402,4 @@ building a writable database copy. See
 
 ## License
 
-Mammoth OSS is licensed under the [MIT License](LICENSE.txt).
+Mammoth OSS Data Plane is licensed under the [MIT License](LICENSE.txt).

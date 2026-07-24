@@ -30,8 +30,8 @@ Extensions may provide:
 Destination adapters that advertise prepared-payload support receive the exact
 JSON already projected by Mammoth. They must not restore fields, reserialize a
 source work item, or apply a second policy. Central policy authoring and fleet
-governance may live in Mammoth Platform; deterministic policy execution remains
-inside the OSS data plane.
+governance may live in Mammoth Control Plane; deterministic policy execution
+remains inside Mammoth Data Plane.
 
 Registration is explicit:
 
@@ -88,9 +88,10 @@ Mammoth::Commands::DeadLettersCommand.new(
 ).call
 ```
 
-These APIs are useful in OSS and are also integration seams for the paid
-Mammoth Platform. They keep the local data plane inspectable and testable
-without introducing a control plane into Mammoth OSS.
+These APIs are useful in Mammoth Data Plane and are also integration seams for
+Mammoth Control Plane and Mammoth Control Agent. They keep the local data plane
+inspectable and testable without introducing control-plane behavior into the
+open-source runtime.
 
 See also:
 

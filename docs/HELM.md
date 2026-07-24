@@ -158,7 +158,7 @@ node:
 
 ## Operational State Adapter
 
-Mammoth OSS uses the SQLite operational state adapter by default:
+Mammoth Data Plane uses the SQLite operational state adapter by default:
 
 ```yaml
 operational_state:

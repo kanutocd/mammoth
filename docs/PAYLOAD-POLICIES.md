@@ -4,14 +4,15 @@
 
 # Payload Policies
 
-Mammoth OSS can remove or mask selected PostgreSQL columns before a payload
-leaves the data plane. Policies are configured per destination, so one receiver
-can receive the complete event while another receives a reduced projection.
+Mammoth Data Plane can remove or mask selected PostgreSQL columns before a
+payload leaves the data plane. Policies are configured per destination, so one
+receiver can receive the complete event while another receives a reduced
+projection.
 
 Use this boundary to enforce straightforward, deterministic data minimization
-close to the source. Mammoth Platform may provide centralized policy authoring,
-governance, rollout, and audit workflows, but it is not required to execute an
-OSS payload policy.
+close to the source. Mammoth Control Plane may provide centralized policy
+authoring, governance, rollout, and audit workflows, but it is not required to
+execute a Mammoth Data Plane payload policy.
 
 ## Configure a policy
 

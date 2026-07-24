@@ -115,8 +115,9 @@ contact points or send notifications; use the Alerting page to inspect rule
 state and evaluation details without generating external traffic.
 
 This is intentionally a polished single-node glimpse built from Mammoth's
-public metrics, not a control plane. The control plane and its agent are part
-of the paid Mammoth Platform experience across Mammoth deployments.
+public metrics, not a control plane. Mammoth Control Plane and Mammoth Control
+Agent are paid components of the Mammoth ecosystem for multi-deployment
+operations.
 
 Run the scenario again without recreating the stack:
 

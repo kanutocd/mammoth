@@ -67,7 +67,8 @@ not send notifications or external alert traffic.
 
 This profile is a single-node demonstration built from Mammoth's public
 observability endpoints. It is not a control plane. The multi-deployment
-control plane and its agent belong to the paid Mammoth Platform.
+experience is provided by Mammoth Control Plane and Mammoth Control Agent,
+paid components of the Mammoth ecosystem.
 
 ## Endpoints
 

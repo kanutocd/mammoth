@@ -158,7 +158,7 @@
           "description": "Operator-defined node metadata."
         }
       },
-      "description": "Optional local node identity. Mammoth OSS uses this for status and future extension surfaces only."
+      "description": "Optional local node identity. Mammoth Data Plane uses this for status and future extension surfaces only."
     },
     "postgres": {
       "type": "object",
@@ -346,7 +346,7 @@
             "enum": [
               "webhook"
             ],
-            "description": "Destination adapter type. Mammoth OSS 0.7.x supports webhook destinations."
+            "description": "Destination adapter type. Mammoth Data Plane 0.7.x supports webhook destinations."
           },
           "enabled": {
             "type": "boolean",
@@ -520,7 +520,7 @@
           "enum": [
             "sqlite"
           ],
-          "description": "Operational state adapter. Mammoth OSS 0.7.x ships the sqlite adapter."
+          "description": "Operational state adapter. Mammoth Data Plane 0.7.x ships the sqlite adapter."
         }
       },
       "description": "Operational state adapter selection. SQLite remains the default OSS adapter."

@@ -10,6 +10,8 @@
 
 ### Changed
 
+- Retire the former product-family name in favor of the Mammoth ecosystem and
+  identify this open-source project as Mammoth Data Plane.
 - Default the unauthenticated observability HTTP server to the loopback
   interface and document the network controls required for non-loopback
   bindings.

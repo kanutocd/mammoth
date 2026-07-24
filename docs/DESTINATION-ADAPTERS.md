@@ -16,7 +16,7 @@ destinations:
     timeout_seconds: 5
 ```
 
-The `webhook` adapter remains the only Mammoth OSS destination adapter.
+The `webhook` adapter remains the only Mammoth Data Plane destination adapter.
 
 Adapter contract:
 

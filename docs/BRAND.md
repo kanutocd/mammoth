@@ -7,6 +7,23 @@ Mammoth is the PostgreSQL CDC Data Plane.
 
 It exists for one purpose: to reliably carry PostgreSQL transactions from the database to downstream systems.
 
+## Ecosystem Naming
+
+**Mammoth** is the umbrella brand. Use **Mammoth ecosystem** when the context
+needs to distinguish the product family from an individual component.
+
+```text
+Mammoth
+├── Mammoth Data Plane
+├── Mammoth Control Plane
+├── Mammoth Control Agent
+└── Mammoth Extensions
+```
+
+This open-source project is **Mammoth Data Plane**. Use **Mammoth OSS Data
+Plane** only when emphasizing its open-source licensing. Do not use “Mammoth
+Platform” as a product or ecosystem name.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="branding/logo/exports/png/mammoth-primary-horizontal-reversed-transparent.png">
   <source media="(prefers-color-scheme: light)" srcset="branding/logo/exports/png/mammoth-primary-horizontal-light.png">

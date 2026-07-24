@@ -8,16 +8,17 @@ Gem::Specification.new do |spec|
   spec.authors = ["Ken C. Demanawa"]
   spec.email = ["kenneth.c.demanawa@gmail.com"]
 
-  spec.summary = "Reliable delivery of PostgreSQL logical replication events with retries, dead letters, and operational state."
+  spec.summary = "Mammoth Data Plane for reliable PostgreSQL change-event delivery."
   spec.description = <<~TEXT
-    Mammoth is an OSS PostgreSQL change-event delivery appliance for Ruby.
+    Mammoth Data Plane is the open-source PostgreSQL change-event delivery
+    runtime in the Mammoth ecosystem.
 
     It realizes the CDC Ecosystem pgoutput and cdc-core libraries for PostgreSQL,
     then delivers normalized changes to webhook endpoints with durable
     checkpointing, retry state, dead letters, and operational visibility.
 
-    Mammoth is application-first: it can be installed as a Ruby gem, packaged
-    into a container image, or deployed into Kubernetes with Helm.
+    Mammoth Data Plane is application-first: it can be installed as a Ruby gem,
+    packaged into a container image, or deployed into Kubernetes with Helm.
   TEXT
 
   spec.homepage = "https://kanutocd.github.io/mammoth/"

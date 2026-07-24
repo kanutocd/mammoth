@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
   <title id="title">Mammoth social preview</title>
-  <desc id="desc">Mammoth OSS, the PostgreSQL CDC Data Plane.</desc>
+  <desc id="desc">Mammoth Data Plane, the open-source PostgreSQL CDC runtime.</desc>
   <rect width="1280" height="640" fill="#0F0F0F"/>
   <path d="M0 516H1280" stroke="#336791" stroke-width="6"/>
   <path d="M0 538H1280" stroke="#5BA0E6" stroke-width="3"/>

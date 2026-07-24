@@ -14,7 +14,7 @@ operational_state:
   adapter: sqlite
 ```
 
-The `sqlite` adapter remains the Mammoth OSS default.
+The `sqlite` adapter remains the Mammoth Data Plane default.
 
 Adapter contract:
 

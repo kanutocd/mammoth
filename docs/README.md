@@ -22,6 +22,10 @@
 
 🦣 Mammoth is a self-hosted PostgreSQL TransactionEnvelope-driven Change Data Capture relay focused on reliable delivery of database change events to webhook destinations.
 
+This documentation covers **Mammoth Data Plane**, the open-source runtime in
+the Mammoth ecosystem. See [Mammoth Brand](file.BRAND.html) for the ecosystem
+naming hierarchy.
+
 ```text
 PostgreSQL
     ↓
@@ -31,7 +35,7 @@ pgoutput-source-adapter
     ↓
 CDC::Core::ChangeEvent / TransactionEnvelope
     ↓
-Mammoth
+Mammoth Data Plane
     ↓
 Webhook fanout
 ```

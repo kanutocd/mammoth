@@ -2,7 +2,7 @@
 
 module Mammoth
   module OperationalState
-    # SQLite-backed operational state adapter used by Mammoth OSS.
+    # SQLite-backed operational state adapter used by Mammoth Data Plane.
     class SQLiteAdapter < Adapter
       attr_reader :sqlite_store
 

@@ -74,8 +74,10 @@ and convert the wordmark to paths.
 - Stacked: icon above wordmark
 - Standalone icon: use where Mammoth is already identified
 
-Do not attach `Mammoth Platform` to the OSS mark as though the open-source
-project includes the paid control plane.
+Use `Mammoth` for the umbrella brand and `Mammoth ecosystem` when emphasis is
+needed. Identify this project as `Mammoth Data Plane`, or `Mammoth OSS Data
+Plane` when emphasizing licensing. Do not append `Platform` to the Mammoth
+brand.
 
 ## Do not
 
