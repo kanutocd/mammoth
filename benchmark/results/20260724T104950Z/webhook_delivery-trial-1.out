@@ -1,0 +1,20 @@
+Mammoth webhook delivery benchmark
+requests=1000 delivery_unit=transaction receiver_latency_ms=10.0 auth=true signing=true
+
+requests        unit latency_ms auth signing req/sec elapsed_s   bytes
+-------- ----------- ---------- ---- ------- ------- --------- -------
+    1000 transaction       10.0 true    true   83.53 11.971409 1685037
+
+[
+  {
+    "requests": 1000,
+    "delivery_unit": "transaction",
+    "receiver_latency_ms": 10.0,
+    "auth": true,
+    "signing": true,
+    "received_requests": 1000,
+    "received_bytes": 1685037,
+    "elapsed_seconds": 11.971409,
+    "requests_per_second": 83.53
+  }
+]

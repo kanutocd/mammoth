@@ -1,0 +1,44 @@
+Mammoth payload policy benchmark
+transformations=100000 warmup_transformations=5000 events_per_transaction=4
+
+scenario transformations events transformations/sec  events/sec us/transformation allocs/transformation bytes
+-------- --------------- ------ ------------------- ----------- ----------------- --------------------- -----
+inactive          100000 400000          3290988.62 13163954.49             0.304                   1.0  2549
+  remove          100000 400000            14605.84    58423.35            68.466                 154.0  1884
+    mask          100000 400000             18100.7    72402.79            55.246                 154.0  2620
+
+[
+  {
+    "scenario": "inactive",
+    "transformations": 100000,
+    "events": 400000,
+    "elapsed_seconds": 0.030386,
+    "transformations_per_second": 3290988.62,
+    "events_per_second": 13163954.49,
+    "microseconds_per_transformation": 0.304,
+    "allocations_per_transformation": 1.0,
+    "payload_bytes": 2549
+  },
+  {
+    "scenario": "remove",
+    "transformations": 100000,
+    "events": 400000,
+    "elapsed_seconds": 6.846577,
+    "transformations_per_second": 14605.84,
+    "events_per_second": 58423.35,
+    "microseconds_per_transformation": 68.466,
+    "allocations_per_transformation": 154.0,
+    "payload_bytes": 1884
+  },
+  {
+    "scenario": "mask",
+    "transformations": 100000,
+    "events": 400000,
+    "elapsed_seconds": 5.524649,
+    "transformations_per_second": 18100.7,
+    "events_per_second": 72402.79,
+    "microseconds_per_transformation": 55.246,
+    "allocations_per_transformation": 154.0,
+    "payload_bytes": 2620
+  }
+]

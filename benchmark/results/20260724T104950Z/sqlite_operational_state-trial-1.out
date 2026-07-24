@@ -1,0 +1,24 @@
+Mammoth SQLite operational-state benchmark
+records=10000 dead_letters=1000 checkpoint_interval=100
+
+records  dlq checkpoints db_bytes delivered/sec  dup/sec dlq/sec
+------- ---- ----------- -------- ------------- -------- -------
+  10000 1000           1  3809280       1630.38 12385.59 1654.41
+
+[
+  {
+    "records": 10000,
+    "dead_letters": 1000,
+    "checkpoint_interval": 100,
+    "delivered_write_seconds": 6.133534,
+    "delivered_writes_per_second": 1630.38,
+    "duplicate_check_seconds": 0.80739,
+    "duplicate_checks_per_second": 12385.59,
+    "dead_letter_write_seconds": 0.604445,
+    "dead_letter_writes_per_second": 1654.41,
+    "delivered_envelopes": 10000,
+    "dead_letters_total": 1000,
+    "checkpoints": 1,
+    "sqlite_bytes": 3809280
+  }
+]

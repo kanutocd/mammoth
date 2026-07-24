@@ -1,0 +1,64 @@
+Mammoth webhook fanout benchmark
+transactions=250 events_per_transaction=4 receiver_latency_ms=10.0 destinations=1,2,5,10
+
+dest  tx requests delivered dlq latency_ms tx/sec req/sec elapsed_s
+---- --- -------- --------- --- ---------- ------ ------- ---------
+   1 250      250       250   0       10.0  76.76   76.76  3.257036
+   2 250      500       500   0       10.0  35.09   70.19  7.124013
+   5 250     1250      1250   0       10.0  14.05   70.23 17.797789
+  10 250     2500      2500   0       10.0   7.44   74.36 33.618806
+
+[
+  {
+    "destinations": 1,
+    "transactions": 250,
+    "events": 1000,
+    "webhook_requests": 250,
+    "delivered_envelopes": 250,
+    "dead_letters": 0,
+    "receiver_latency_ms": 10.0,
+    "elapsed_seconds": 3.257036,
+    "transactions_per_second": 76.76,
+    "webhook_requests_per_second": 76.76,
+    "bytes": 420528
+  },
+  {
+    "destinations": 2,
+    "transactions": 250,
+    "events": 1000,
+    "webhook_requests": 500,
+    "delivered_envelopes": 500,
+    "dead_letters": 0,
+    "receiver_latency_ms": 10.0,
+    "elapsed_seconds": 7.124013,
+    "transactions_per_second": 35.09,
+    "webhook_requests_per_second": 70.19,
+    "bytes": 841056
+  },
+  {
+    "destinations": 5,
+    "transactions": 250,
+    "events": 1000,
+    "webhook_requests": 1250,
+    "delivered_envelopes": 1250,
+    "dead_letters": 0,
+    "receiver_latency_ms": 10.0,
+    "elapsed_seconds": 17.797789,
+    "transactions_per_second": 14.05,
+    "webhook_requests_per_second": 70.23,
+    "bytes": 2102640
+  },
+  {
+    "destinations": 10,
+    "transactions": 250,
+    "events": 1000,
+    "webhook_requests": 2500,
+    "delivered_envelopes": 2500,
+    "dead_letters": 0,
+    "receiver_latency_ms": 10.0,
+    "elapsed_seconds": 33.618806,
+    "transactions_per_second": 7.44,
+    "webhook_requests_per_second": 74.36,
+    "bytes": 4205280
+  }
+]

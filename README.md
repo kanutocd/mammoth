@@ -292,8 +292,10 @@ production:
 - observability snapshots
 - DLQ replay
 
-The historical numbers in [Benchmarks](https://github.com/kanutocd/mammoth/tree/main/docs/BENCHMARKS.md) are retained as a
-snapshot, not a universal performance claim. Re-run the scripts in
+The [reference snapshot](https://github.com/kanutocd/mammoth/blob/main/benchmark/results/20260724T104950Z/snapshot.md)
+records a full local run, its exact commands, environment, raw output, and
+interpretation. It is a reproducible baseline, not a universal performance
+claim. Re-run the scripts in
 [`benchmark/`](https://github.com/kanutocd/mammoth/tree/main/benchmark) on your own hardware when choosing
 `runtime.concurrency`, `destinations`, SQLite storage, scrape frequency, and
 DLQ replay expectations.

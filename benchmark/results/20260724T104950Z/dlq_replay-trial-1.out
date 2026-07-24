@@ -1,0 +1,20 @@
+Mammoth DLQ replay benchmark
+dead_letters=1000 destinations=2 delivery_unit=transaction
+
+ dlq destinations        unit replay/sec pending resolved delivered db_bytes
+---- ------------ ----------- ---------- ------- -------- --------- --------
+1000            2 transaction     1030.3       0     1000      1000  2551808
+
+[
+  {
+    "dead_letters": 1000,
+    "destinations": 2,
+    "delivery_unit": "transaction",
+    "elapsed_seconds": 0.97059,
+    "replayed_per_second": 1030.3,
+    "pending": 0,
+    "resolved": 1000,
+    "delivered_envelopes": 1000,
+    "sqlite_bytes": 2551808
+  }
+]

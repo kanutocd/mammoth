@@ -1,0 +1,56 @@
+Mammoth serialization benchmark
+serializations=100000 warmup_serializations=5000 events_per_transaction=4
+
+                scenario operations events  ops/sec events/sec   us/op allocs/op bytes
+------------------------ ---------- ------ -------- ---------- ------- --------- -----
+       event_explicit_id     100000 100000 56265.11   56265.11  17.773      30.0   418
+       event_fallback_id     100000 100000 31984.09   31984.09  31.266      42.0   438
+transaction_explicit_ids     100000 400000 13903.08    55612.3  71.927     125.0  1960
+transaction_fallback_ids     100000 400000  7297.05   29188.21 137.042     180.0  2052
+
+[
+  {
+    "scenario": "event_explicit_id",
+    "operations": 100000,
+    "events": 100000,
+    "elapsed_seconds": 1.7773,
+    "operations_per_second": 56265.11,
+    "events_per_second": 56265.11,
+    "microseconds_per_operation": 17.773,
+    "allocations_per_operation": 30.0,
+    "payload_bytes": 418
+  },
+  {
+    "scenario": "event_fallback_id",
+    "operations": 100000,
+    "events": 100000,
+    "elapsed_seconds": 3.126555,
+    "operations_per_second": 31984.09,
+    "events_per_second": 31984.09,
+    "microseconds_per_operation": 31.266,
+    "allocations_per_operation": 42.0,
+    "payload_bytes": 438
+  },
+  {
+    "scenario": "transaction_explicit_ids",
+    "operations": 100000,
+    "events": 400000,
+    "elapsed_seconds": 7.192653,
+    "operations_per_second": 13903.08,
+    "events_per_second": 55612.3,
+    "microseconds_per_operation": 71.927,
+    "allocations_per_operation": 125.0,
+    "payload_bytes": 1960
+  },
+  {
+    "scenario": "transaction_fallback_ids",
+    "operations": 100000,
+    "events": 400000,
+    "elapsed_seconds": 13.704164,
+    "operations_per_second": 7297.05,
+    "events_per_second": 29188.21,
+    "microseconds_per_operation": 137.042,
+    "allocations_per_operation": 180.0,
+    "payload_bytes": 2052
+  }
+]

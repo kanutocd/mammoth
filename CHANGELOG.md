@@ -21,6 +21,9 @@
   scanning.
 - Pin the Ruby container base image to an immutable digest and publish release
   images with SBOM and maximum provenance attestations.
+- Published a full reference benchmark snapshot with machine-readable results,
+  raw output, and documented interpretation across projection, delivery,
+  fanout, SQLite operational state, observability, and dead-letter replay.
 
 ## 1.4.0 - 2026-07-19
 

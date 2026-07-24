@@ -87,7 +87,9 @@ bundle exec ruby benchmark/snapshot.rb
 ```
 
 Publish snapshots with the generated command, environment metadata, and Mammoth
-commit SHA. Do not commit `benchmark/results/`; it is ignored by git.
+commit SHA. Routine `benchmark/results/` runs are ignored. Intentionally
+selected references may be retained with their generated Markdown, JSON, and
+successful raw output.
 
 ## Serialization
 
@@ -341,34 +343,93 @@ MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 \
 bundle exec ruby benchmark/dlq_replay.rb
 ```
 
-## Existing Snapshot
+## Reference Snapshot: 2026-07-24
 
-The tables below are retained from an earlier run of
-`benchmark/concurrent_delivery.rb`. Do not treat them as universal performance
-claims. Re-run benchmarks on your own hardware and publish the exact command,
-environment, and Mammoth commit SHA with any interpretation.
+The current reference is a clean, full-preset, single-trial run at commit
+`b6889c0` using Ruby 4.0.5 on x86-64 Linux. The
+[generated report](https://github.com/kanutocd/mammoth/blob/main/benchmark/results/20260724T104950Z/snapshot.md),
+[machine-readable snapshot](https://github.com/kanutocd/mammoth/blob/main/benchmark/results/20260724T104950Z/snapshot.json),
+and raw standard output are retained with the repository.
 
-### Benchmark Configuration
+These measurements characterize this host and configuration only. A single
+trial is useful as a baseline, not as a statistical confidence interval or
+capacity commitment.
 
-* 10,000 transactions
-* 4 events per transaction
-* 40,000 total events
-* `preserve_order: false`
+### Projection costs
 
-### Fast Sink (10ms)
+| Scenario | Rate | Time | Allocations |
+| --- | ---: | ---: | ---: |
+| Event serialization, explicit ID | 56,265 events/sec | 17.773 µs/event | 30/event |
+| Event serialization, fallback ID | 31,984 events/sec | 31.266 µs/event | 42/event |
+| Transaction serialization, explicit IDs | 55,612 events/sec | 71.927 µs/transaction | 125/transaction |
+| Transaction serialization, fallback IDs | 29,188 events/sec | 137.042 µs/transaction | 180/transaction |
+| Inactive payload policy | 3,290,989 transformations/sec | 0.304 µs/transformation | 1/transformation |
+| Remove payload policy | 14,606 transformations/sec | 68.466 µs/transformation | 154/transformation |
+| Mask payload policy | 18,101 transformations/sec | 55.246 µs/transformation | 154/transformation |
 
-| Concurrency | Transactions/sec | Events/sec | Avg Latency (ms) | P95 Latency (ms) | Elapsed (s) |
-| ----------- | ---------------: | ---------: | ---------------: | ---------------: | ----------: |
-| 1           |            96.50 |     385.98 |           10.204 |           10.404 |     103.631 |
-| 5           |           482.26 |    1929.04 |           10.235 |           10.451 |      20.736 |
-| 10          |           955.04 |    3820.17 |           10.287 |           11.047 |      10.471 |
-| 25          |          2419.65 |    9678.61 |           10.173 |           10.330 |       4.133 |
+Deterministic fallback IDs cost about 1.76 times the explicit-ID event time and
+1.91 times the explicit-ID transaction time in this isolated projection test.
+Prefer stable upstream IDs when available, while retaining fallback IDs for
+correct replay identity. The inactive policy path is effectively a guard
+check. Matching remove and mask policies remain CPU-local, but their copy,
+selector, and redaction work should be included in CPU planning for very high
+event rates.
 
-### Realistic Webhook (50ms)
+### Concurrent delivery
 
-| Concurrency | Transactions/sec | Events/sec | Avg Latency (ms) | P95 Latency (ms) | Elapsed (s) |
-| ----------- | ---------------: | ---------: | ---------------: | ---------------: | ----------: |
-| 1           |            19.85 |      79.40 |           50.206 |           50.405 |     503.795 |
-| 5           |            99.27 |     397.07 |           50.234 |           50.419 |     100.737 |
-| 10          |           198.40 |     793.61 |           50.181 |           50.402 |      50.403 |
-| 25          |           495.11 |    1980.44 |           50.224 |           50.420 |      20.198 |
+The synthetic sink slept for 25 ms per transaction with four events per
+transaction and `preserve_order: false`.
+
+| Concurrency | Transactions/sec | Events/sec | Average latency | P95 latency |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 39.36 | 157.45 | 25.262 ms | 25.913 ms |
+| 5 | 195.53 | 782.10 | 25.443 ms | 26.694 ms |
+| 10 | 382.93 | 1,531.71 | 25.860 ms | 27.513 ms |
+| 25 | 956.30 | 3,825.21 | 25.670 ms | 27.540 ms |
+| 50 | 1,861.65 | 7,446.58 | 26.013 ms | 28.402 ms |
+
+Throughput scaled to 47.3 times the single-worker rate at concurrency 50, or
+about 94.6% of ideal linear scaling, while p95 processing latency increased by
+2.489 ms. This indicates that the tested range remained destination-latency
+bound. It does not establish that PostgreSQL ingestion, checkpointing, a real
+receiver, or a constrained production host will scale identically.
+
+### Delivery, state, and operations
+
+| Surface | Configuration | Result |
+| --- | --- | ---: |
+| Signed/authenticated webhook | 10 ms receiver latency, 1,000 transactions | 83.53 requests/sec |
+| Fanout | 1 destination, 250 transactions | 76.76 requests/sec |
+| Fanout | 10 destinations, 2,500 requests | 74.36 requests/sec |
+| Delivered-ledger writes | 10,000 rows | 1,630.38 writes/sec |
+| Duplicate checks | 10,000 rows | 12,385.59 checks/sec |
+| Dead-letter writes | 1,000 rows | 1,654.41 writes/sec |
+| Readiness snapshot | 10,000 delivered, 1,000 dead letters | 10,381.57 snapshots/sec |
+| Metrics snapshot | 10,000 delivered, 1,000 dead letters | 746.64 snapshots/sec |
+| DLQ replay | 1,000 rows, 2 destinations, no network | 1,030.30 rows/sec |
+
+The 10 ms webhook test reached 83.5% of the latency-only ceiling of 100
+requests/sec, with the remaining time covering local HTTP, serialization,
+authentication, and signing. Fanout held roughly 70–77 requests/sec as
+destination count increased, so transaction throughput fell approximately
+inversely with the number of destinations; concurrency and route selectivity
+are therefore the relevant compensating controls.
+
+SQLite duplicate reads were much faster than ledger and dead-letter writes on
+this filesystem. Metrics generation took about 1.34 ms per snapshot and
+readiness about 0.096 ms, leaving substantial local headroom at ordinary scrape
+intervals. DLQ replay resolved all 1,000 rows with none pending, but its rate
+excludes receiver latency, retries, and policy execution.
+
+### Interpretation boundaries
+
+- The snapshot used one trial; repeat trials before treating small differences
+  as regressions.
+- HTTP receivers and synthetic sinks ran locally, without production network
+  variance or rate limits.
+- PostgreSQL decoding, WAL transport, acknowledgement, and the contiguous
+  progress coordinator are outside these downstream benchmarks.
+- SQLite results depend strongly on filesystem, volume, cache, and durability
+  behavior.
+- Capacity planning should rerun the same commands on deployment-equivalent
+  hardware with realistic latency, fanout, payload size, and concurrency.

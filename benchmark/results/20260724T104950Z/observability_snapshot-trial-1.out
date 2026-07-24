@@ -1,0 +1,19 @@
+Mammoth observability snapshot benchmark
+delivered=10000 dead_letters=1000 snapshots=100
+
+delivered  dlq snapshots db_bytes ready/sec metrics/sec
+--------- ---- --------- -------- --------- -----------
+    10000 1000       100  3723264  10381.57      746.64
+
+[
+  {
+    "delivered": 10000,
+    "dead_letters": 1000,
+    "snapshots": 100,
+    "readiness_seconds": 0.009632,
+    "readiness_per_second": 10381.57,
+    "metrics_seconds": 0.133933,
+    "metrics_per_second": 746.64,
+    "sqlite_bytes": 3723264
+  }
+]

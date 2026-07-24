@@ -1,0 +1,489 @@
+{
+  "generated_at": "2026-07-24T10:49:50Z",
+  "preset": "full",
+  "trials": 1,
+  "environment": {
+    "git_sha": "b6889c0f37a19c7d1950c28d5524c2742c5feddb",
+    "git_status": "",
+    "ruby": "ruby 4.0.5 (2026-05-20 revision 64336ffd0e) +PRISM [x86_64-linux]",
+    "platform": "x86_64-linux",
+    "hostname": "redacted",
+    "cpu": "Linux redacted 7.0.0-28-generic #28~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Jul  1 15:50:57 UTC 2 x86_64 x86_64 x86_64 GNU/Linux"
+  },
+  "benchmarks": [
+    {
+      "name": "serialization",
+      "script": "benchmark/serialization.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_SERIALIZATIONS": "100000",
+        "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS": "5000",
+        "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4"
+      },
+      "command": "MAMMOTH_BENCH_SERIALIZATIONS=100000 MAMMOTH_BENCH_WARMUP_SERIALIZATIONS=5000 MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 bundle exec ruby benchmark/serialization.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:49:50Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "serialization-trial-1.out",
+          "stderr_file": "serialization-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_SERIALIZATIONS": "100000",
+            "MAMMOTH_BENCH_WARMUP_SERIALIZATIONS": "5000",
+            "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "scenario": "event_explicit_id",
+              "operations": 100000,
+              "events": 100000,
+              "elapsed_seconds": 1.7773,
+              "operations_per_second": 56265.11,
+              "events_per_second": 56265.11,
+              "microseconds_per_operation": 17.773,
+              "allocations_per_operation": 30.0,
+              "payload_bytes": 418
+            },
+            {
+              "scenario": "event_fallback_id",
+              "operations": 100000,
+              "events": 100000,
+              "elapsed_seconds": 3.126555,
+              "operations_per_second": 31984.09,
+              "events_per_second": 31984.09,
+              "microseconds_per_operation": 31.266,
+              "allocations_per_operation": 42.0,
+              "payload_bytes": 438
+            },
+            {
+              "scenario": "transaction_explicit_ids",
+              "operations": 100000,
+              "events": 400000,
+              "elapsed_seconds": 7.192653,
+              "operations_per_second": 13903.08,
+              "events_per_second": 55612.3,
+              "microseconds_per_operation": 71.927,
+              "allocations_per_operation": 125.0,
+              "payload_bytes": 1960
+            },
+            {
+              "scenario": "transaction_fallback_ids",
+              "operations": 100000,
+              "events": 400000,
+              "elapsed_seconds": 13.704164,
+              "operations_per_second": 7297.05,
+              "events_per_second": 29188.21,
+              "microseconds_per_operation": 137.042,
+              "allocations_per_operation": 180.0,
+              "payload_bytes": 2052
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payload_policy",
+      "script": "benchmark/payload_policy.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_TRANSFORMATIONS": "100000",
+        "MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS": "5000",
+        "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4"
+      },
+      "command": "MAMMOTH_BENCH_TRANSFORMATIONS=100000 MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS=5000 MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 bundle exec ruby benchmark/payload_policy.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:50:17Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "payload_policy-trial-1.out",
+          "stderr_file": "payload_policy-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_TRANSFORMATIONS": "100000",
+            "MAMMOTH_BENCH_WARMUP_TRANSFORMATIONS": "5000",
+            "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "scenario": "inactive",
+              "transformations": 100000,
+              "events": 400000,
+              "elapsed_seconds": 0.030386,
+              "transformations_per_second": 3290988.62,
+              "events_per_second": 13163954.49,
+              "microseconds_per_transformation": 0.304,
+              "allocations_per_transformation": 1.0,
+              "payload_bytes": 2549
+            },
+            {
+              "scenario": "remove",
+              "transformations": 100000,
+              "events": 400000,
+              "elapsed_seconds": 6.846577,
+              "transformations_per_second": 14605.84,
+              "events_per_second": 58423.35,
+              "microseconds_per_transformation": 68.466,
+              "allocations_per_transformation": 154.0,
+              "payload_bytes": 1884
+            },
+            {
+              "scenario": "mask",
+              "transformations": 100000,
+              "events": 400000,
+              "elapsed_seconds": 5.524649,
+              "transformations_per_second": 18100.7,
+              "events_per_second": 72402.79,
+              "microseconds_per_transformation": 55.246,
+              "allocations_per_transformation": 154.0,
+              "payload_bytes": 2620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "concurrent_delivery",
+      "script": "benchmark/concurrent_delivery.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_TRANSACTIONS": "5000",
+        "MAMMOTH_BENCH_WARMUP_TRANSACTIONS": "100",
+        "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+        "MAMMOTH_BENCH_LATENCY_MS": "25",
+        "MAMMOTH_BENCH_CONCURRENCY": "1,5,10,25,50",
+        "MAMMOTH_BENCH_PRESERVE_ORDER": "false"
+      },
+      "command": "MAMMOTH_BENCH_TRANSACTIONS=5000 MAMMOTH_BENCH_WARMUP_TRANSACTIONS=100 MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 MAMMOTH_BENCH_LATENCY_MS=25 MAMMOTH_BENCH_CONCURRENCY=1,5,10,25,50 MAMMOTH_BENCH_PRESERVE_ORDER=false bundle exec ruby benchmark/concurrent_delivery.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:50:32Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "concurrent_delivery-trial-1.out",
+          "stderr_file": "concurrent_delivery-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_TRANSACTIONS": "5000",
+            "MAMMOTH_BENCH_WARMUP_TRANSACTIONS": "100",
+            "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+            "MAMMOTH_BENCH_LATENCY_MS": "25",
+            "MAMMOTH_BENCH_CONCURRENCY": "1,5,10,25,50",
+            "MAMMOTH_BENCH_PRESERVE_ORDER": "false",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "concurrency": 1,
+              "preserve_order": false,
+              "transactions": 5000,
+              "events": 20000,
+              "sink_latency_ms": 25.0,
+              "elapsed_seconds": 127.022683,
+              "transactions_per_second": 39.36,
+              "events_per_second": 157.45,
+              "average_latency_ms": 25.262,
+              "p95_latency_ms": 25.913
+            },
+            {
+              "concurrency": 5,
+              "preserve_order": false,
+              "transactions": 5000,
+              "events": 20000,
+              "sink_latency_ms": 25.0,
+              "elapsed_seconds": 25.57215,
+              "transactions_per_second": 195.53,
+              "events_per_second": 782.1,
+              "average_latency_ms": 25.443,
+              "p95_latency_ms": 26.694
+            },
+            {
+              "concurrency": 10,
+              "preserve_order": false,
+              "transactions": 5000,
+              "events": 20000,
+              "sink_latency_ms": 25.0,
+              "elapsed_seconds": 13.05726,
+              "transactions_per_second": 382.93,
+              "events_per_second": 1531.71,
+              "average_latency_ms": 25.86,
+              "p95_latency_ms": 27.513
+            },
+            {
+              "concurrency": 25,
+              "preserve_order": false,
+              "transactions": 5000,
+              "events": 20000,
+              "sink_latency_ms": 25.0,
+              "elapsed_seconds": 5.228474,
+              "transactions_per_second": 956.3,
+              "events_per_second": 3825.21,
+              "average_latency_ms": 25.67,
+              "p95_latency_ms": 27.54
+            },
+            {
+              "concurrency": 50,
+              "preserve_order": false,
+              "transactions": 5000,
+              "events": 20000,
+              "sink_latency_ms": 25.0,
+              "elapsed_seconds": 2.685796,
+              "transactions_per_second": 1861.65,
+              "events_per_second": 7446.58,
+              "average_latency_ms": 26.013,
+              "p95_latency_ms": 28.402
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webhook_delivery",
+      "script": "benchmark/webhook_delivery.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_REQUESTS": "1000",
+        "MAMMOTH_BENCH_LATENCY_MS": "10",
+        "MAMMOTH_BENCH_DELIVERY_UNIT": "transaction",
+        "MAMMOTH_BENCH_AUTH": "true",
+        "MAMMOTH_BENCH_SIGNING": "true"
+      },
+      "command": "MAMMOTH_BENCH_REQUESTS=1000 MAMMOTH_BENCH_LATENCY_MS=10 MAMMOTH_BENCH_DELIVERY_UNIT=transaction MAMMOTH_BENCH_AUTH=true MAMMOTH_BENCH_SIGNING=true bundle exec ruby benchmark/webhook_delivery.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:53:32Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "webhook_delivery-trial-1.out",
+          "stderr_file": "webhook_delivery-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_REQUESTS": "1000",
+            "MAMMOTH_BENCH_LATENCY_MS": "10",
+            "MAMMOTH_BENCH_DELIVERY_UNIT": "transaction",
+            "MAMMOTH_BENCH_AUTH": "true",
+            "MAMMOTH_BENCH_SIGNING": "true",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "requests": 1000,
+              "delivery_unit": "transaction",
+              "receiver_latency_ms": 10.0,
+              "auth": true,
+              "signing": true,
+              "received_requests": 1000,
+              "received_bytes": 1685037,
+              "elapsed_seconds": 11.971409,
+              "requests_per_second": 83.53
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webhook_fanout",
+      "script": "benchmark/webhook_fanout.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_TRANSACTIONS": "250",
+        "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+        "MAMMOTH_BENCH_DESTINATIONS": "1,2,5,10",
+        "MAMMOTH_BENCH_LATENCY_MS": "10"
+      },
+      "command": "MAMMOTH_BENCH_TRANSACTIONS=250 MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 MAMMOTH_BENCH_DESTINATIONS=1,2,5,10 MAMMOTH_BENCH_LATENCY_MS=10 bundle exec ruby benchmark/webhook_fanout.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:53:44Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "webhook_fanout-trial-1.out",
+          "stderr_file": "webhook_fanout-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_TRANSACTIONS": "250",
+            "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+            "MAMMOTH_BENCH_DESTINATIONS": "1,2,5,10",
+            "MAMMOTH_BENCH_LATENCY_MS": "10",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "destinations": 1,
+              "transactions": 250,
+              "events": 1000,
+              "webhook_requests": 250,
+              "delivered_envelopes": 250,
+              "dead_letters": 0,
+              "receiver_latency_ms": 10.0,
+              "elapsed_seconds": 3.257036,
+              "transactions_per_second": 76.76,
+              "webhook_requests_per_second": 76.76,
+              "bytes": 420528
+            },
+            {
+              "destinations": 2,
+              "transactions": 250,
+              "events": 1000,
+              "webhook_requests": 500,
+              "delivered_envelopes": 500,
+              "dead_letters": 0,
+              "receiver_latency_ms": 10.0,
+              "elapsed_seconds": 7.124013,
+              "transactions_per_second": 35.09,
+              "webhook_requests_per_second": 70.19,
+              "bytes": 841056
+            },
+            {
+              "destinations": 5,
+              "transactions": 250,
+              "events": 1000,
+              "webhook_requests": 1250,
+              "delivered_envelopes": 1250,
+              "dead_letters": 0,
+              "receiver_latency_ms": 10.0,
+              "elapsed_seconds": 17.797789,
+              "transactions_per_second": 14.05,
+              "webhook_requests_per_second": 70.23,
+              "bytes": 2102640
+            },
+            {
+              "destinations": 10,
+              "transactions": 250,
+              "events": 1000,
+              "webhook_requests": 2500,
+              "delivered_envelopes": 2500,
+              "dead_letters": 0,
+              "receiver_latency_ms": 10.0,
+              "elapsed_seconds": 33.618806,
+              "transactions_per_second": 7.44,
+              "webhook_requests_per_second": 74.36,
+              "bytes": 4205280
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sqlite_operational_state",
+      "script": "benchmark/sqlite_operational_state.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_RECORDS": "10000",
+        "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+        "MAMMOTH_BENCH_CHECKPOINT_INTERVAL": "100"
+      },
+      "command": "MAMMOTH_BENCH_RECORDS=10000 MAMMOTH_BENCH_DEAD_LETTERS=1000 MAMMOTH_BENCH_CHECKPOINT_INTERVAL=100 bundle exec ruby benchmark/sqlite_operational_state.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:54:48Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "sqlite_operational_state-trial-1.out",
+          "stderr_file": "sqlite_operational_state-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_RECORDS": "10000",
+            "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+            "MAMMOTH_BENCH_CHECKPOINT_INTERVAL": "100",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "records": 10000,
+              "dead_letters": 1000,
+              "checkpoint_interval": 100,
+              "delivered_write_seconds": 6.133534,
+              "delivered_writes_per_second": 1630.38,
+              "duplicate_check_seconds": 0.80739,
+              "duplicate_checks_per_second": 12385.59,
+              "dead_letter_write_seconds": 0.604445,
+              "dead_letter_writes_per_second": 1654.41,
+              "delivered_envelopes": 10000,
+              "dead_letters_total": 1000,
+              "checkpoints": 1,
+              "sqlite_bytes": 3809280
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "observability_snapshot",
+      "script": "benchmark/observability_snapshot.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_DELIVERED": "10000",
+        "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+        "MAMMOTH_BENCH_SNAPSHOTS": "100"
+      },
+      "command": "MAMMOTH_BENCH_DELIVERED=10000 MAMMOTH_BENCH_DEAD_LETTERS=1000 MAMMOTH_BENCH_SNAPSHOTS=100 bundle exec ruby benchmark/observability_snapshot.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:54:56Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "observability_snapshot-trial-1.out",
+          "stderr_file": "observability_snapshot-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_DELIVERED": "10000",
+            "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+            "MAMMOTH_BENCH_SNAPSHOTS": "100",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "delivered": 10000,
+              "dead_letters": 1000,
+              "snapshots": 100,
+              "readiness_seconds": 0.009632,
+              "readiness_per_second": 10381.57,
+              "metrics_seconds": 0.133933,
+              "metrics_per_second": 746.64,
+              "sqlite_bytes": 3723264
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dlq_replay",
+      "script": "benchmark/dlq_replay.rb",
+      "defaults": {
+        "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+        "MAMMOTH_BENCH_DESTINATIONS": "2",
+        "MAMMOTH_BENCH_DELIVERY_UNIT": "transaction",
+        "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4"
+      },
+      "command": "MAMMOTH_BENCH_DEAD_LETTERS=1000 MAMMOTH_BENCH_DESTINATIONS=2 MAMMOTH_BENCH_DELIVERY_UNIT=transaction MAMMOTH_BENCH_EVENTS_PER_TRANSACTION=4 bundle exec ruby benchmark/dlq_replay.rb",
+      "trials": [
+        {
+          "trial": 1,
+          "started_at": "2026-07-24T10:55:04Z",
+          "status": 0,
+          "success": true,
+          "stdout_file": "dlq_replay-trial-1.out",
+          "stderr_file": "dlq_replay-trial-1.err",
+          "command_env": {
+            "MAMMOTH_BENCH_DEAD_LETTERS": "1000",
+            "MAMMOTH_BENCH_DESTINATIONS": "2",
+            "MAMMOTH_BENCH_DELIVERY_UNIT": "transaction",
+            "MAMMOTH_BENCH_EVENTS_PER_TRANSACTION": "4",
+            "MAMMOTH_BENCH_JSON": "1"
+          },
+          "results": [
+            {
+              "dead_letters": 1000,
+              "destinations": 2,
+              "delivery_unit": "transaction",
+              "elapsed_seconds": 0.97059,
+              "replayed_per_second": 1030.3,
+              "pending": 0,
+              "resolved": 1000,
+              "delivered_envelopes": 1000,
+              "sqlite_bytes": 2551808
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

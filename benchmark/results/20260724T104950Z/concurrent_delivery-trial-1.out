@@ -1,0 +1,73 @@
+Mammoth concurrent delivery benchmark
+transactions=5000 events_per_transaction=4 sink_latency_ms=25.0 preserve_order=false
+
+ concurrency       tx/sec   events/sec       avg_ms       p95_ms    elapsed_s
+--------------------------------------------------------------------------------
+           1        39.36       157.45       25.262       25.913      127.023
+           5       195.53       782.10       25.443       26.694       25.572
+          10       382.93      1531.71       25.860       27.513       13.057
+          25       956.30      3825.21       25.670       27.540        5.228
+          50      1861.65      7446.58       26.013       28.402        2.686
+
+[
+  {
+    "concurrency": 1,
+    "preserve_order": false,
+    "transactions": 5000,
+    "events": 20000,
+    "sink_latency_ms": 25.0,
+    "elapsed_seconds": 127.022683,
+    "transactions_per_second": 39.36,
+    "events_per_second": 157.45,
+    "average_latency_ms": 25.262,
+    "p95_latency_ms": 25.913
+  },
+  {
+    "concurrency": 5,
+    "preserve_order": false,
+    "transactions": 5000,
+    "events": 20000,
+    "sink_latency_ms": 25.0,
+    "elapsed_seconds": 25.57215,
+    "transactions_per_second": 195.53,
+    "events_per_second": 782.1,
+    "average_latency_ms": 25.443,
+    "p95_latency_ms": 26.694
+  },
+  {
+    "concurrency": 10,
+    "preserve_order": false,
+    "transactions": 5000,
+    "events": 20000,
+    "sink_latency_ms": 25.0,
+    "elapsed_seconds": 13.05726,
+    "transactions_per_second": 382.93,
+    "events_per_second": 1531.71,
+    "average_latency_ms": 25.86,
+    "p95_latency_ms": 27.513
+  },
+  {
+    "concurrency": 25,
+    "preserve_order": false,
+    "transactions": 5000,
+    "events": 20000,
+    "sink_latency_ms": 25.0,
+    "elapsed_seconds": 5.228474,
+    "transactions_per_second": 956.3,
+    "events_per_second": 3825.21,
+    "average_latency_ms": 25.67,
+    "p95_latency_ms": 27.54
+  },
+  {
+    "concurrency": 50,
+    "preserve_order": false,
+    "transactions": 5000,
+    "events": 20000,
+    "sink_latency_ms": 25.0,
+    "elapsed_seconds": 2.685796,
+    "transactions_per_second": 1861.65,
+    "events_per_second": 7446.58,
+    "average_latency_ms": 26.013,
+    "p95_latency_ms": 28.402
+  }
+]

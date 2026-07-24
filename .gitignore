@@ -2,7 +2,13 @@
 /.yardoc
 /_yardoc/
 /coverage/
-/benchmark/results/
+/benchmark/results/*
+!/benchmark/results/README.md
+!/benchmark/results/20260724T104950Z/
+/benchmark/results/20260724T104950Z/*
+!/benchmark/results/20260724T104950Z/snapshot.md
+!/benchmark/results/20260724T104950Z/snapshot.json
+!/benchmark/results/20260724T104950Z/*.out
 /doc/
 /pkg/
 /spec/reports/
