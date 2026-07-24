@@ -401,7 +401,8 @@ logging:
   #   Very chatty; useful while diagnosing delivery or replication behavior.
   #
   # info:
-  #   Recommended normal default.
+  #   Recommended normal default. Emits lifecycle, delivery, checkpoint, retry,
+  #   and dead-letter JSON records to stdout for container log collection.
   #
   # warn/error:
   #   Quieter production modes.

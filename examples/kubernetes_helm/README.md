@@ -48,6 +48,18 @@ disk capacity and catalog-XID age. Server guardrails such as
 slots; they do not preserve the missing delivery interval. Coordinate schema
 migrations with webhook consumers because DDL is not replicated.
 
+The chart defaults `logging.level` to `info`. Mammoth writes
+newline-delimited JSON to standard output for collection by the cluster logging
+stack:
+
+```bash
+kubectl logs -f deployment/mammoth
+```
+
+Use `debug` temporarily for per-work and WAL acknowledgement records, or
+`warn`/`error` for quieter operation. Logs omit payload bodies, configured
+headers, credentials, signing secrets, and exception messages.
+
 The OSS chart starts only `mammoth start`. Run `mammoth observability` as a
 separate process with the same configuration, PostgreSQL Secret, and PVC when
 the deployment needs `/readyz` and `/metrics`; do not start a second relay for

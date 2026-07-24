@@ -17,6 +17,7 @@ module Mammoth
     attr_reader source_name: String
     attr_reader slot_name: String
     attr_reader publication_name: String
+    attr_reader logger: untyped
 
     def initialize: (
       checkpoint_store: CheckpointStore,
@@ -24,7 +25,8 @@ module Mammoth
       slot_name: String,
       publication_name: String,
       ?acknowledger: untyped,
-      ?position_resolver: untyped
+      ?position_resolver: untyped,
+      ?logger: untyped
     ) -> void
 
     def register: (untyped work, group_end: bool) -> void

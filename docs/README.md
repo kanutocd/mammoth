@@ -104,6 +104,7 @@ Mammoth 1.x supports:
 - transaction envelope preservation
 - concurrent downstream delivery with one PostgreSQL replication stream
 - retry handling
+- configurable structured JSON logging to standard output
 - contiguous durable-delivery watermark and PostgreSQL acknowledgement
 - source-owned transport LSN preservation independent of payload `commit_lsn`
 - fail-closed PostgreSQL slot and checkpoint continuity preflight
@@ -126,6 +127,13 @@ CLI behavior, and operational-state migrations are documented in
 [Compatibility](file.COMPATIBILITY.html).
 The canonical event and transaction JSON contracts are documented in
 [Webhook Payloads](file.WEBHOOK-PAYLOADS.html).
+
+Mammoth's `logging.level` accepts `debug`, `info`, `warn`, or `error`. Logs are
+newline-delimited JSON on standard output so Docker and Kubernetes collect them
+directly. `info` is the recommended default; use `debug` temporarily for
+per-work and WAL acknowledgement detail. See
+[Configuration](file.CONFIGURATION.html#logging) for the logged events and
+sensitive-data boundary.
 
 ## v1 Non-goals
 

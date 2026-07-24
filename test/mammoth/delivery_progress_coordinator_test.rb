@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "stringio"
 
 module Mammoth
+  # rubocop:disable Metrics/ClassLength
   class DeliveryProgressCoordinatorTest < Minitest::Test
     def test_does_not_advance_past_out_of_order_completion
       with_coordinator do |coordinator, checkpoint_store, acknowledgements|
@@ -79,6 +81,24 @@ module Mammoth
         coordinator.complete(work)
 
         assert_equal "0/A", observed_checkpoint.fetch("last_lsn")
+      end
+    end
+
+    def test_logs_checkpoint_advancement
+      with_temp_dir do |dir|
+        checkpoint_store = CheckpointStore.new(SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!)
+        output = StringIO.new
+        logger = Logging::Logger.new(level: "info", output:)
+        coordinator = build_coordinator(checkpoint_store, acknowledger: nil, logger:)
+        work = core_event(source_position: "0/A")
+        coordinator.register(work, group_end: true)
+
+        coordinator.complete(work)
+
+        record = JSON.parse(output.string)
+        assert_equal "checkpoint_advanced", record.fetch("event")
+        assert_equal "0/A", record.fetch("source_position")
+        assert_equal "mammoth_prod", record.fetch("slot")
       end
     end
 
@@ -162,13 +182,14 @@ module Mammoth
       end
     end
 
-    def build_coordinator(checkpoint_store, acknowledger:)
+    def build_coordinator(checkpoint_store, acknowledger:, logger: Logging::NullLogger::INSTANCE)
       DeliveryProgressCoordinator.new(
         checkpoint_store: checkpoint_store,
         source_name: "local_mammoth",
         slot_name: "mammoth_prod",
         publication_name: "mammoth_publication",
-        acknowledger: acknowledger
+        acknowledger: acknowledger,
+        logger: logger
       )
     end
 
@@ -176,4 +197,5 @@ module Mammoth
       checkpoint_store.fetch(source_name: "local_mammoth", slot_name: "mammoth_prod")
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

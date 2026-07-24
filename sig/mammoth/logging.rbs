@@ -1,0 +1,31 @@
+module Mammoth
+  module Logging
+    LEVELS: Hash[String, Integer]
+
+    class Logger
+      attr_reader level: String
+      attr_reader output: untyped
+      attr_reader clock: untyped
+      def initialize: (level: untyped, ?output: untyped, ?clock: untyped) -> void
+      def debug: (untyped event, **untyped context) -> bool
+      def info: (untyped event, **untyped context) -> bool
+      def warn: (untyped event, **untyped context) -> bool
+      def error: (untyped event, **untyped context) -> bool
+      def enabled?: (untyped severity) -> bool
+      private
+      def write: (untyped severity, untyped event, untyped context) -> bool
+    end
+
+    class NullLogger
+      INSTANCE: NullLogger
+      def debug: (untyped event, **untyped context) -> false
+      def info: (untyped event, **untyped context) -> false
+      def warn: (untyped event, **untyped context) -> false
+      def error: (untyped event, **untyped context) -> false
+      def enabled?: (untyped severity) -> false
+    end
+
+    def build: (untyped config, ?output: untyped, ?clock: untyped) -> Logger
+    def self.build: (untyped config, ?output: untyped, ?clock: untyped) -> Logger
+  end
+end

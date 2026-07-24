@@ -55,6 +55,16 @@ module Mammoth
       assert_equal "127.0.0.1", ObservabilityServer::DEFAULT_HOST
     end
 
+    def test_maps_debug_logging_to_webrick
+      config = Struct.new(:level) do
+        def dig(*_keys) = level
+      end
+      server = ObservabilityServer.allocate
+      server.instance_variable_set(:@config, config.new("debug"))
+
+      assert_equal WEBrick::Log::DEBUG, server.send(:webrick_log_level)
+    end
+
     def test_readyz_returns_503_when_store_fails
       config = Configuration.load(fixture_config_path)
       server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, state_adapter: UnreadyAdapter.new,

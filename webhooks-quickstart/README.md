@@ -206,6 +206,13 @@ docker compose down -v
 rm -f data/events/*
 ```
 
+The bundled configuration uses `logging.level: info`, so Mammoth’s lifecycle,
+delivery, retry, dead-letter, and checkpoint records appear as newline-delimited
+JSON in the Compose log stream. Temporarily change it to `debug` for per-work
+and WAL acknowledgement detail; `warn` and `error` provide quieter modes.
+Mammoth does not log payload bodies, configured headers, credentials, signing
+secrets, or exception messages.
+
 ## Mammoth image
 
 The Compose file defaults to the released image matching this quickstart:

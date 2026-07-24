@@ -109,7 +109,7 @@ module Mammoth
     def observability
       config = load_config
       server = ObservabilityServer.new(config)
-      puts "Mammoth observability listening on #{server.host}:#{server.port}"
+      Logging.build(config).info("observability_started", host: server.host, port: server.port)
       server.start
       0
     end

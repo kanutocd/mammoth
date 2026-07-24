@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "stringio"
 
 module Mammoth
   # rubocop:disable Metrics/ClassLength
@@ -18,19 +19,24 @@ module Mammoth
       end
     end
 
-    def test_retries_before_success
+    def test_retries_before_success # rubocop:disable Metrics/AbcSize
       with_temp_dir do |dir|
         sqlite = SQLiteStore.connect(File.join(dir, "mammoth.db")).bootstrap!
         sink = FlakySink.new(failures_before_success: 1)
         sleeps = []
-        worker = build_worker(sqlite, sink: sink, sleeper: ->(seconds) { sleeps << seconds })
+        output = StringIO.new
+        logger = Logging::Logger.new(level: "info", output:)
+        worker = build_worker(sqlite, sink: sink, sleeper: ->(seconds) { sleeps << seconds }, logger:)
 
         result = worker.deliver(sample_event)
+        records = output.string.lines.map { |line| JSON.parse(line) }
 
         assert_equal "delivered", result.fetch(:status)
         assert_equal 2, result.fetch(:attempts)
         assert_equal [1], sleeps
         assert_equal 0, DeadLetterStore.new(sqlite).count
+        assert_equal(%w[delivery_retry delivery_succeeded], records.map { |record| record.fetch("event") })
+        assert_equal(%w[warn info], records.map { |record| record.fetch("severity") })
       end
     end
 
@@ -208,7 +214,8 @@ module Mammoth
                    stored.dig("metadata", PayloadPolicy::POLICY_METADATA_KEY, "fingerprint")
     end
 
-    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {}, route_filter: nil, payload_policy: nil, enabled: true)
+    def build_worker(sqlite, sink:, sleeper: ->(_seconds) {}, route_filter: nil, payload_policy: nil, enabled: true,
+                     logger: Logging::NullLogger::INSTANCE)
       DeliveryWorker.new(
         sink: sink,
         checkpoint_store: CheckpointStore.new(sqlite),
@@ -222,7 +229,8 @@ module Mammoth
         sleeper: sleeper,
         route_filter: route_filter,
         payload_policy: payload_policy,
-        enabled: enabled
+        enabled: enabled,
+        logger: logger
       )
     end
 

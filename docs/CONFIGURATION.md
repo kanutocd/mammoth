@@ -361,6 +361,24 @@ warn
 error
 ```
 
+Mammoth writes one JSON object per line to standard output so container
+runtimes collect the logs without file configuration:
+
+```bash
+docker compose logs -f mammoth
+```
+
+`info` reports application and replication lifecycle, delivery outcomes,
+checkpoint advancement, retries, and dead letters. `debug` additionally reports
+individual normalized work and WAL acknowledgements. `warn` emits retries and
+recoverable operational problems. `error` emits terminal replication,
+application, acknowledgement, and dead-letter outcomes.
+
+Log records contain operational identifiers such as Mammoth name, slot,
+publication, destination, work type, source position, attempt, and status.
+Payload bodies, configured headers, credentials, signing secrets, and exception
+messages are not included.
+
 ## Validate config
 
 ```bash

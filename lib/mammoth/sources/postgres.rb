@@ -29,6 +29,8 @@ module Mammoth
       attr_reader :checkpoint_store
       # @return [#inspect, nil] injected PostgreSQL publication inspector
       attr_reader :publication_inspector
+      # @return [Mammoth::Logging::Logger, Mammoth::Logging::NullLogger] operational logger
+      attr_reader :logger
 
       # Build a PostgreSQL CDC source.
       #
@@ -40,7 +42,7 @@ module Mammoth
       # @param checkpoint_store [Mammoth::CheckpointStore, nil] persisted checkpoints for restart resume
       # @param publication_inspector [#inspect, nil] injected publication metadata inspector
       def initialize(config, runner: nil, parser: nil, decoder: nil, adapter: nil, checkpoint_store: nil,
-                     publication_inspector: nil)
+                     publication_inspector: nil, logger: Logging::NullLogger::INSTANCE)
         @config = config
         @runner = runner
         @parser = parser
@@ -48,6 +50,7 @@ module Mammoth
         @adapter = adapter
         @checkpoint_store = checkpoint_store
         @publication_inspector = publication_inspector
+        @logger = logger
       end
 
       # Stream CDC::Core work from PostgreSQL logical replication.
@@ -61,9 +64,12 @@ module Mammoth
       # @yieldparam work [CDC::Core::ChangeEvent, CDC::Core::TransactionEnvelope]
       # @return [Enumerator, nil]
       # @raise [Mammoth::ReplicationError] when the source cannot stream CDC work
+      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def each(&block)
         return enum_for(:each) unless block_given?
 
+        logger.info("replication_starting", slot: config.dig("replication", "slot"),
+                                            publications: Array(config.dig("replication", "publications")))
         preflight_slot!
         preflight_replica_identity!
         normalizer = effective_adapter
@@ -72,22 +78,29 @@ module Mammoth
         end
 
         normalizer.each_normalized(decoded_stream) do |work|
-          yield_with_progress_position(validate_core_work!(work), &block)
+          core_work = validate_core_work!(work)
+          logger.debug("replication_work_normalized", work_type: core_work.class.name,
+                                                      source_position: @latest_progress_position)
+          yield_with_progress_position(core_work, &block)
         end
+        logger.info("replication_stopped", slot: config.dig("replication", "slot"))
         nil
       rescue StandardError => e
+        logger.error("replication_failed", slot: config.dig("replication", "slot"), error_class: e.class.name)
         raise e if e.is_a?(ReplicationError)
 
         raise ReplicationError, "PostgreSQL CDC source failed: #{e.message}"
       end
+      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       # Acknowledge a durably handled PostgreSQL WAL position.
       #
       # @param lsn [String, Integer] pgoutput-client compatible WAL position
       # @return [Integer] normalized acknowledged WAL position
       def acknowledge(lsn)
-        effective_runner.ack(lsn)
+        effective_runner.ack(lsn).tap { logger.debug("wal_acknowledged", slot: config.dig("replication", "slot"), lsn:) }
       rescue StandardError => e
+        logger.error("wal_acknowledgement_failed", slot: config.dig("replication", "slot"), error_class: e.class.name)
         raise ReplicationError, "PostgreSQL WAL acknowledgement failed: #{e.message}"
       end
 

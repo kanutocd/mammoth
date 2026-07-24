@@ -50,6 +50,8 @@ module Mammoth
 
     private
 
+    def webrick_log_level: () -> Integer
+
     def build_server: () -> untyped
 
     def mount_endpoints: () -> untyped

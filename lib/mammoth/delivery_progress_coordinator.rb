@@ -36,7 +36,7 @@ module Mammoth
       end
     end
 
-    attr_reader :checkpoint_store, :source_name, :slot_name, :publication_name
+    attr_reader :checkpoint_store, :source_name, :slot_name, :publication_name, :logger
 
     # @param checkpoint_store [Mammoth::CheckpointStore] durable checkpoint persistence
     # @param source_name [String] logical source name
@@ -45,13 +45,14 @@ module Mammoth
     # @param acknowledger [#call, nil] upstream durable-progress acknowledgement
     # @param position_resolver [#call, nil] source-owned durable position resolver
     def initialize(checkpoint_store:, source_name:, slot_name:, publication_name:, acknowledger: nil,
-                   position_resolver: nil)
+                   position_resolver: nil, logger: Logging::NullLogger::INSTANCE)
       @checkpoint_store = checkpoint_store
       @source_name = source_name
       @slot_name = slot_name
       @publication_name = publication_name
       @acknowledger = acknowledger
       @position_resolver = position_resolver
+      @logger = logger
       # rubocop:disable Layout/LeadingCommentSpace -- Steep inline type syntax requires `#:`.
       @groups = [] #: Array[Group]
       @entries_by_work = {} #: Hash[untyped, Array[Entry]]
@@ -133,6 +134,8 @@ module Mammoth
         last_lsn: position
       )
       @acknowledger&.call(position)
+      logger.info("checkpoint_advanced", mammoth_name: source_name, slot: slot_name, publication: publication_name,
+                                         source_position: position)
     end
 
     def remove_group(group)

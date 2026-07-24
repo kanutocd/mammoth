@@ -12,7 +12,7 @@ module Mammoth
   # rubocop:disable Metrics/ClassLength
   class Application
     attr_reader :config, :state_adapter, :consumer, :delivery_worker, :checkpoint_store, :lifecycle_hooks, :observer,
-                :progress_coordinator
+                :progress_coordinator, :logger
 
     # @param config [Mammoth::Configuration] loaded configuration
     # @param source [#each, nil] injectable event source for tests and demos
@@ -21,9 +21,11 @@ module Mammoth
     # @param sleeper [#call] retry sleep strategy
     # @param lifecycle_hooks [Mammoth::LifecycleHooks, Hash] local lifecycle callbacks
     # @param observer [CDC::Core::Observer, nil] dispatch lifecycle observer
+    # @param logger [Mammoth::Logging::Logger, nil] structured operational logger
     def initialize(config, source: nil, sink: nil, state_adapter: nil, sleeper: Kernel.method(:sleep),
-                   lifecycle_hooks: LifecycleHooks.new, observer: nil)
+                   lifecycle_hooks: LifecycleHooks.new, observer: nil, logger: nil)
       @config = config
+      @logger = logger || Logging.build(config)
       @lifecycle_hooks = build_lifecycle_hooks(lifecycle_hooks)
       @observer = observer || MetricsObserver.new
       @state_adapter = state_adapter || build_state_adapter
@@ -49,21 +51,36 @@ module Mammoth
     # Start the application runtime and deliver consumed CDC work.
     #
     # @return [Integer] number of processed work units
+    # rubocop:disable Metrics/AbcSize
     def start
       runtime = build_runtime
       processed = nil
 
+      operational_logger.info("application_started", mammoth_name: config&.dig("mammoth", "name"),
+                                                     runtime: config&.dig("runtime", "adapter"),
+                                                     delivery_unit: config&.dig("delivery", "unit"))
       lifecycle_hooks.call(:before_start, application_context(runtime: runtime))
       processed = process_consumer(runtime)
       lifecycle_hooks.call(:after_start, application_context(runtime: runtime, processed: processed))
+      operational_logger.info("application_completed", mammoth_name: config&.dig("mammoth", "name"), processed:)
       processed
+    rescue StandardError => e
+      operational_logger.error("application_failed", mammoth_name: config&.dig("mammoth", "name"),
+                                                     error_class: e.class.name)
+      raise
     ensure
       lifecycle_hooks.call(:before_shutdown, application_context(runtime: runtime, processed: processed))
       runtime.shutdown if runtime.respond_to?(:shutdown)
       lifecycle_hooks.call(:after_shutdown, application_context(runtime: runtime, processed: processed))
+      operational_logger.info("application_stopped", mammoth_name: config&.dig("mammoth", "name"), processed:)
     end
+    # rubocop:enable Metrics/AbcSize
 
     private
+
+    def operational_logger
+      logger || Logging::NullLogger::INSTANCE
+    end
 
     def build_lifecycle_hooks(hooks)
       return hooks if hooks.is_a?(LifecycleHooks)
@@ -84,6 +101,7 @@ module Mammoth
       processed = 0
 
       consumer.start_with_boundaries do |work, group_end|
+        operational_logger.debug("work_received", work_type: work.class.name, work_id: work_identifier(work), group_end:)
         progress_coordinator.register(work, group_end:)
         process_work(runtime, work)
         processed += 1
@@ -92,6 +110,13 @@ module Mammoth
       runtime.flush
       progress_coordinator.finalize
       processed
+    end
+
+    def work_identifier(work)
+      return work.transaction_id if work.respond_to?(:transaction_id)
+      return work.event_id if work.respond_to?(:event_id)
+
+      nil
     end
 
     def process_work(runtime, work)
@@ -115,7 +140,7 @@ module Mammoth
     end
 
     def build_source
-      Sources::Postgres.new(config, checkpoint_store: checkpoint_store)
+      Sources::Postgres.new(config, checkpoint_store: checkpoint_store, logger: logger)
     end
 
     def build_progress_coordinator
@@ -125,7 +150,8 @@ module Mammoth
         slot_name: config.dig("replication", "slot"),
         publication_name: Array(config.dig("replication", "publications")).join(","),
         acknowledger: source_acknowledger,
-        position_resolver: source_position_resolver
+        position_resolver: source_position_resolver,
+        logger: logger
       )
     end
 
@@ -147,7 +173,8 @@ module Mammoth
         dead_letter_store: state_adapter.dead_letter_store,
         delivered_envelope_store: state_adapter.delivered_envelope_store,
         sleeper: sleeper,
-        delivery_policy: delivery_policy
+        delivery_policy: delivery_policy,
+        logger: logger
       )
     end
 

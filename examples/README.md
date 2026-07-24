@@ -33,6 +33,18 @@ examples are the place where PostgreSQL acknowledgement, logical replication,
 TransactionEnvelope delivery, and the CDC Ecosystem source adapter are
 intentionally exercised together.
 
+Example configurations use `logging.level: info`. Live Compose examples expose
+Mammoth’s newline-delimited JSON logs with:
+
+```bash
+docker compose logs -f mammoth
+```
+
+Set the level to `debug` when diagnosing individual work or WAL
+acknowledgements, or to `warn`/`error` for quieter operation. Payload bodies,
+configured headers, credentials, signing secrets, and exception messages are
+excluded from the records.
+
 Dead-letter replay deliberately follows a different boundary from
 `deliver-sample`: it sends the exact destination payload persisted after any
 payload policy was applied. Replay does not reconstruct CDC-core work or apply

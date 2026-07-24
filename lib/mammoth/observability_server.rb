@@ -29,7 +29,7 @@ module Mammoth
       @port = port || config.dig("observability", "port") || DEFAULT_PORT
       @state_adapter = state_adapter || OperationalState::Registry.build_configured(config)
       @slot_health_provider = slot_health_provider || Sources::Postgres.new(config)
-      @logger = logger || WEBrick::Log.new($stderr, WEBrick::Log::WARN)
+      @logger = logger || WEBrick::Log.new($stdout, webrick_log_level)
       @server = build_server
       mount_endpoints
     end
@@ -49,6 +49,15 @@ module Mammoth
     end
 
     private
+
+    def webrick_log_level
+      {
+        "debug" => WEBrick::Log::DEBUG,
+        "info" => WEBrick::Log::INFO,
+        "warn" => WEBrick::Log::WARN,
+        "error" => WEBrick::Log::ERROR
+      }.fetch(config.dig("logging", "level") || "info")
+    end
 
     def build_server
       WEBrick::HTTPServer.new(

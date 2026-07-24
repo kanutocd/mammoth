@@ -106,7 +106,11 @@ module Mammoth
         end
 
         assert_empty stderr
-        assert_match(/Mammoth observability listening on 127.0.0.1:9393/, stdout)
+        record = JSON.parse(stdout)
+        assert_equal "info", record.fetch("severity")
+        assert_equal "observability_started", record.fetch("event")
+        assert_equal "127.0.0.1", record.fetch("host")
+        assert_equal 9393, record.fetch("port")
       end
     end
 

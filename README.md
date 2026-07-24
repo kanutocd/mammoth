@@ -106,6 +106,7 @@ Mammoth 1.x includes:
 - per-destination payload removal and masking policies
 - per-destination enable/disable and retry policy controls
 - delivery worker with retry, delivered-ledger, and DLQ handling
+- configurable `debug`, `info`, `warn`, and `error` JSON logging to stdout
 - contiguous delivery watermark for checkpoint and PostgreSQL acknowledgement
 - source-owned transport LSN preservation independent of payload `commit_lsn`
 - fail-closed PostgreSQL slot and checkpoint continuity preflight
@@ -256,6 +257,30 @@ bundle exec ./exe/mammoth status config/mammoth.example.yml
 bundle exec ./exe/mammoth start config/mammoth.example.yml
 bundle exec ./exe/mammoth observability config/mammoth.example.yml
 ```
+
+## Logging
+
+Mammoth emits one JSON object per line to standard output. Set
+`logging.level` to `debug`, `info`, `warn`, or `error`; `info` is the
+recommended normal setting, while `debug` adds per-work and WAL acknowledgement
+records.
+
+```yaml
+logging:
+  level: info
+```
+
+In Docker Compose, follow the application, replication, delivery, retry,
+dead-letter, and checkpoint activity with:
+
+```bash
+docker compose logs -f mammoth
+```
+
+Operational identifiers are included, but payload bodies, configured headers,
+credentials, signing secrets, and exception messages are excluded. See
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md#logging) for the event and level
+details.
 
 Reconstruct and deliver a single persisted event JSON file through Mammoth's
 core delivery path:

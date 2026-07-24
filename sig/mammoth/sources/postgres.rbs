@@ -9,6 +9,7 @@ module Mammoth
       @adapter: untyped
       @checkpoint_store: untyped
       @publication_inspector: untyped
+      @logger: untyped
       @effective_runner: untyped
       @effective_parser: untyped
       @effective_decoder: untyped
@@ -22,8 +23,9 @@ module Mammoth
       attr_reader adapter: untyped
       attr_reader checkpoint_store: untyped
       attr_reader publication_inspector: untyped
+      attr_reader logger: untyped
 
-      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped, ?checkpoint_store: untyped, ?publication_inspector: untyped) -> void
+      def initialize: (Mammoth::Configuration config, ?runner: untyped, ?parser: untyped, ?decoder: untyped, ?adapter: untyped, ?checkpoint_store: untyped, ?publication_inspector: untyped, ?logger: untyped) -> void
 
       def each: () ?{ ((CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope) work) -> untyped } -> (Enumerator[(CDC::Core::ChangeEvent | CDC::Core::TransactionEnvelope), nil] | nil)
       def acknowledge: (untyped lsn) -> untyped

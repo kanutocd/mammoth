@@ -11,6 +11,9 @@
 - Default the unauthenticated observability HTTP server to the loopback
   interface and document the network controls required for non-loopback
   bindings.
+- Implement `logging.level` with container-friendly JSON stdout logs for
+  application and replication lifecycle, delivery outcomes, retries, dead
+  letters, checkpoints, and debug-level work progress.
 
 ### Quality
 

@@ -380,6 +380,37 @@ module Mammoth
       refute_respond_to runtime, :shutdown
     end
 
+    def test_logs_application_failure_without_exception_message
+      runtime = Object.new
+      def runtime.shutdown = nil
+      consumer = Object.new
+      def consumer.start_with_boundaries = raise("sensitive failure details")
+      output = StringIO.new
+      logger = Logging::Logger.new(level: "error", output:)
+      app = Application.allocate
+      app.instance_variable_set(:@config, nil)
+      app.instance_variable_set(:@consumer, consumer)
+      app.instance_variable_set(:@delivery_worker, nil)
+      app.instance_variable_set(:@checkpoint_store, nil)
+      app.instance_variable_set(:@lifecycle_hooks, LifecycleHooks.new)
+      app.instance_variable_set(:@progress_coordinator, NullProgressCoordinator.new)
+      app.instance_variable_set(:@logger, logger)
+      app.define_singleton_method(:build_runtime) { runtime }
+
+      assert_raises(RuntimeError) { app.start }
+      record = JSON.parse(output.string)
+      assert_equal "application_failed", record.fetch("event")
+      assert_equal "RuntimeError", record.fetch("error_class")
+      refute_includes output.string, "sensitive failure details"
+    end
+
+    def test_work_identifier_supports_event_ids_and_unknown_work
+      app = Application.allocate
+
+      assert_equal "event-1", app.send(:work_identifier, Struct.new(:event_id).new("event-1"))
+      assert_nil app.send(:work_identifier, Object.new)
+    end
+
     StubStateAdapter = Data.define(:dead_letter_store, :delivered_envelope_store)
 
     class AcknowledgingSource

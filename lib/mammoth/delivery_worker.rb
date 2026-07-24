@@ -7,12 +7,12 @@ module Mammoth
   # the delivery contract small: attempt webhook delivery, record idempotent
   # success, and persist exhausted failures to the dead letter queue. Contiguous
   # checkpointing is owned by DeliveryProgressCoordinator.
-  class DeliveryWorker
+  class DeliveryWorker # rubocop:disable Metrics/ClassLength
     # Default source name used when an event does not provide one.
     DEFAULT_SOURCE = "postgresql"
 
     attr_reader :sink, :checkpoint_store, :dead_letter_store, :delivered_envelope_store, :retry_schedule, :max_attempts,
-                :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :payload_policy, :enabled
+                :sleeper, :source_name, :slot_name, :publication_name, :route_filter, :payload_policy, :enabled, :logger
 
     # @param sink [#deliver] destination sink
     # @param checkpoint_store [Mammoth::CheckpointStore] retained dependency; shared progress owns writes
@@ -29,7 +29,7 @@ module Mammoth
     # @param enabled [Boolean] whether this destination accepts new deliveries
     def initialize(sink:, checkpoint_store:, dead_letter_store:, delivered_envelope_store:, source_name:, slot_name:,
                    publication_name:, max_attempts:, retry_schedule:, sleeper: Kernel.method(:sleep),
-                   route_filter: nil, payload_policy: nil, enabled: true)
+                   route_filter: nil, payload_policy: nil, enabled: true, logger: Logging::NullLogger::INSTANCE)
       @sink = sink
       @checkpoint_store = checkpoint_store
       @dead_letter_store = dead_letter_store
@@ -43,6 +43,7 @@ module Mammoth
       @route_filter = route_filter || RouteFilter.new
       @payload_policy = payload_policy || PayloadPolicy.new
       @enabled = enabled
+      @logger = logger
       return unless @payload_policy.active? && !sink.respond_to?(:deliver_payload)
 
       raise ConfigurationError, "destination #{destination_name} does not accept prepared payloads"
@@ -58,7 +59,7 @@ module Mammoth
     # @param sleeper [#call] sleep strategy
     # @return [Mammoth::DeliveryWorker]
     def self.from_config(config, sink:, checkpoint_store:, dead_letter_store:, delivered_envelope_store:,
-                         sleeper: Kernel.method(:sleep), delivery_policy: {})
+                         sleeper: Kernel.method(:sleep), delivery_policy: {}, logger: Logging::NullLogger::INSTANCE)
       new(
         sink: sink,
         checkpoint_store: checkpoint_store,
@@ -72,7 +73,8 @@ module Mammoth
         sleeper: sleeper,
         route_filter: delivery_policy.fetch("route_filter", RouteFilter.new),
         payload_policy: delivery_policy.fetch("payload_policy", PayloadPolicy.new),
-        enabled: delivery_policy.fetch("enabled", true)
+        enabled: delivery_policy.fetch("enabled", true),
+        logger: logger
       )
     end
 
@@ -109,7 +111,7 @@ module Mammoth
       deliver_prepared(prepared, work: work, delivery_method: delivery_method)
     end
 
-    # rubocop:disable Metrics/MethodLength
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
     def deliver_prepared(prepared, work:, delivery_method:)
       attempts = 0
       canonical_payload = prepared.canonical_payload
@@ -118,16 +120,21 @@ module Mammoth
       idempotency_key = idempotency_key_for(payload: canonical_payload, delivery_unit: delivery_unit)
 
       skip_result = skip_result_for(canonical_payload, idempotency_key: idempotency_key)
-      return skip_result if skip_result
+      if skip_result
+        log_outcome("delivery_skipped", skip_result, delivery_unit:)
+        return skip_result
+      end
 
       if delivered_envelope_store.delivered?(idempotency_key)
-        return {
+        result = {
           status: "skipped",
           duplicate: true,
           idempotency_key: idempotency_key,
           attempts: attempts,
           destination: destination_name
         }
+        log_outcome("delivery_skipped", result, delivery_unit:)
+        return result
       end
 
       begin
@@ -142,15 +149,19 @@ module Mammoth
           transaction_id: payload["transaction_id"],
           source_position: payload["source_position"]
         )
-        result.merge(attempts: attempts, idempotency_key: idempotency_key)
+        result = result.merge(attempts: attempts, idempotency_key: idempotency_key)
+        log_outcome("delivery_succeeded", result, delivery_unit:)
+        result
       rescue DeliveryError => e
         return dead_letter(payload, e, attempts) if attempts >= max_attempts
 
-        wait_before_retry(attempts)
+        wait_seconds = wait_before_retry(attempts)
+        logger.warn("delivery_retry", destination: destination_name, delivery_unit:, attempt: attempts,
+                                      wait_seconds:, error_class: e.class.name)
         retry
       end
     end
-    # rubocop:enable Metrics/MethodLength
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
     def idempotency_key_for(payload:, delivery_unit:)
       [
@@ -191,6 +202,7 @@ module Mammoth
     def wait_before_retry(attempts)
       wait_seconds = retry_schedule.fetch(attempts - 1, retry_schedule.last)
       sleeper.call(wait_seconds)
+      wait_seconds
     end
 
     def deliver_to_sink(prepared, work:, delivery_method:)
@@ -207,7 +219,16 @@ module Mammoth
         error: error,
         retry_count: attempts
       )
+      logger.error(
+        "delivery_dead_lettered",
+        destination: destination_name, attempts:, dead_letter_id: id, error_class: error.class.name
+      )
       { status: "dead_lettered", dead_letter_id: id, attempts: attempts }
+    end
+
+    def log_outcome(event, result, delivery_unit:)
+      logger.info(event, destination: destination_name, delivery_unit:, status: result[:status],
+                         attempts: result[:attempts], reason: result[:reason], duplicate: result[:duplicate])
     end
 
     def transaction_payload?(payload)
