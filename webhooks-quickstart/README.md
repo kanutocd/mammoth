@@ -218,7 +218,7 @@ secrets, or exception messages.
 The Compose file defaults to the released image matching this quickstart:
 
 ```text
-ghcr.io/kanutocd/mammoth:v1.4.0
+ghcr.io/kanutocd/mammoth:v1.5.0
 ```
 
 Override it without editing Compose:
@@ -262,7 +262,7 @@ The example UIs are intentionally split into ordinary source files:
   the Demo Store styles and JavaScript.
 - `event_console/views/` contains the Event Console ERB template, and
   `event_console/public/` contains its styles and JavaScript. The console
-  vendors the minified ISC-licensed `renderjson` 1.4.0 distribution for
+  vendors the minified ISC-licensed `renderjson` 1.5.0 distribution for
   offline, collapsible payload inspection.
 
 WEBrick serves the Rack applications, while Ruby's standard `ERB` library

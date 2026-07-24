@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mammoth (1.4.0)
+    mammoth (1.5.0)
       cdc-concurrent (~> 0.1)
       cdc-core (~> 0.1)
       json (>= 2.19.2, < 3.0)
@@ -20,25 +20,23 @@ GEM
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
-    async (2.42.0)
+    async (2.43.0)
       console (~> 1.29)
       fiber-annotation
       io-event (~> 1.11)
-      metrics (~> 0.12)
-      traces (~> 0.18)
     bigdecimal (4.1.2)
     cdc-concurrent (0.1.1)
       async (~> 2.0)
       cdc-core (~> 0.1, >= 0.1.3)
     cdc-core (0.1.3)
-    concurrent-ruby (1.3.7)
+    concurrent-ruby (1.3.8)
     console (1.37.0)
       fiber-annotation
       fiber-local (~> 1.1)
       json
     csv (3.3.5)
     drb (2.2.3)
-    erb (6.0.5)
+    erb (6.0.6)
     ffi (1.17.4-aarch64-linux-gnu)
     ffi (1.17.4-aarch64-linux-musl)
     ffi (1.17.4-arm-linux-gnu)
@@ -55,7 +53,7 @@ GEM
     fiber-storage (1.0.1)
     fileutils (1.8.0)
     io-console (0.8.2)
-    io-event (1.19.2)
+    io-event (1.19.3)
     irb (1.18.0)
       pp (>= 0.6.0)
       prism (>= 1.3.0)
@@ -72,7 +70,6 @@ GEM
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     logger (1.7.0)
-    metrics (0.15.0)
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
@@ -173,7 +170,6 @@ GEM
     strscan (3.1.8)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
-    traces (0.18.2)
     tsort (0.2.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
@@ -211,16 +207,16 @@ DEPENDENCIES
 CHECKSUMS
   addressable (2.9.0) sha256=7fdf6ac3660f7f4e867a0838be3f6cf722ace541dd97767fa42bc6cfa980c7af
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
-  async (2.42.0) sha256=536078293b8c95d5b5679fa01bf7d2458bcc65cd46dec2c4cb3580feaeb965c6
+  async (2.43.0) sha256=c3a6bd7ebb56a02b19eaa3b8ca26fced4397554bcd8c5d5046be5ee5598c452d
   bigdecimal (4.1.2) sha256=53d217666027eab4280346fba98e7d5b66baaae1b9c3c1c0ffe89d48188a3fbd
   bundler (4.0.15) sha256=a4ceb882fe94a0e0ac63cd0813932bbfd631a14e5ac0b7975189b19a4d28d9e7
   cdc-concurrent (0.1.1) sha256=6ca5b22499c40e50f69a86addb52516e49656866dbc221118fed10b7cf547fb5
   cdc-core (0.1.3) sha256=46926888ee6d05c0591e317e9e778d372b616c7674c30f4f1a65ae87c110820b
-  concurrent-ruby (1.3.7) sha256=4412caec3a5ea2e5fdc52076724c071a81f2c0593d83b2ac8cbb8ca63b3151b0
+  concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1
   console (1.37.0) sha256=8093b286c2595a063849c098594fee5155ecc7967d36f3aa8cbe7569c8f3efd7
   csv (3.3.5) sha256=6e5134ac3383ef728b7f02725d9872934f523cb40b961479f69cf3afa6c8e73f
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
-  erb (6.0.5) sha256=858e63488cb796c9daba8b6e9ff4b3879c395022049be9a66a8e00980e612eac
+  erb (6.0.6) sha256=a9b24986700f5bf127c4f297c5403c3ca41b83b0a316c0cd09a096b56e644ae5
   ffi (1.17.4-aarch64-linux-gnu) sha256=b208f06f91ffd8f5e1193da3cae3d2ccfc27fc36fba577baf698d26d91c080df
   ffi (1.17.4-aarch64-linux-musl) sha256=9286b7a615f2676245283aef0a0a3b475ae3aae2bb5448baace630bb77b91f39
   ffi (1.17.4-arm-linux-gnu) sha256=d6dbddf7cb77bf955411af5f187a65b8cd378cb003c15c05697f5feee1cb1564
@@ -236,7 +232,7 @@ CHECKSUMS
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   fileutils (1.8.0) sha256=8c6b1df54e2540bdb2f39258f08af78853aa70bad52b4d394bbc6424593c6e02
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
-  io-event (1.19.2) sha256=c9ac4f0c3153b453727ab15c03cc762b29a207979c703b2bb15c8be6209d4b4c
+  io-event (1.19.3) sha256=0fe24f0fe334ad39cf61a290131c54f8848184c0d166cea86ffae2d6548339d3
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
   json (2.21.1) sha256=13a43df75d95641443f5702dff350f237164a9d811ff0f2c2800d4d980220583
   json-schema (6.2.0) sha256=e8bff46ed845a22c1ab2bd0d7eccf831c01fe23bb3920caa4c74db4306813666
@@ -244,8 +240,7 @@ CHECKSUMS
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   listen (3.10.0) sha256=c6e182db62143aeccc2e1960033bebe7445309c7272061979bb098d03760c9d2
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
-  mammoth (1.4.0)
-  metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
+  mammoth (1.5.0)
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   minitest-mock (5.27.0) sha256=7040ed7185417a966920987eaa6eaf1be4ea1fc5b25bb03ff4703f98564a55b0
   parallel (2.1.0) sha256=b35258865c2e31134c5ecb708beaaf6772adf9d5efae28e93e99260877b09356
@@ -294,7 +289,6 @@ CHECKSUMS
   steep (2.0.0) sha256=6eb0ecc09637bbb54f0a5f2cf63daea6d3208ccace64b4f1107d976333605c30
   strscan (3.1.8) sha256=aae2db611a225559f21ffbb71765c9a4e60fd262534a9ea84f4f11c7f32f679e
   terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
-  traces (0.18.2) sha256=80f1649cb4daace1d7174b81f3b3b7427af0b93047759ba349960cb8f315e214
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
   unicode-display_width (3.2.0) sha256=0cdd96b5681a5949cdbc2c55e7b420facae74c4aaf9a9815eee1087cb1853c42
   unicode-emoji (4.2.0) sha256=519e69150f75652e40bf736106cfbc8f0f73aa3fb6a65afe62fefa7f80b0f80f
