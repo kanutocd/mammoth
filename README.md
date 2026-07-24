@@ -52,6 +52,16 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration,
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
 shared vocabulary so operators can inspect, recover, and reason about delivery.
 
+## Mammoth ecosystem
+
+The Data Plane is one component of the broader Mammoth ecosystem. The companion
+Control Plane, Control Agent, and Extensions are developed separately and are
+not part of this open-source repository or its MIT distribution.
+
+See the [Mammoth ecosystem overview](docs/ECOSYSTEM.md) for public scope,
+integration boundaries, and roadmap status. Planned capabilities are
+directional and do not represent a release commitment.
+
 ## Supported PostgreSQL versions
 
 Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These are the
