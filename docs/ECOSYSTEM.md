@@ -17,7 +17,7 @@ Mammoth
 | Component | Responsibility | Public status |
 | --- | --- | --- |
 | Mammoth Data Plane | PostgreSQL CDC consumption, delivery, retries, payload policies, operational state, and destination fanout. | Implemented here; open source under the repository license. |
-| Mammoth Control Plane | Multi-tenant inventory, identity and access control, durable orchestration, audit evidence, and operator workflows. | Implemented privately in active 0.40 development; not publicly released. |
+| Mammoth Control Plane | Multi-tenant inventory, identity and access control, durable orchestration, audit evidence, and operator workflows. | Implemented privately in active development; not publicly released. |
 | Mammoth Control Agent | Secure node-side enrollment, control-plane communication, command execution, and local reconciliation. | Secure-channel foundation implemented privately; broader managed-node workflows remain planned. |
 | Mammoth Extensions | Replaceable destination, runtime, state, and integration adapters. | Data Plane registries are implemented here; additional private and public extensions are planned independently. |
 
