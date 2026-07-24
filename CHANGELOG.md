@@ -6,13 +6,15 @@
 
 ## Unreleased
 
+## 1.5.1 - 2026-07-25
+
 ### Changed
 
 - Adopt Mammoth as the ecosystem brand, identify this open-source project as
   Mammoth Data Plane, and align documentation, published gem metadata,
   configuration descriptions, and branding assets with the new hierarchy.
 
-## 1.5.0 - 2026-07-19
+## 1.5.0 - 2026-07-24
 
 ### Changed
 
