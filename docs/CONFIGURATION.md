@@ -374,7 +374,7 @@ Mammoth can expose optional health, readiness, and metrics endpoints.
 
 ```yaml
 observability:
-  host: 0.0.0.0
+  host: 127.0.0.1
   port: 9393
 ```
 
@@ -384,3 +384,7 @@ are started with `mammoth observability CONFIG` and include `/healthz`,
 adapter with read-only PostgreSQL slot health. Metrics include retained WAL and
 slot status; the observability process never starts a replication stream or
 changes slot lifecycle.
+
+The endpoints do not authenticate clients and can expose operational details.
+Only bind to a non-loopback address behind a trusted network boundary or an
+authenticated reverse proxy.

@@ -4,6 +4,24 @@
 
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Default the unauthenticated observability HTTP server to the loopback
+  interface and document the network controls required for non-loopback
+  bindings.
+
+### Quality
+
+- Run the container quickstart smoke test on pull requests and whenever Docker,
+  application, configuration, or dependency inputs change.
+- Added Dependabot updates, Ruby dependency auditing, dependency review,
+  CodeQL analysis, and high- and critical-severity container vulnerability
+  scanning.
+- Pin the Ruby container base image to an immutable digest and publish release
+  images with SBOM and maximum provenance attestations.
+
 ## 1.4.0 - 2026-07-19
 
 ### Added

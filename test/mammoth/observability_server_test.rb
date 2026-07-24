@@ -51,6 +51,10 @@ module Mammoth
       end
     end
 
+    def test_defaults_to_loopback_when_observability_host_is_not_configured
+      assert_equal "127.0.0.1", ObservabilityServer::DEFAULT_HOST
+    end
+
     def test_readyz_returns_503_when_store_fails
       config = Configuration.load(fixture_config_path)
       server = ObservabilityServer.new(config, host: "127.0.0.1", port: 0, state_adapter: UnreadyAdapter.new,

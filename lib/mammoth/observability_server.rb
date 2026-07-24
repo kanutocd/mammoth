@@ -11,7 +11,7 @@ module Mammoth
   # the same configured operational-state backend.
   class ObservabilityServer
     # Default bind host for the observability server.
-    DEFAULT_HOST = "0.0.0.0"
+    DEFAULT_HOST = "127.0.0.1"
     # Default TCP port for the observability server.
     DEFAULT_PORT = 9393
 

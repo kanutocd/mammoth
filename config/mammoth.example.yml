@@ -385,7 +385,11 @@ operational_state:
 
 observability:
   # Bind host for the optional health, readiness, and metrics server.
-  host: 0.0.0.0
+  #
+  # The endpoints do not authenticate clients and may expose operational
+  # details. Keep the loopback default unless a trusted network boundary or
+  # authenticated reverse proxy protects the listener.
+  host: 127.0.0.1
 
   # HTTP port for /healthz, /readyz, and /metrics.
   port: 9393

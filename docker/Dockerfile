@@ -1,4 +1,6 @@
-FROM ruby:4.0-slim AS build
+ARG RUBY_IMAGE=ruby:4.0-slim@sha256:abd7528c4df35d151e2643d5efb845e442a26e36a4babc6459bee508619137a2
+
+FROM ${RUBY_IMAGE} AS build
 
 WORKDIR /src
 
@@ -17,7 +19,7 @@ RUN bundle install \
  && bundle exec rake build
 
 
-FROM ruby:4.0-slim AS runtime
+FROM ${RUBY_IMAGE} AS runtime
 
 ENV MAMMOTH_CONFIG="/app/config/mammoth.config.yaml"
 

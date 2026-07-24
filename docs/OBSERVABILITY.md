@@ -16,16 +16,22 @@ bundle exec ./exe/mammoth observability config/mammoth.example.yml
 By default the server binds to:
 
 ```text
-0.0.0.0:9393
+127.0.0.1:9393
 ```
 
 Configure the bind address and port:
 
 ```yaml
 observability:
-  host: 0.0.0.0
+  host: 127.0.0.1
   port: 9393
 ```
+
+The endpoints do not authenticate clients and readiness responses contain
+operational details. Keep the loopback default unless the listener is protected
+by a trusted network boundary or an authenticated reverse proxy. Container and
+Kubernetes deployments that bind to `0.0.0.0` should restrict ingress with
+network policy or equivalent firewall controls.
 
 ## Runnable monitoring showcase
 
