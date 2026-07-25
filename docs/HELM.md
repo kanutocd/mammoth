@@ -298,16 +298,14 @@ kubectl get pvc
 
 Run one active Mammoth replica per logical replication slot.
 
-PostgreSQL logical replication slots are consumed by one active subscriber at a time, so the chart uses a single replica by default.
-
-```yaml
-replicaCount: 1
-```
+PostgreSQL logical replication slots are consumed by one active subscriber at a
+time, so the chart deliberately fixes the Deployment at one replica. The public
+chart does not expose a `replicaCount` value.
 
 The `Recreate` deployment strategy releases the slot before starting the
-replacement pod. Do not change the strategy or replica count without assigning
-an independent slot and independent operational-state store to each active
-relay.
+replacement pod. A multi-replica deployment requires a separate chart or
+manifests that assign an independent slot and independent operational-state
+store to each active relay.
 
 ## PostgreSQL operational guardrails
 

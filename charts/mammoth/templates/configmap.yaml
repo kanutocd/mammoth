@@ -44,9 +44,9 @@ data:
       slot: {{ .Values.replication.slot | quote }}
       publications:
         {{ toYaml .Values.replication.publications | nindent 8 }}
-      auto_create_slot: {{ .Values.replication.auto_create_slot | default true }}
-      temporary_slot: {{ .Values.replication.temporary_slot | default false }}
-      feedback_interval: {{ .Values.replication.feedback_interval | default 5.0 }}
+      auto_create_slot: {{- if hasKey .Values.replication "auto_create_slot" }} {{ .Values.replication.auto_create_slot }}{{- else }} true{{- end }}
+      temporary_slot: {{- if hasKey .Values.replication "temporary_slot" }} {{ .Values.replication.temporary_slot }}{{- else }} false{{- end }}
+      feedback_interval: {{- if hasKey .Values.replication "feedback_interval" }} {{ .Values.replication.feedback_interval }}{{- else }} 5.0{{- end }}
 
     delivery:
       unit: {{ .Values.delivery.unit | default "transaction" | quote }}
@@ -55,9 +55,9 @@ data:
 
     runtime:
       adapter: {{ .Values.runtime.adapter | default "concurrent" | quote }}
-      concurrency: {{ .Values.runtime.concurrency | default 1 }}
-      batch_size: {{ .Values.runtime.batch_size | default 1 }}
-      preserve_order: {{ .Values.runtime.preserve_order | default true }}
+      concurrency: {{- if hasKey .Values.runtime "concurrency" }} {{ .Values.runtime.concurrency }}{{- else }} 1{{- end }}
+      batch_size: {{- if hasKey .Values.runtime "batch_size" }} {{ .Values.runtime.batch_size }}{{- else }} 1{{- end }}
+      preserve_order: {{- if hasKey .Values.runtime "preserve_order" }} {{ .Values.runtime.preserve_order }}{{- else }} true{{- end }}
       timeout_seconds: {{ .Values.runtime.timeout_seconds | default "null" }}
 
     {{- if .Values.destinations }}

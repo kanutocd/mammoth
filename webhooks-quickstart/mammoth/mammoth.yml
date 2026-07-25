@@ -71,4 +71,4 @@ observability:
   port: 9393
 
 logging:
-  level: info
+  level: debug

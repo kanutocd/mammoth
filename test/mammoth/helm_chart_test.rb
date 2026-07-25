@@ -25,7 +25,46 @@ module Mammoth
       end
     end
 
+    def test_chart_preserves_explicit_false_and_zero_values
+      stdout, stderr, status = Open3.capture3(*explicit_false_and_zero_command)
+
+      assert status.success?, stderr
+      explicit_false_and_zero_config.each { |content| assert_includes stdout, content }
+    end
+
     private
+
+    def explicit_false_and_zero_command
+      [
+        "helm",
+        "template",
+        "mammoth",
+        "charts/mammoth",
+        "--set",
+        "replication.auto_create_slot=false",
+        "--set",
+        "replication.temporary_slot=false",
+        "--set",
+        "replication.feedback_interval=0",
+        "--set",
+        "runtime.concurrency=0",
+        "--set",
+        "runtime.batch_size=0",
+        "--set",
+        "runtime.preserve_order=false"
+      ]
+    end
+
+    def explicit_false_and_zero_config
+      [
+        "auto_create_slot: false",
+        "temporary_slot: false",
+        "feedback_interval: 0",
+        "concurrency: 0",
+        "batch_size: 0",
+        "preserve_order: false"
+      ]
+    end
 
     def helm_template_command
       [
