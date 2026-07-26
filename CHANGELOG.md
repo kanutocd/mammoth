@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- Correct the Mammoth Helm chart's default image tag to `v1.5.1`, matching the
+- Correct the Mammoth Helm chart's default image tag to `1.5.2`, matching the
   published container image tag convention.
 
 ## 1.5.1 - 2026-07-25
