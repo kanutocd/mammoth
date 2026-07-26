@@ -12,6 +12,22 @@ These serialized forms are supported v1 contracts. Receivers must tolerate
 additive fields and additive columns inside `data`, `identity`, `changes`, and
 `metadata`.
 
+## Machine-readable contract roadmap
+
+Mammoth currently documents its canonical webhook event and transaction
+payloads in this guide. The long-term contract should also be published as
+versioned JSON Schema artifacts owned by Mammoth:
+
+```text
+schemas/webhook-event.v1.schema.json
+schemas/webhook-transaction.v1.schema.json
+```
+
+Downstream consumers should then reference or vendor schemas from a pinned
+Mammoth release instead of independently recreating Mammoth's transport
+contract. The published schemas must remain aligned with the canonical
+serializers and Mammoth's 1.x compatibility guarantees.
+
 ## Row-level event
 
 With `delivery.unit: event`, Mammoth sends one payload per

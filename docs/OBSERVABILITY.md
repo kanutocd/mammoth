@@ -83,7 +83,7 @@ Example response:
   "status": "ok",
   "service": "mammoth",
   "name": "local_mammoth",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "checked_at": "2026-07-06T00:00:00Z"
 }
 ```

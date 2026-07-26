@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/kanutocd/mammoth
-  tag: "1.5.1"
+  tag: "v1.5.2"
   pullPolicy: IfNotPresent
 
 # Private PRO images can be used by overriding image.repository and setting

@@ -6,6 +6,18 @@
 
 ## Unreleased
 
+## 1.5.2 - 2026-07-26
+
+### Changed
+
+- Document the roadmap for publishing Mammoth-owned, versioned JSON Schema
+  artifacts for canonical webhook event and transaction payloads.
+
+### Fixed
+
+- Correct the Mammoth Helm chart's default image tag to `v1.5.1`, matching the
+  published container image tag convention.
+
 ## 1.5.1 - 2026-07-25
 
 ### Changed
