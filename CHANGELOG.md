@@ -6,6 +6,12 @@
 
 ## Unreleased
 
+## 1.5.3 - 2026-07-26
+
+### Fixed
+
+- Add the actual Publish chart step to helm.yml github actions workflow
+
 ## 1.5.2 - 2026-07-26
 
 ### Changed
