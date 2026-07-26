@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -43,3 +44,5 @@ jobs:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
 
+      - name: Publish chart
+        run: helm push "dist/mammoth-${GITHUB_REF_NAME#v}.tgz" oci://ghcr.io/kanutocd/charts
