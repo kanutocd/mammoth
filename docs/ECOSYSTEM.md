@@ -45,6 +45,27 @@ not promise a release date or availability in this repository.
 | Control Plane production persistence, tenant isolation, RBAC, API/UI workflows, auditability, and import tooling | Implemented privately / continuing | Private companion component; remaining workflow normalization and production acceptance work is not a Data Plane release commitment. |
 | Control Agent secure enrollment, agent-initiated transport, command journal, and local reconciliation | Partially implemented privately / continuing | Private companion component; public integration contracts will be documented when released. |
 | Extension ecosystem beyond the Data Plane's built-in registries | Planned | Additional adapters may be published independently with their own compatibility and license terms. |
+| Multi-source PostgreSQL ingestion | Planned | A future Data Plane capability to independently consume multiple PostgreSQL logical-replication streams. It is not available in the current single-stream runtime. |
+
+### Multi-source PostgreSQL ingestion
+
+The current Data Plane supports one PostgreSQL replication stream per Mammoth
+process configuration. A future multi-source mode is intended to supervise
+independent, source-scoped PostgreSQL streams while preserving checkpoint,
+acknowledgement, retry, and health isolation for every source.
+
+The intended delivery sequence is:
+
+1. introduce an opt-in source collection while retaining single-source
+   configuration compatibility;
+2. ship source runners, per-source checkpoints and acknowledgements,
+   source-aware event identity, status, metrics, and replay; and
+3. certify multi-source operational state, HA/fencing, and failure-recovery
+   behavior before declaring the mode production-ready.
+
+Ordering will be guaranteed only within each PostgreSQL source; Mammoth will
+not claim a global order across independent databases. Multi-source work is
+directional and does not promise a version or release date.
 
 For current Data Plane implementation status, use the repository's release
 notes, compatibility guide, and public documentation. Private companion
