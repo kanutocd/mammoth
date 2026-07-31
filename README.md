@@ -21,9 +21,9 @@
 [![Tested Against PostgreSQL 14–18](https://img.shields.io/badge/Tested%20Against-PostgreSQL%2014--18-336791?logo=postgresql&logoColor=white)](https://github.com/kanutocd/mammoth/blob/main/.github/workflows/ci.yml#L50)
 [![License](https://img.shields.io/badge/License-MIT-22C55E)](LICENSE.txt)
 
-
-Mammoth is a self-hosted PostgreSQL event relay focused on reliable delivery
-of database change events.
+Mammoth is a self-hosted PostgreSQL change-event relay focused on reliable
+delivery of database change events to downstream systems. It turns PostgreSQL
+logical replication streams into observable, recoverable delivery pipelines.
 
 This repository contains the **Mammoth Data Plane**, the open-source runtime in
 the broader Mammoth ecosystem:
@@ -52,6 +52,50 @@ Mammoth is intentionally boring infrastructure. It uses YAML configuration,
 JSON Schema validation, local SQLite operational state, and the CDC Ecosystem's
 shared vocabulary so operators can inspect, recover, and reason about delivery.
 
+## Why Mammoth?
+
+Mammoth is designed for applications where PostgreSQL is the system of record,
+including Rails applications that need reliable reactions to database state
+changes without coupling every workflow to request handling.
+
+Applications increasingly need to react to changes in their primary database:
+
+- update search indexes after data changes
+- synchronize external systems
+- trigger integrations and asynchronous workflows
+- build analytics pipelines
+- maintain audit and event histories
+
+Many systems start with polling, application callbacks, or database triggers.
+As applications grow, these approaches can become increasingly difficult to
+operate, recover from failures, and reason about.
+
+Mammoth uses PostgreSQL logical replication as the authoritative change stream
+and provides a reliable delivery layer between PostgreSQL and downstream
+consumers.
+
+The goal is simple: make database change delivery explicit, observable, and
+recoverable.
+
+## What makes Mammoth different?
+
+Mammoth deliberately focuses on the delivery boundary between PostgreSQL and
+downstream consumers rather than trying to become a general-purpose streaming
+platform.
+
+It treats change delivery as an operational concern:
+
+- transactional change-event handling
+- durable delivery state
+- explicit checkpoint management
+- replayable failures
+- observable runtime behavior
+
+Unlike application callbacks, Mammoth does not require workflows to execute
+inside request handling. Unlike broad streaming platforms, it provides a
+focused PostgreSQL-native model for teams that need reliable change delivery
+without adopting a larger streaming infrastructure stack.
+
 ## Mammoth ecosystem
 
 The Data Plane is one component of the broader Mammoth ecosystem. The companion
@@ -65,8 +109,8 @@ directional and do not represent a release commitment.
 ## Reference Implementation
 
 The [Spherical Mammoth](https://github.com/kanutocd/spherical-mammoth)
-repository is the production-shaped, cloud-native reference implementation for
-the Mammoth Data Plane.
+repository is the production-shaped, cloud-native reference environment for
+deploying, validating, and operating the Mammoth Data Plane.
 
 It demonstrates how Mammoth integrates into a complete application environment:
 
@@ -107,15 +151,11 @@ See:
 
 ## Supported PostgreSQL versions
 
-Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These are the
-PostgreSQL major versions currently maintained by the PostgreSQL community and
-covered by Mammoth's real logical-replication E2E compatibility matrix.
+Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These versions are currently maintained by the PostgreSQL community and covered by Mammoth's logical-replication E2E compatibility matrix.
 
-Mammoth supports PostgreSQL major versions that are both maintained by the
-PostgreSQL community and included in Mammoth's compatibility test matrix. New
-PostgreSQL majors are unsupported until explicitly tested and documented. EOL
-versions may be removed from the supported range in a subsequent Mammoth minor
-release with release-note notice.
+New PostgreSQL majors are unsupported until explicitly tested and documented.
+EOL versions may be removed from the supported range in a subsequent Mammoth
+minor release with release-note notice.
 
 PostgreSQL 19 is a development release and is not supported.
 
@@ -163,7 +203,7 @@ Mammoth 1.x includes:
 - JSON Schema-backed configuration validation
 - SQLite operational memory bootstrap
 - checkpoint persistence
-- dead letter persistence
+- dead-letter persistence
 - delivered-envelope ledger persistence
 - webhook delivery sink
 - webhook fanout to multiple destinations
@@ -206,7 +246,7 @@ modes, not isolated API snippets.
 | [`schema_evolution`](examples/schema_evolution) | Consumer-first additive schema evolution without implying DDL delivery. |
 | [`destination_idempotency`](examples/destination_idempotency) | Atomic destination-side duplicate suppression across isolated relay ledgers. |
 | [`failing_webhook_retry`](examples/failing_webhook_retry) | Retry exhaustion and durable dead-letter persistence. |
-| [`operational_state`](examples/operational_state) | Inspectable checkpoints, delivered ledgers, and dead letters. |
+| [`operational_state`](examples/operational_state) | Inspectable checkpoints, delivered ledgers, and dead-letters. |
 | [`kubernetes_helm`](examples/kubernetes_helm) | Single-consumer Kubernetes deployment using the public Helm chart. |
 
 See [`examples/README.md`](examples/README.md) for the complete index, boundary
@@ -229,36 +269,40 @@ and transaction JSON contracts, column-change semantics, and event-ID behavior.
 
 ## Boundary
 
-Mammoth begins at CDC-core work items and ends at webhook fanout delivery.
+Mammoth begins at CDC Core work items and ends at webhook fanout delivery.
 
 Mammoth does not own pgoutput protocol parsing, value decoding, source
-normalization, or core dispatch vocabulary. Those belong to upstream CDC
-Ecosystem components. Mammoth selects and composes a delivery runtime while
-delegating its scheduling mechanics to the runtime layer. The runtime registry
-wraps the selected adapter with configured batch accumulation; `Application`
-only streams core work and coordinates lifecycle flush and shutdown calls.
+normalization, or core dispatch vocabulary. Those responsibilities belong to
+upstream CDC Ecosystem components. Mammoth selects and composes a delivery
+runtime while delegating scheduling mechanics to the runtime layer. 
+The runtime registry wraps the selected adapter with configured batch accumulation;
+`Application` only streams core work and coordinates lifecycle flush and
+shutdown calls.
 
 For the live PostgreSQL stream, `pgoutput-source-adapter` incrementally owns
 `Begin`/`Commit` buffering and emits exact `CDC::Core::ChangeEvent` or
 `CDC::Core::TransactionEnvelope` work items. Mammoth only composes the
-transport, parser, decoder, and source adapter and forwards the resulting core
-work to delivery. Mammoth's publication preflight supplies ordered,
+transport, parser, decoder, and source adapter, then forwards the resulting
+core work to delivery. Mammoth's publication preflight supplies ordered,
 catalog-derived replica-identity columns to the adapter, which owns composite
 and non-`id` key extraction.
 
 At the downstream boundary, `Mammoth::DeliveryProcessor` implements
 `CDC::Core::Processor` and returns `CDC::Core::ProcessorResult`. Inline and
 concurrent runtimes notify a `CDC::Core::Observer`; Mammoth's default observer
-maps the canonical started, succeeded, failed, and skipped notifications to
+maps canonical started, succeeded, failed, and skipped notifications to
 Prometheus counters.
 
-`Mammoth::ReplicationConsumer` accepts only exact core events and transaction
-envelopes. `deliver-sample` input crosses
-`PersistedPayloadDeserializer` before entering the live delivery path, so its
-stored hash does not masquerade as CDC-core work. Dead-letter replay is a
-separate destination boundary: Mammoth sends the exact prepared JSON persisted
-for that destination and does not reconstruct CDC work or reapply the current
-payload policy.
+`Mammoth::ReplicationConsumer` accepts only CDC Core event and transaction
+envelope types.
+
+`deliver-sample` input passes through `PersistedPayloadDeserializer` before
+entering the live delivery path, ensuring stored hashes do not masquerade as
+CDC Core work.
+
+Dead-letter replay is a separate destination boundary: Mammoth sends the exact
+prepared JSON persisted for that destination and does not reconstruct CDC work
+or reapply the current payload policy.
 
 ## Extensions
 
@@ -384,10 +428,9 @@ A reference benchmark run on Ruby 4.0.5 produced:
 | SQLite delivered-ledger writes                      |  **1,630 writes/sec** |
 | Dead-letter replay mechanics                        | **1,030 entries/sec** |
 
-At concurrency 50 with a synthetic 25 ms destination, Mammoth processed
-**1,862 transactions/sec** against a theoretical ceiling of 2,000, while
-maintaining **28.4 ms P95 latency**. This indicates low scheduling overhead for
-I/O-bound downstream delivery.
+Mammoth processed **1,862 transactions/sec** against a calculated workload
+ceiling of 2,000 transactions/sec, while maintaining **28.4 ms P95 latency**.
+This indicates low scheduling overhead for I/O-bound downstream delivery.
 
 These are local, single-trial reference measurements, not universal capacity
 claims or comparisons with other CDC platforms. The benchmarks isolate specific
