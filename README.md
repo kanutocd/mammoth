@@ -62,6 +62,49 @@ See the [Mammoth ecosystem overview](docs/ECOSYSTEM.md) for public scope,
 integration boundaries, and roadmap status. Planned capabilities are
 directional and do not represent a release commitment.
 
+## Reference Implementation
+
+The [Spherical Mammoth](https://github.com/kanutocd/spherical-mammoth)
+repository is the production-shaped, cloud-native reference implementation for
+the Mammoth Data Plane.
+
+It demonstrates how Mammoth integrates into a complete application environment:
+
+```text
+Application services
+        ↓
+PostgreSQL transactional state
+        ↓
+PostgreSQL logical replication
+        ↓
+Mammoth Data Plane
+        ↓
+Webhook delivery
+        ↓
+Independent downstream consumers
+```
+
+**Spherical Mammoth provides:**
+
+- a realistic SaaS-style application workflow
+- PostgreSQL-backed business state
+- Ory Kratos identity lifecycle integration
+- polyglot downstream consumers
+- Docker Compose and Kubernetes deployment paths
+- Helm-based deployment
+- OpenTofu-managed cloud infrastructure examples
+- CDC validation and failure scenarios
+
+The repository is intentionally separate from Mammoth OSS. Mammoth provides the
+CDC relay data plane; Spherical Mammoth demonstrates how that data plane can be
+deployed, exercised, and operated in a cloud-native environment.
+
+See:
+
+- [Spherical Mammoth](https://github.com/kanutocd/spherical-mammoth)
+- [Cloud-native deployment guide](https://github.com/kanutocd/spherical-mammoth/blob/main/docs/runbooks/cloud-native-mammoth.md)
+
+
 ## Supported PostgreSQL versions
 
 Mammoth supports PostgreSQL 14 through PostgreSQL 18, inclusive. These are the
