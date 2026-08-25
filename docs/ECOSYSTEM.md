@@ -39,38 +39,167 @@ The following is a directional view of ecosystem work. “Implemented” refers 
 capabilities represented by this repository's public contracts; “planned” does
 not promise a release date or availability in this repository.
 
+
+
 | Area | Status | Public scope |
 | --- | --- | --- |
 | Data Plane delivery, retries, dead letters, replay, payload policies, and operational recovery | Implemented | See the versioned README and documentation under `docs/`. |
 | Control Plane production persistence, tenant isolation, RBAC, API/UI workflows, auditability, and import tooling | Implemented privately / continuing | Private companion component; remaining workflow normalization and production acceptance work is not a Data Plane release commitment. |
 | Control Agent secure enrollment, agent-initiated transport, command journal, and local reconciliation | Partially implemented privately / continuing | Private companion component; public integration contracts will be documented when released. |
 | Extension ecosystem beyond the Data Plane's built-in registries | Planned | Additional adapters may be published independently with their own compatibility and license terms. |
-| Multi-source PostgreSQL ingestion | Planned | A future Data Plane capability to independently consume multiple PostgreSQL logical-replication streams. It is not available in the current single-stream runtime. |
+| Multi-source PostgreSQL ingestion | Planned | An optional future Data Plane mode that supervises multiple independent PostgreSQL sources. Each source retains its own replication slot, checkpoint, acknowledgement, retry, replay, health, and operational state while sharing a single Mammoth runtime. Current releases remain intentionally single-source. |
 
 ### Multi-source PostgreSQL ingestion
 
-The current Data Plane supports one PostgreSQL replication stream per Mammoth
-process configuration. A future multi-source mode is intended to supervise
-independent, source-scoped PostgreSQL streams while preserving checkpoint,
-acknowledgement, retry, and health isolation for every source.
+| Status | Planned |
+|--------|---------|
+| **Capability** | A future Data Plane mode that supervises multiple, independent PostgreSQL logical replication sources within a single Mammoth runtime while preserving complete operational isolation per source. |
 
-The intended delivery sequence is:
+The current Mammoth Data Plane is intentionally **single-source**.
 
-1. introduce an opt-in source collection while retaining single-source
-   configuration compatibility;
-2. ship source runners, per-source checkpoints and acknowledgements,
-   source-aware event identity, status, metrics, and replay; and
-3. certify multi-source operational state, HA/fencing, and failure-recovery
-   behavior before declaring the mode production-ready.
+**Architectural invariant:** Every PostgreSQL source owns exactly one logical replication slot and one isolated operational state.
 
-Ordering will be guaranteed only within each PostgreSQL source; Mammoth will
-not claim a global order across independent databases. Multi-source work is
-directional and does not promise a version or release date.
+The current single-source architecture is a deliberate design choice rather than a technical limitation. It minimizes operational complexity, isolates failure domains, and establishes a consistent ownership model that future multi-source supervision extends without changing.
 
-For current Data Plane implementation status, use the repository's release
-notes, compatibility guide, and public documentation. Private companion
-component plans may change independently and should not be treated as a
-promise of inclusion in a Data Plane release.
+A single Data Plane instance owns:
+
+- one PostgreSQL source;
+- one logical replication slot;
+- one logical replication stream;
+- one isolated operational state; and
+- one independent runtime lifecycle.
+
+This design keeps the runtime operationally simple and predictable.
+
+Future releases may introduce an **optional multi-source mode** that allows a single Data Plane process to supervise multiple PostgreSQL sources. Each source will continue to behave as an independent replication runtime.
+
+The feature is intended for deployments that replicate from multiple independent PostgreSQL databases while reducing deployment and operational overhead. It is not intended to multiplex multiple replication slots from the same PostgreSQL source into a shared processing pipeline.
+
+### Source isolation
+
+Regardless of deployment mode, every source remains isolated.
+
+Each source owns its own:
+
+- PostgreSQL connection;
+- logical replication slot;
+- publication;
+- checkpoint progression;
+- acknowledgement lifecycle;
+- retry state;
+- dead-letter state;
+- replay metadata;
+- health reporting; and
+- operational metrics.
+
+Operational state is isolated on a per-source basis. A checkpoint, retry, acknowledgement, replay, or health transition for one source cannot advance, modify, or invalidate the operational state of another source.
+
+### Runtime model
+
+
+Conceptually, a future multi-source Data Plane behaves as a supervisor of independent Source Runtimes.
+
+```text
+                    Mammoth Data Plane
+                          |
+               Source Runtime Supervisor
+          +---------------+---------------+
+          |               |               |
+          |               |               |
+
+     Source Runtime   Source Runtime   Source Runtime
+
+          |               |               |
+
+    PostgreSQL A    PostgreSQL B    PostgreSQL C
+
+          |               |               |
+
+        Slot A          Slot B          Slot C
+```
+
+The Data Plane coordinates the Source Runtimes but does not merge their replication state.
+
+Each Source Runtime is independently recoverable and progresses its replication stream without coordinating checkpoints or acknowledgements with other Source Runtimes.
+
+### Ordering
+
+Ordering is guaranteed **only within each PostgreSQL source**.
+
+Mammoth will not attempt to establish a global ordering across independent PostgreSQL databases or replication streams.
+
+Ordering guarantees terminate at the source boundary.
+
+### Operational state
+
+The default SQLite operational store remains the authoritative operational state for the Data Plane.
+
+In multi-source mode, it maintains logically isolated state for every source, including:
+
+- checkpoints;
+- acknowledgements;
+- retries;
+- dead letters;
+- replay metadata; and
+- health information.
+
+The physical storage implementation may evolve over time, but per-source operational isolation remains a core architectural guarantee.
+
+### Compatibility
+
+Multi-source support is intended to be fully opt-in.
+
+Existing single-source deployments, configuration files, operational procedures, and CLI interfaces remain valid without modification.
+
+### Planned implementation sequence
+
+```text
+Single-source (today)
+
+Data Plane
+     |
+Source Runtime
+     |
+PostgreSQL
+     |
+Replication Slot
+```
+
+```text
+Multi-source (future)
+
+Data Plane
+
+├── Source Runtime
+│      |
+│   PostgreSQL A
+│      |
+│    Slot A
+│
+├── Source Runtime
+│      |
+│   PostgreSQL B
+│      |
+│    Slot B
+│
+└── Source Runtime
+       |
+   PostgreSQL C
+       |
+     Slot C
+```
+
+The intended implementation sequence is:
+
+1. Introduce an optional source collection while preserving full single-source compatibility.
+2. Introduce independent Source Runtime supervision.
+3. Add per-source checkpointing, acknowledgements, replay, metrics, and health reporting.
+4. Validate multi-source operational behavior, including recovery, fencing, failover, and high availability.
+5. Declare the feature production-ready after operational certification.
+
+This roadmap is directional and does not imply a specific release or version.
+
+The Data Plane supervises independent Source Runtimes. It does not merge, coordinate, or establish a global ordering across independent PostgreSQL replication streams.
 
 ## Licensing and availability
 

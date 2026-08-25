@@ -129,7 +129,7 @@ The essential Compose shape is:
 ```yaml
 services:
   mammoth-init:
-    image: ghcr.io/kanutocd/mammoth:v1.5.3
+    image: ghcr.io/kanutocd/mammoth:v1.5.4
     command: ["sh", "-c", "mammoth validate /config/mammoth.yml && mammoth bootstrap /config/mammoth.yml"]
     environment: &mammoth-environment
       MAMMOTH_POSTGRES_PASSWORD: ${MAMMOTH_POSTGRES_PASSWORD}
@@ -140,7 +140,7 @@ services:
       - mammoth-data:/app/.sqlite3
 
   mammoth:
-    image: ghcr.io/kanutocd/mammoth:v1.5.3
+    image: ghcr.io/kanutocd/mammoth:v1.5.4
     command: ["start", "/config/mammoth.yml"]
     environment: *mammoth-environment
     volumes: *mammoth-volumes

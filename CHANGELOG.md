@@ -6,6 +6,11 @@
 
 ## Unreleased
 
+## 1.5.4 - 2026-08-26
+
+- Upgraded runtime depency sqlite3 from 2.9.5 to 2.9.6 because of security/stability reasons
+  as outline by this PR https://github.com/kanutocd/mammoth/pull/21 by @dependabot
+
 ## 1.5.3 - 2026-07-26
 
 ### Fixed
