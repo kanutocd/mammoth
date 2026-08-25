@@ -1,10 +1,11 @@
-ARG RUBY_IMAGE=ruby:4.0-slim@sha256:abd7528c4df35d151e2643d5efb845e442a26e36a4babc6459bee508619137a2
+ARG RUBY_IMAGE=ruby:4.0-slim
 
 FROM ${RUBY_IMAGE} AS build
 
 WORKDIR /src
 
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
     build-essential \
     git \
@@ -40,6 +41,7 @@ COPY --from=build /src/pkg/mammoth-*.gem /tmp/
 # Ruby 4.0.6 bundles vulnerable json 2.18.0 as a default gem. Mammoth installs
 # its patched dependency first, then removes only the obsolete default spec.
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
