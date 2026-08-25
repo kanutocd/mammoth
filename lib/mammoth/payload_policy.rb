@@ -135,14 +135,22 @@ module Mammoth
       return value.map { |item| canonicalize(item) } if value.is_a?(Array)
       return value unless value.is_a?(Hash)
 
-      value.keys.sort.to_h { |key| [key, canonicalize(value.fetch(key))] }
+      value.keys.sort.each_with_object(
+        {} # : Hash[untyped, untyped]
+      ) do |key, result|
+        result[key] = canonicalize(value.fetch(key))
+      end
     end
 
     def stringify_keys(value)
       return value.map { |item| stringify_keys(item) } if value.is_a?(Array)
       return value unless value.is_a?(Hash)
 
-      value.to_h { |key, item| [key.to_s, stringify_keys(item)] }
+      value.each_with_object(
+        {} # : Hash[String, untyped]
+      ) do |(key, item), result|
+        result[key.to_s] = stringify_keys(item)
+      end
     end
 
     def deep_freeze(value)
