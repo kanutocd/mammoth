@@ -67,12 +67,12 @@ jobs:
           persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.6
+        uses: github/codeql-action/init@v4.37.8
         with:
           languages: ruby
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v4.37.6
+        uses: github/codeql-action/analyze@v4.37.8
 
   container-audit:
     name: Container vulnerability audit
