@@ -10,6 +10,8 @@
 
 - Upgraded runtime depency sqlite3 from 2.9.5 to 2.9.6 because of security/stability reasons
   as outline by this PR https://github.com/kanutocd/mammoth/pull/21 by @dependabot
+- Fixed the Dockerfile security issue that was flagged by Trivy by unpinning the ruby base image's digest hash
+  and explicitly include an `apt-get upgrade`
 
 ## 1.5.3 - 2026-07-26
 
