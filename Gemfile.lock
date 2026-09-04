@@ -151,7 +151,7 @@ GEM
     sqlite3 (2.9.6-x86_64-darwin)
     sqlite3 (2.9.6-x86_64-linux-gnu)
     sqlite3 (2.9.6-x86_64-linux-musl)
-    steep (2.0.0)
+    steep (2.1.0)
       concurrent-ruby (>= 1.1.10)
       csv (>= 3.0.9)
       fileutils (>= 1.1.0)
@@ -162,7 +162,7 @@ GEM
       parser (>= 3.2)
       prism (>= 0.25.0)
       rainbow (>= 2.2.2, < 4.0)
-      rbs (~> 4.0)
+      rbs (~> 4.2)
       securerandom (>= 0.1)
       strscan (>= 1.0.0)
       terminal-table (>= 2, < 5)
@@ -201,7 +201,7 @@ DEPENDENCIES
   rubocop-minitest (~> 0.40.0)
   rubocop-rake (~> 0.7.1)
   simplecov (~> 1.1.1)
-  steep (~> 2.0)
+  steep (~> 2.1)
   yard (~> 0.9.44)
 
 CHECKSUMS
@@ -286,7 +286,7 @@ CHECKSUMS
   sqlite3 (2.9.6-x86_64-darwin) sha256=b5842fea77781c14da03fa7bc0feb82db03a69e135affcb6f5399cbd2797a5f3
   sqlite3 (2.9.6-x86_64-linux-gnu) sha256=613188ce02f614126ddbc38c5e217ccffd6306d0dcd9adca9764547aa890a634
   sqlite3 (2.9.6-x86_64-linux-musl) sha256=d493b11818a3573387a1d56e1ee8fa00da23a683a7a1cc063e7a0feeed843abf
-  steep (2.0.0) sha256=6eb0ecc09637bbb54f0a5f2cf63daea6d3208ccace64b4f1107d976333605c30
+  steep (2.1.0) sha256=1daf53573283b0e6d404a7273cca41fe5c15b14ece05167934f5ffc179e171d9
   strscan (3.1.8) sha256=aae2db611a225559f21ffbb71765c9a4e60fd262534a9ea84f4f11c7f32f679e
   terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
