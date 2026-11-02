@@ -6,6 +6,11 @@
 
 ## Unreleased
 
+## 1.5.5 - 2026-11-02
+
+- Merged @dependabot's Pull Requests
+- Bumped sqlite3 version to '>= 2.10.2' to fix the vulnerability "GHSA-4fqr-96q8-xrfx" reported by bundler-audit
+
 ## 1.5.4 - 2026-08-26
 
 - Upgraded runtime depency sqlite3 from 2.9.5 to 2.9.6 because of security/stability reasons
