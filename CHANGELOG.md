@@ -6,6 +6,12 @@
 
 ## Unreleased
 
+## 1.5.6 - 2026-11-09
+
+- chore(deps): bump pg from 1.6.3 to 1.7.0
+- chore(deps): bump github/codeql-action from 4.39.1 to 4.39.2
+- chore(deps): bump rubocop from 1.91.0 to 1.92.2
+
 ## 1.5.5 - 2026-11-02
 
 - Merged @dependabot's Pull Requests

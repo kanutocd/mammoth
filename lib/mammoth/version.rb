@@ -2,5 +2,5 @@
 
 module Mammoth
   # Current Mammoth gem version.
-  VERSION = "1.5.5"
+  VERSION = "1.5.6"
 end

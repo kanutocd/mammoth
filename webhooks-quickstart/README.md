@@ -219,7 +219,7 @@ secrets, or exception messages.
 The Compose file defaults to the released image matching this quickstart:
 
 ```text
-ghcr.io/kanutocd/mammoth:v1.5.5
+ghcr.io/kanutocd/mammoth:v1.5.6
 ```
 
 Override it without editing Compose:
